@@ -99,6 +99,31 @@ cln <- cln[!(cln %like% "is.general")]
 dt.conc.m <- as.matrix(dt.conc[, cln, with = FALSE])
 
 
+# base concentrations equation
+
+conc.base.res <- t(dt.coef.m) %*% exp(cnst + dt.coef.m %*% log(dt.conc.m[1, ]))
+
+# product concentrations equation
+
+conc.prod.res <- exp(cnst + dt.coef.m %*% log(dt.conc.m[1, ]))
+
+# jacobian matrix
+
+jc <- t(dt.coef.m) %*% (dt.coef.m * as.vector(conc.prod.res))
+# t(conc.prod.res) %*% dt.coef.m %*% t(dt.coef.m)
+
+# error vector
+
+err.v <- t(dt.coef.m) %*% conc.prod.res - dt.conc.m[1, ]
+err.v <- conc.base.res - dt.conc.m[1, ]
+
+# step
+
+conc.base.res - solve(jc) %*% err.v
+
+
+
+
 
 # for (i in 1:reac.nm) {
 #   
@@ -114,7 +139,7 @@ dt.conc.m <- as.matrix(dt.conc[, cln, with = FALSE])
 #   
 # }
 
-sum(t(dt.coef.m[]) %*% exp(cnst + dt.coef.m %*% dt.conc.m[1, ]))
+
 
 # dt.coef.m[, 1] %*% exp(cnst + dt.coef.m %*% dt.conc.m[1, ]) + dt.coef.m[, 2] %*% exp(cnst + dt.coef.m %*% dt.conc.m[1, ])
 
