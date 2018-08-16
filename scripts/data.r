@@ -64,6 +64,7 @@ for (i in cln) {
 }
 
 dt.coef[, name := str_replace(name, "^ *\\+ *", "")]
+dt.coef[name %like% "\\+", name := paste(name, 1:.N, sep = "_"), name]
 
 
 # restore constants ------------------
@@ -71,6 +72,62 @@ dt.coef[, name := str_replace(name, "^ *\\+ *", "")]
 cnst <- (10 ^ cnst)[, 1]
 cnst <- c(rep(1, part.nm), cnst)
 cnst <- log(cnst)
+
+
+# create result set
+
+cln <- colnames(dt.conc)
+cln <- cln[!(cln %like% "is.general")]
+
+dt.conc.res <- dt.conc[, cln, with = FALSE]
+
+cln <- dt.coef[(name %like% "\\+"), name]
+
+for (i in cln) {
+  
+  dt.conc.res[, eval(i) := 0]
+  
+}
+
+#
+
+dt.coef.m <- as.matrix(dt.coef[, !c("name"), with = FALSE])
+
+cln <- colnames(dt.conc)
+cln <- cln[!(cln %like% "is.general")]
+
+dt.conc.m <- as.matrix(dt.conc[, cln, with = FALSE])
+
+
+
+# for (i in 1:reac.nm) {
+#   
+#   ff <- dt.coef.m[i, 1] * exp(cnst[i] + dt.coef.m[i, ] %*% dt.conc.m[1, ])
+#   print(as.vector(ff))
+#   
+# }
+# 
+# for (i in 1:part.nm) {
+#   
+#   ff <- dt.coef.m[, i] %*% exp(cnst + dt.coef.m %*% dt.conc.m[1, ])
+#   print(as.vector(ff))
+#   
+# }
+
+sum(t(dt.coef.m[]) %*% exp(cnst + dt.coef.m %*% dt.conc.m[1, ]))
+
+# dt.coef.m[, 1] %*% exp(cnst + dt.coef.m %*% dt.conc.m[1, ]) + dt.coef.m[, 2] %*% exp(cnst + dt.coef.m %*% dt.conc.m[1, ])
+
+
+# dt.conc.m %*% t(dt.coef.m)
+
+
+
+
+
+
+
+
 
 
 
