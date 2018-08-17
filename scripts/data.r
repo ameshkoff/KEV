@@ -89,37 +89,59 @@ for (i in cln) {
   
 }
 
-#
+# stechiometric coefficients to matrix
 
 dt.coef.m <- as.matrix(dt.coef[, !c("name"), with = FALSE])
 
 cln <- colnames(dt.conc)
 cln <- cln[!(cln %like% "is.general")]
 
+# base concentrations to matrix
+
 dt.conc.m <- as.matrix(dt.conc[, cln, with = FALSE])
+dt.conc.m.iter <- copy(dt.conc.m[1, ])
 
 
-# base concentrations equation
+for (iter in 1:1000) {
+  
+  # base concentrations equation
+  
+  conc.base.res <- t(dt.coef.m) %*% exp(cnst + dt.coef.m %*% log(dt.conc.m.iter))
+  
+  # product concentrations equation
+  
+  conc.prod.res <- exp(cnst + dt.coef.m %*% log(dt.conc.m.iter))
+  
+  # jacobian matrix
+  
+  jc <- t(dt.coef.m) %*% (dt.coef.m * as.vector(conc.prod.res))
+  
+  # error vector
+  
+  err.v <- t(dt.coef.m) %*% conc.prod.res - dt.conc.m[1, ]
+  # err.v <- conc.base.res - dt.conc.m[1, ]
+  
+  # step
+  
+  tmp <- exp(log(dt.conc.m.iter) - 1 * solve(jc) %*% err.v)
 
-conc.base.res <- t(dt.coef.m) %*% exp(cnst + dt.coef.m %*% log(dt.conc.m[1, ]))
+  precis <- mean(abs(log(dt.conc.m.iter) - log(tmp)))
+  
+  dt.conc.m.iter <- tmp
+  
+  if (precis < 1e-08) {
+    
+    cat(iter, dt.conc.m.iter)
+    break
+    
+  }
+  
+  if (iter %% 100 == 0) print(iter)
+  
+  iter <- iter + 1
+  
+}
 
-# product concentrations equation
-
-conc.prod.res <- exp(cnst + dt.coef.m %*% log(dt.conc.m[1, ]))
-
-# jacobian matrix
-
-jc <- t(dt.coef.m) %*% (dt.coef.m * as.vector(conc.prod.res))
-# t(conc.prod.res) %*% dt.coef.m %*% t(dt.coef.m)
-
-# error vector
-
-err.v <- t(dt.coef.m) %*% conc.prod.res - dt.conc.m[1, ]
-err.v <- conc.base.res - dt.conc.m[1, ]
-
-# step
-
-conc.base.res - solve(jc) %*% err.v
 
 
 
@@ -156,17 +178,20 @@ conc.base.res - solve(jc) %*% err.v
 
 
 
+# rs <- matrix(data = 0, nrow = part.nm, ncol = part.nm)
 # 
+# for (l in 1:part.nm) {
+#   
+#   for (j in 1:part.nm) {
+#     
+#     for (i in 1:reac.nm)
+#     
+#       rs[l,j] <- rs[l,j] + as.vector(dt.coef.m[i, l] * dt.coef.m[i, j] * conc.prod.res[i, ])
+#       
+#   }
+#   
+# }
 
-for (i in 1:reac.nm) {
-  
-  for (j in 1:part.nm) {
-  
-    dt.coef[i, j, with = FALSE] * log()
-    
-  }
-
-}
 
 
 
