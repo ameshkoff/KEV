@@ -25,172 +25,160 @@ library(stringr)
 
 
 
-# ------------------------ load data -------------------------
+# load data --------------------------------- #
 
-# load data
+dt.load <- function(subdir = "") {
 
-cnst <- as.data.table(read.csv2("data.raw/k_constants_log10.csv"), keep.rownames = FALSE)
-dt.coef <- as.data.table(read.csv2("data.raw/stech_coefficients.csv"), keep.rownames = FALSE)
-dt.conc <- as.data.table(read.csv2("data.raw/concentrations.csv"), keep.rownames = FALSE)
-
-
-# ---------------------- preprocessing -----------------------
-
-# create variables --------------------
-
-cnst.nm <- nrow(cnst)
-part.nm <- ncol(dt.coef)
-reac.nm <- nrow(dt.coef) + part.nm
-
-# complete coefficients matrix -------
-
-cln <- colnames(dt.coef)
-
-dt.coef <- rbind(as.data.table(diag(part.nm)), dt.coef, use.names = FALSE)
-setnames(dt.coef, cln)
-
-# create names
-
-dt.coef[, name := ""]
-
-cln <- colnames(dt.coef)
-cln <- cln[cln != "name"]
-
-for (i in cln) {
+  if (subdir != "")
+    subdir <- paste0("/", subdir, "/")
   
-  dt.coef[eval(as.name(i)) > 0, name := paste0(name, " + ", i)]
-  dt.coef[eval(as.name(i)) < 0, name := paste0(name, " - ", i)]
+  assign("cnst", as.data.table(read.csv2(paste0("data.raw", subdir, "k_constants_log10.csv")), keep.rownames = FALSE), envir = .GlobalEnv)
+  assign("dt.coef", as.data.table(read.csv2(paste0("data.raw", subdir, "stech_coefficients.csv")), keep.rownames = FALSE), envir = .GlobalEnv)
+  assign("dt.conc", as.data.table(read.csv2(paste0("data.raw", subdir, "concentrations.csv")), keep.rownames = FALSE), envir = .GlobalEnv)
   
 }
 
-dt.coef[, name := str_replace(name, "^ *\\+ *", "")]
-dt.coef[name %like% "\\+", name := paste(name, 1:.N, sep = "_"), name]
 
+# preprocessing ----------------------------- #
 
-# restore constants ------------------
-
-cnst <- (10 ^ cnst)[, 1]
-cnst <- c(rep(1, part.nm), cnst)
-cnst <- log(cnst)
-
-
-# create result set
-
-cln <- colnames(dt.conc)
-cln <- cln[!(cln %like% "is.general")]
-
-dt.conc.res <- dt.conc[, cln, with = FALSE]
-
-cln <- dt.coef[(name %like% "\\+"), name]
-
-for (i in cln) {
+dt.preproc <- function() {
   
-  dt.conc.res[, eval(i) := 0]
+  # scalars
   
-}
-
-# stechiometric coefficients to matrix
-
-dt.coef.m <- as.matrix(dt.coef[, !c("name"), with = FALSE])
-
-cln <- colnames(dt.conc)
-cln <- cln[!(cln %like% "is.general")]
-
-# base concentrations to matrix
-
-dt.conc.m <- as.matrix(dt.conc[, cln, with = FALSE])
-dt.conc.m.iter <- copy(dt.conc.m[1, ])
-
-
-for (iter in 1:1000) {
+  assign("cnst.nm", nrow(cnst), envir = .GlobalEnv)
+  assign("part.nm", ncol(dt.coef), envir = .GlobalEnv)
+  assign("reac.nm", nrow(dt.coef) + part.nm, envir = .GlobalEnv)
   
-  # base concentrations equation
+  # complete coefficients matrix
   
-  conc.base.res <- t(dt.coef.m) %*% exp(cnst + dt.coef.m %*% log(dt.conc.m.iter))
+  cln <- colnames(dt.coef)
   
-  # product concentrations equation
+  assign("dt.coef", rbind(as.data.table(diag(part.nm)), dt.coef, use.names = FALSE), envir = .GlobalEnv)
+  setnames(dt.coef, cln)
   
-  conc.prod.res <- exp(cnst + dt.coef.m %*% log(dt.conc.m.iter))
+  # create names
   
-  # jacobian matrix
+  dt.coef[, name := ""]
   
-  jc <- t(dt.coef.m) %*% (dt.coef.m * as.vector(conc.prod.res))
+  cln <- colnames(dt.coef)
+  cln <- cln[cln != "name"]
   
-  # error vector
-  
-  err.v <- t(dt.coef.m) %*% conc.prod.res - dt.conc.m[1, ]
-  # err.v <- conc.base.res - dt.conc.m[1, ]
-  
-  # step
-  
-  tmp <- exp(log(dt.conc.m.iter) - 1 * solve(jc) %*% err.v)
-
-  precis <- mean(abs(log(dt.conc.m.iter) - log(tmp)))
-  
-  dt.conc.m.iter <- tmp
-  
-  if (precis < 1e-08) {
+  for (i in cln) {
     
-    cat(iter, dt.conc.m.iter)
-    break
+    dt.coef[eval(as.name(i)) > 0, name := paste0(name, " + ", i)]
+    dt.coef[eval(as.name(i)) < 0, name := paste0(name, " - ", i)]
     
   }
   
-  if (iter %% 100 == 0) print(iter)
+  dt.coef[, name := str_replace(name, "^ *\\+ *", "")]
+  dt.coef[name %like% "\\+", name := paste(name, 1:.N, sep = "_"), name]
   
-  iter <- iter + 1
+  # restore constants
+  
+  cnst <- (10 ^ cnst)[, 1]
+  cnst <- c(rep(1, part.nm), cnst)
+  assign("cnst", log(cnst), envir = .GlobalEnv)
+  
+  # stechiometric coefficients to matrix
+  
+  assign("dt.coef.m", as.matrix(dt.coef[, !c("name"), with = FALSE]), envir = .GlobalEnv)
+  
+  # base concentrations to matrix
+  
+  tmp <- dt.conc[2:nrow(dt.conc), cln, with = FALSE]
+  
+  cln <- colnames(tmp)
+  for (i in cln)
+    tmp[, eval(i) := as.numeric(str_replace(eval(as.name(i)), "\\,", "."))]
+  
+  assign("dt.conc.m", as.matrix(tmp), envir = .GlobalEnv)
+  
+}
+
+# evaluating ------------------------------ #
+
+newton.evaluator <- function(cnst, dt.coef.m, dt.conc.in, max.it = 1000) {
+  
+  dt.conc.out <- copy(dt.conc.in)
+  
+  for (iter in 1:max.it) {
+    
+    # base concentrations equation
+    conc.base.res <- t(dt.coef.m) %*% exp(cnst + dt.coef.m %*% log(dt.conc.out))
+    
+    # product concentrations equation
+    conc.prod.res <- exp(cnst + dt.coef.m %*% log(dt.conc.out))
+    
+    # jacobian matrix
+    jc <- t(dt.coef.m) %*% (dt.coef.m * as.vector(conc.prod.res))
+    
+    # error vector
+    err.v <- t(dt.coef.m) %*% conc.prod.res - dt.conc.in
+
+    # step
+    tmp <- exp(log(dt.conc.out) - 1 * solve(jc) %*% err.v)
+    
+    # check accuracy
+    accr <- mean(abs(log(dt.conc.out) - log(tmp)))
+    dt.conc.out <- tmp
+    
+    if (accr < 1e-08) {
+      
+      # tmp <- exp(cnst + dt.coef.m %*% log(dt.conc.out))
+      break
+      
+    }
+    
+    # print steps for longer evaluation
+    if (iter %% 100 == 0) print(iter)
+    
+    # iterator
+    iter <- iter + 1
+    
+  }
+  
+  list(out = conc.prod.res, iter = iter)
+  
+}
+
+# loop for every solution --------------------------- #
+
+newton.wrapper <- function(cnst, dt.coef.m, dt.conc.m) {
+
+  dt.res <- matrix(ncol = reac.nm, nrow = 0)
+  
+  for (i in 1:nrow(dt.conc.m)) {
+    
+    dt.conc.in <- copy(dt.conc.m[i, ])
+    out <- newton.evaluator(cnst, dt.coef.m, dt.conc.in)
+    
+    dt.res <- rbind(dt.res, t(out[[1]]))
+    
+  }
+  
+  dt.res
   
 }
 
 
+# run -----------------------------------------------
+
+dt.load(subdir = "ds.1")
+dt.preproc()
+
+dt.res <- newton.wrapper(cnst, dt.coef.m, dt.conc.m)
+dt.res <- data.table(dt.res)
+
+cln <- colnames(dt.conc)
+cln <- cln[!(cln %like% "is.general")]
+
+setnames(dt.res, c(cln, dt.coef[(name %like% "\\+"), name]))
+
+dt.res
 
 
 
 
-# for (i in 1:reac.nm) {
-#   
-#   ff <- dt.coef.m[i, 1] * exp(cnst[i] + dt.coef.m[i, ] %*% dt.conc.m[1, ])
-#   print(as.vector(ff))
-#   
-# }
-# 
-# for (i in 1:part.nm) {
-#   
-#   ff <- dt.coef.m[, i] %*% exp(cnst + dt.coef.m %*% dt.conc.m[1, ])
-#   print(as.vector(ff))
-#   
-# }
-
-
-
-# dt.coef.m[, 1] %*% exp(cnst + dt.coef.m %*% dt.conc.m[1, ]) + dt.coef.m[, 2] %*% exp(cnst + dt.coef.m %*% dt.conc.m[1, ])
-
-
-# dt.conc.m %*% t(dt.coef.m)
-
-
-
-
-
-
-
-
-
-
-
-# rs <- matrix(data = 0, nrow = part.nm, ncol = part.nm)
-# 
-# for (l in 1:part.nm) {
-#   
-#   for (j in 1:part.nm) {
-#     
-#     for (i in 1:reac.nm)
-#     
-#       rs[l,j] <- rs[l,j] + as.vector(dt.coef.m[i, l] * dt.coef.m[i, j] * conc.prod.res[i, ])
-#       
-#   }
-#   
-# }
 
 
 
