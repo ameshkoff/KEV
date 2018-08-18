@@ -19,6 +19,7 @@ library(data.table)
 library(MASS)
 library(Matrix)
 library(gmp)
+library(Rmpfr)
 library(Hmisc)
 # strings
 library(stringi)
@@ -35,22 +36,31 @@ dt.load <- function(subdir = "", sep = ";") {
   if (subdir != "")
     subdir <- paste0("/", subdir, "/")
   
+  tbl <- c("cnst", "dt.coef", "dt.conc")
+  
   if (sep == ";") {
     
-    assign("cnst", as.data.table(read.csv2(paste0("data.raw", subdir, "k_constants_log10.csv"), stringsAsFactors = FALSE)
+    assign(tbl[1], as.data.table(read.csv2(paste0("data.raw", subdir, "k_constants_log10.csv"), stringsAsFactors = FALSE, colClasses = "character")
                                  , keep.rownames = FALSE), envir = .GlobalEnv)
-    assign("dt.coef", as.data.table(read.csv2(paste0("data.raw", subdir, "stech_coefficients.csv"), stringsAsFactors = FALSE)
+    assign(tbl[2], as.data.table(read.csv2(paste0("data.raw", subdir, "stech_coefficients.csv"), stringsAsFactors = FALSE, colClasses = "character")
                                     , keep.rownames = FALSE), envir = .GlobalEnv)
-    assign("dt.conc", as.data.table(read.csv2(paste0("data.raw", subdir, "concentrations.csv"), stringsAsFactors = FALSE)
+    assign(tbl[3], as.data.table(read.csv2(paste0("data.raw", subdir, "concentrations.csv")
+                                           , stringsAsFactors = FALSE, colClasses = "character", skip = 1)
                                     , keep.rownames = FALSE), envir = .GlobalEnv)
+    assign("part.eq", as.data.table(read.csv2(paste0("data.raw", subdir, "concentrations.csv")
+                                           , stringsAsFactors = FALSE, colClasses = "character", header = FALSE , nrows = 1)
+                                 , keep.rownames = FALSE), envir = .GlobalEnv)
     
   } else if (sep == ",") {
     
-    assign("cnst", as.data.table(read.csv(paste0("data.raw", subdir, "k_constants_log10.csv"), stringsAsFactors = FALSE)
+    assign(tbl[1], as.data.table(read.csv(paste0("data.raw", subdir, "k_constants_log10.csv"), stringsAsFactors = FALSE, colClasses = "character")
                                  , keep.rownames = FALSE), envir = .GlobalEnv)
-    assign("dt.coef", as.data.table(read.csv(paste0("data.raw", subdir, "stech_coefficients.csv"), stringsAsFactors = FALSE)
+    assign(tbl[2], as.data.table(read.csv(paste0("data.raw", subdir, "stech_coefficients.csv"), stringsAsFactors = FALSE, colClasses = "character")
                                     , keep.rownames = FALSE), envir = .GlobalEnv)
-    assign("dt.conc", as.data.table(read.csv(paste0("data.raw", subdir, "concentrations.csv"), stringsAsFactors = FALSE)
+    assign(tbl[3], as.data.table(read.csv(paste0("data.raw", subdir, "concentrations.csv"), stringsAsFactors = FALSE, colClasses = "character")
+                                    , keep.rownames = FALSE), envir = .GlobalEnv, skip = 1)
+    assign("part.eq", as.data.table(read.csv2(paste0("data.raw", subdir, "concentrations.csv")
+                                              , stringsAsFactors = FALSE, colClasses = "character", header = FALSE , nrows = 1)
                                     , keep.rownames = FALSE), envir = .GlobalEnv)
     
   }
@@ -61,20 +71,53 @@ dt.load <- function(subdir = "", sep = ";") {
 
 # preprocessing ----------------------------- #
 
-dt.preproc <- function() {
+dt.preproc <- function(prec = 106, sep = ";") {
   
   # scalars
   
-  assign("cnst.nm", nrow(cnst), envir = .GlobalEnv)
   assign("part.nm", ncol(dt.coef), envir = .GlobalEnv)
   assign("reac.nm", nrow(dt.coef) + part.nm, envir = .GlobalEnv)
   
-  # complete coefficients matrix
+  cnst <- rbind(rep(0, part.nm), cnst, use.names = FALSE)
+  
+  # complete coefficients data table
   
   cln <- colnames(dt.coef)
   
   assign("dt.coef", rbind(as.data.table(diag(part.nm)), dt.coef, use.names = FALSE), envir = .GlobalEnv)
   setnames(dt.coef, cln)
+  
+  # matrices
+  
+  tbl <- c("cnst", "dt.coef", "dt.conc")
+  
+  for (j in tbl) {
+    
+    f <- eval(as.name(j))
+    
+    if (sep == ";") {
+      
+      cln <- colnames(f)
+      
+      for (i in cln) {
+        
+        # replace commas with points
+        f[, eval(i) := str_replace(eval(as.name(i)), "\\,", ".")]
+        
+      }
+      
+    }
+    
+    # to numbers
+    
+    f <- as.matrix(f)
+    f <- mpfr(f, precBits = prec)
+    
+    assign(paste0(j, ".m"), f, envir = .GlobalEnv)
+    
+  }
+  
+  assign("part.eq", which(part.eq[1] == "eq"), envir = .GlobalEnv)
   
   # create names
   
@@ -91,36 +134,19 @@ dt.preproc <- function() {
   }
   
   dt.coef[, name := str_replace(name, "^ *\\+ *", "")]
-  # dt.coef[name %like% "\\+", name := paste(name, 1:.N, sep = "_"), name]
   dt.coef[, name := paste(name, 1:.N, sep = "_"), name]
   
   # restore constants
-  
-  cnst <- (10 ^ unlist(cnst))
-  cnst <- c(rep(1, part.nm), cnst)
-  assign("cnst", log(cnst), envir = .GlobalEnv)
-  
-  # stechiometric coefficients to matrix
-  
-  assign("dt.coef.m", as.matrix(dt.coef[, !c("name"), with = FALSE]), envir = .GlobalEnv)
-  
-  # base concentrations to matrix
-  
-  tmp <- dt.conc[2:nrow(dt.conc), cln, with = FALSE]
-  
-  cln <- colnames(tmp)
-  for (i in cln)
-    tmp[, eval(i) := as.numeric(str_replace(eval(as.name(i)), "\\,", "."))]
-  
-  assign("dt.conc.m", as.matrix(tmp), envir = .GlobalEnv)
-  
-  assign("part.eq", which(dt.conc[1] == "eq"), envir = .GlobalEnv)
+  # browser()
+  cnst.m <- (10 ^ cnst.m)
+  # cnst.m <- c(rep(1, part.nm), cnst.m)
+  assign("cnst.m", log(cnst.m), envir = .GlobalEnv)
   
 }
 
 # evaluating ------------------------------ #
 
-newton.evaluator <- function(cnst, dt.coef.m, dt.conc.in, part.eq = integer(), max.it = 1000) {
+newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, part.eq = integer(), max.it = 1000) {
   
   dt.conc.out <- copy(dt.conc.in)
   
@@ -131,23 +157,23 @@ newton.evaluator <- function(cnst, dt.coef.m, dt.conc.in, part.eq = integer(), m
       dt.conc.out[part.eq] <- dt.conc.in[part.eq]
       
     }
-    
+
     # base concentrations equation
-    conc.base.res <- as.bigq(t(dt.coef.m)) %*% as.bigq(exp(cnst + as.numeric(as.bigq(dt.coef.m) %*% as.bigq(log(dt.conc.out)))))
-    
+    conc.base.res <- t(dt.coef.m) %*% exp(cnst.m + dt.coef.m %*% log(dt.conc.out))
+    # browser()
     # product concentrations equation
-    conc.prod.res <- as.bigq(exp(cnst + as.numeric(as.bigq(dt.coef.m) %*% as.bigq(log(dt.conc.out)))))
+    conc.prod.res <- exp(cnst.m + dt.coef.m %*% log(dt.conc.out))
     
     # jacobian matrix
-    jc <- as.bigq(t(dt.coef.m)) %*% (as.bigq(dt.coef.m) * as.vector(conc.prod.res))
+    jc <- t(dt.coef.m) %*% (dt.coef.m * as.vector(conc.prod.res))
     
     # error vector
-    err.v <- as.bigq(t(dt.coef.m)) %*% conc.prod.res - dt.conc.in
-
+    err.v <- t(dt.coef.m) %*% conc.prod.res - dt.conc.in
+    
     # step
     # tmp <- exp(log(dt.conc.out) - 1 * as.matrix(solve(Matrix(jc))) %*% err.v)
-    # tmp <- exp(log(dt.conc.out) - 1 * as.matrix(ginv(jc, tol = 0)) %*% err.v)
-    tmp <- exp(log(dt.conc.out) - as.numeric(solve(jc) %*% err.v))
+    tmp <- exp(log(dt.conc.out) - 1 * as.matrix(ginv(asNumeric(jc), tol = 0)) %*% err.v)
+    # tmp <- exp(log(dt.conc.out) - as.numeric(solve(jc) %*% err.v))
     
     # check accuracy
     accr <- mean(abs(log(dt.conc.out) - log(tmp)))
@@ -155,7 +181,7 @@ newton.evaluator <- function(cnst, dt.coef.m, dt.conc.in, part.eq = integer(), m
     
     if (accr < 1e-08) {
       
-      # tmp <- exp(cnst + dt.coef.m %*% log(dt.conc.out))
+      # tmp <- exp(cnst.m + dt.coef.m %*% log(dt.conc.out))
       break
       
     }
@@ -174,16 +200,18 @@ newton.evaluator <- function(cnst, dt.coef.m, dt.conc.in, part.eq = integer(), m
 
 # loop for every solution --------------------------- #
 
-newton.wrapper <- function(cnst, dt.coef.m, dt.conc.m, part.eq = integer()) {
+newton.wrapper <- function(cnst.m, dt.coef.m, dt.conc.m, part.eq = integer()) {
 
   dt.res <- matrix(ncol = reac.nm, nrow = 0)
   
   for (i in 1:nrow(dt.conc.m)) {
     
     dt.conc.in <- copy(dt.conc.m[i, ])
-    out <- newton.evaluator(cnst, dt.coef.m, dt.conc.in)
+    out <- newton.evaluator(cnst.m, dt.coef.m, dt.conc.in)
     
     dt.res <- rbind(dt.res, as.numeric(out[[1]]))
+    
+    print(i)
     
   }
   
@@ -195,9 +223,9 @@ newton.wrapper <- function(cnst, dt.coef.m, dt.conc.m, part.eq = integer()) {
 # run -----------------------------------------------
 
 dt.load(subdir = "ds.5p", sep = ";")
-dt.preproc()
+dt.preproc(prec = 66, sep = ";")
 
-dt.res <- newton.wrapper(cnst, dt.coef.m, dt.conc.m, part.eq)
+dt.res <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq)
 dt.res <- data.table(dt.res)
 
 setnames(dt.res, dt.coef[, name])
