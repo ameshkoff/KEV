@@ -18,7 +18,7 @@ library(data.table)
 # computation
 library(MASS)
 library(Matrix)
-# library(gmp)
+library(gmp)
 library(Hmisc)
 # strings
 library(stringi)
@@ -96,7 +96,7 @@ dt.preproc <- function() {
   
   # restore constants
   
-  cnst <- (10 ^ cnst)[, 1]
+  cnst <- (10 ^ unlist(cnst))
   cnst <- c(rep(1, part.nm), cnst)
   assign("cnst", log(cnst), envir = .GlobalEnv)
   
@@ -133,21 +133,21 @@ newton.evaluator <- function(cnst, dt.coef.m, dt.conc.in, part.eq = integer(), m
     }
     
     # base concentrations equation
-    conc.base.res <- t(dt.coef.m) %*% exp(cnst + dt.coef.m %*% log(dt.conc.out))
+    conc.base.res <- as.bigq(t(dt.coef.m)) %*% as.bigq(exp(cnst + as.numeric(as.bigq(dt.coef.m) %*% as.bigq(log(dt.conc.out)))))
     
     # product concentrations equation
-    conc.prod.res <- exp(cnst + dt.coef.m %*% log(dt.conc.out))
+    conc.prod.res <- as.bigq(exp(cnst + as.numeric(as.bigq(dt.coef.m) %*% as.bigq(log(dt.conc.out)))))
     
     # jacobian matrix
-    jc <- t(dt.coef.m) %*% (dt.coef.m * as.vector(conc.prod.res))
+    jc <- as.bigq(t(dt.coef.m)) %*% (as.bigq(dt.coef.m) * as.vector(conc.prod.res))
     
     # error vector
-    err.v <- t(dt.coef.m) %*% conc.prod.res - dt.conc.in
+    err.v <- as.bigq(t(dt.coef.m)) %*% conc.prod.res - dt.conc.in
 
     # step
     # tmp <- exp(log(dt.conc.out) - 1 * as.matrix(solve(Matrix(jc))) %*% err.v)
-    tmp <- exp(log(dt.conc.out) - 1 * as.matrix(ginv(jc, tol = 0)) %*% err.v)
-    # tmp <- exp(log(dt.conc.out) - 1 * solve(jc) %*% err.v)
+    # tmp <- exp(log(dt.conc.out) - 1 * as.matrix(ginv(jc, tol = 0)) %*% err.v)
+    tmp <- exp(log(dt.conc.out) - as.numeric(solve(jc) %*% err.v))
     
     # check accuracy
     accr <- mean(abs(log(dt.conc.out) - log(tmp)))
@@ -183,7 +183,7 @@ newton.wrapper <- function(cnst, dt.coef.m, dt.conc.m, part.eq = integer()) {
     dt.conc.in <- copy(dt.conc.m[i, ])
     out <- newton.evaluator(cnst, dt.coef.m, dt.conc.in)
     
-    dt.res <- rbind(dt.res, t(out[[1]]))
+    dt.res <- rbind(dt.res, as.numeric(out[[1]]))
     
   }
   
