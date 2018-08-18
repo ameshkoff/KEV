@@ -111,7 +111,7 @@ dt.preproc <- function(prec = 106, sep = ";") {
     # to numbers
     
     f <- as.matrix(f)
-    f <- mpfr(f, precBits = prec)
+    f <- apply(f, 2, as.numeric)
     
     assign(paste0(j, ".m"), f, envir = .GlobalEnv)
     
@@ -137,7 +137,7 @@ dt.preproc <- function(prec = 106, sep = ";") {
   dt.coef[, name := paste(name, 1:.N, sep = "_"), name]
   
   # restore constants
-  # browser()
+  
   cnst.m <- (10 ^ cnst.m)
   # cnst.m <- c(rep(1, part.nm), cnst.m)
   assign("cnst.m", log(cnst.m), envir = .GlobalEnv)
@@ -171,8 +171,13 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, part.eq = integer(),
     err.v <- t(dt.coef.m) %*% conc.prod.res - dt.conc.in
     
     # step
+    mlt <- 1e+0 # 1e+12
+    
+    tmp <- jc * mlt
+    tmp <- ginv(tmp, tol = 0) * mlt
+    # tmp <- solve(tmp) * mlt
     # tmp <- exp(log(dt.conc.out) - 1 * as.matrix(solve(Matrix(jc))) %*% err.v)
-    tmp <- exp(log(dt.conc.out) - 1 * as.matrix(ginv(asNumeric(jc), tol = 0)) %*% err.v)
+    tmp <- exp(log(dt.conc.out) - 1 * tmp %*% err.v)
     # tmp <- exp(log(dt.conc.out) - as.numeric(solve(jc) %*% err.v))
     
     # check accuracy
@@ -211,7 +216,7 @@ newton.wrapper <- function(cnst.m, dt.coef.m, dt.conc.m, part.eq = integer()) {
     
     dt.res <- rbind(dt.res, as.numeric(out[[1]]))
     
-    print(i)
+    # print(i)
     
   }
   
