@@ -1,7 +1,7 @@
 # ########################################################## #
 #                                                            #
-# Name: 
-# Author: AMeshkov
+# Name: KEV:Constant Evaluator                               #
+# Author: AMeshkov                                           #
 # Date: 2018                                                 #
 #                                                            #
 # ########################################################## #
@@ -18,8 +18,6 @@ library(data.table)
 # computation
 library(MASS)
 library(Matrix)
-library(gmp)
-library(Rmpfr)
 library(Hmisc)
 # strings
 library(stringi)
@@ -31,12 +29,10 @@ library(stringr)
 
 # load data --------------------------------- #
 
-dt.load <- function(subdir = "", sep = ";") {
+dt.load <- function(subdir = "", sep = ";", tbl) {
 
   if (subdir != "")
     subdir <- paste0("/", subdir, "/")
-  
-  tbl <- c("cnst", "dt.coef", "dt.conc")
   
   if (sep == ";") {
     
@@ -71,7 +67,7 @@ dt.load <- function(subdir = "", sep = ";") {
 
 # preprocessing ----------------------------- #
 
-dt.preproc <- function(sep = ";") {
+dt.preproc <- function(sep = ";", tbl) {
   
   # scalars
   
@@ -88,8 +84,6 @@ dt.preproc <- function(sep = ";") {
   setnames(dt.coef, cln)
   
   # matrices
-  
-  tbl <- c("cnst", "dt.coef", "dt.conc")
   
   for (j in tbl) {
     
@@ -134,12 +128,12 @@ dt.preproc <- function(sep = ";") {
   }
   
   dt.coef[, name := str_replace(name, "^ *\\+ *", "")]
+  dt.coef[, name := str_replace(name, "^ *\\-", "-")]
   dt.coef[, name := paste(name, 1:.N, sep = "_"), name]
   
   # restore constants
   
   cnst.m <- (10 ^ cnst.m)
-  # cnst.m <- c(rep(1, part.nm), cnst.m)
   assign("cnst.m", log(cnst.m), envir = .GlobalEnv)
   
 }
@@ -160,7 +154,7 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, part.eq = integer(),
 
     # base concentrations equation
     conc.base.res <- t(dt.coef.m) %*% exp(cnst.m + dt.coef.m %*% log(dt.conc.out))
-    # browser()
+    
     # product concentrations equation
     conc.prod.res <- exp(cnst.m + dt.coef.m %*% log(dt.conc.out))
     
@@ -171,22 +165,14 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, part.eq = integer(),
     err.v <- t(dt.coef.m) %*% conc.prod.res - dt.conc.in
     
     # step
-    mlt <- 1e+0 # 1e+12
-    
-    tmp <- jc * mlt
-    tmp <- ginv(tmp, tol = 0) * mlt
-    # tmp <- solve(tmp) * mlt
-    # tmp <- exp(log(dt.conc.out) - 1 * as.matrix(solve(Matrix(jc))) %*% err.v)
-    tmp <- exp(log(dt.conc.out) - 1 * tmp %*% err.v)
-    # tmp <- exp(log(dt.conc.out) - as.numeric(solve(jc) %*% err.v))
-    
+    tmp <- exp(log(dt.conc.out) - 1 * ginv(jc, tol = 0) %*% err.v)
+
     # check accuracy
     accr <- mean(abs(log(dt.conc.out) - log(tmp)))
     dt.conc.out <- tmp
     
     if (accr < 1e-08) {
       
-      # tmp <- exp(cnst.m + dt.coef.m %*% log(dt.conc.out))
       break
       
     }
@@ -224,21 +210,76 @@ newton.wrapper <- function(cnst.m, dt.coef.m, dt.conc.m, part.eq = integer()) {
   
 }
 
+# conditional fractions ------------------------------ #
+
+cond.fractions <- function(dt.coef, dt.conc.m, dt.coef.m, dt.res, bs.name) {
+  
+  cln <- colnames(dt.res)
+  cln <- cln[cln %like% bs.name]
+  
+  dt.frac <- t(round(100 * as.matrix(dt.res[, cln, with = FALSE]) /
+                       (dt.conc.m[, bs.name] %*% t(dt.coef.m[dt.coef[, eval(as.name(bs.name))] != 0, bs.name])), 1))
+  
+  dt.frac <- data.table(dt.frac, keep.rownames = TRUE)
+  
+  tmp <- data.table(rn = "-log10(CB)", t(data.table(round(-log10(dt.res[, eval(as.name(paste0(bs.name, "_1")))]), 2))))
+  
+  dt.frac <- rbind(tmp, dt.frac)
+  
+  dt.frac  
+  
+}
+
+# save data to files -------------------------------- #
+
+dt.save <- function(dt.res, dt.frac, bs.name, subdir, sep) {
+  
+  if (subdir != "") subdir <- paste0("/", subdir, "/")
+  
+  dir.create(file.path(paste0("output", subdir)), showWarnings = FALSE)
+  
+  if (sep == ";") {
+    
+    write.csv2(dt.res, file = paste0("output", subdir, "equilibrium_concentrations.csv"))
+    write.csv2(dt.frac, file = paste0("output", subdir, bs.name, "_fractions.csv"))
+    
+  } else {
+    
+    write.csv(dt.res, file = paste0("output", subdir, "equilibrium_concentrations.csv"))
+    write.csv(dt.frac, file = paste0("output", subdir, bs.name, "_fractions.csv"))
+    
+  }
+  
+}
+
 
 # run -----------------------------------------------
 
-dt.load(subdir = "ds.5p", sep = ";")
-dt.preproc(sep = ";")
+tbl <- c("cnst", "dt.coef", "dt.conc")
+sp <- ";"
+sbd <- "ds.5p"
+
+dt.load(subdir = sbd, sep = sp, tbl)
+dt.preproc(sep = sp, tbl)
 
 dt.res <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq)
 dt.res <- data.table(dt.res)
 
 setnames(dt.res, dt.coef[, name])
 
+# fractions
+bs.name <- "molecule4"
+dt.frac <- cond.fractions(dt.coef, dt.conc.m, dt.coef.m, dt.res, bs.name)
+
+
+# show results and save
+
+dt.save(dt.res, dt.frac, bs.name, sbd, sp)
+
+remove(sp, tbl)
+
 dt.res
-
-
-
+dt.frac
 
 
 
