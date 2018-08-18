@@ -15,7 +15,10 @@ library(readr)
 library(openxlsx)
 # data structure
 library(data.table)
+# computation
+library(MASS)
 library(Matrix)
+# library(gmp)
 library(Hmisc)
 # strings
 library(stringi)
@@ -27,14 +30,31 @@ library(stringr)
 
 # load data --------------------------------- #
 
-dt.load <- function(subdir = "") {
+dt.load <- function(subdir = "", sep = ";") {
 
   if (subdir != "")
     subdir <- paste0("/", subdir, "/")
   
-  assign("cnst", as.data.table(read.csv2(paste0("data.raw", subdir, "k_constants_log10.csv")), keep.rownames = FALSE), envir = .GlobalEnv)
-  assign("dt.coef", as.data.table(read.csv2(paste0("data.raw", subdir, "stech_coefficients.csv")), keep.rownames = FALSE), envir = .GlobalEnv)
-  assign("dt.conc", as.data.table(read.csv2(paste0("data.raw", subdir, "concentrations.csv")), keep.rownames = FALSE), envir = .GlobalEnv)
+  if (sep == ";") {
+    
+    assign("cnst", as.data.table(read.csv2(paste0("data.raw", subdir, "k_constants_log10.csv"), stringsAsFactors = FALSE)
+                                 , keep.rownames = FALSE), envir = .GlobalEnv)
+    assign("dt.coef", as.data.table(read.csv2(paste0("data.raw", subdir, "stech_coefficients.csv"), stringsAsFactors = FALSE)
+                                    , keep.rownames = FALSE), envir = .GlobalEnv)
+    assign("dt.conc", as.data.table(read.csv2(paste0("data.raw", subdir, "concentrations.csv"), stringsAsFactors = FALSE)
+                                    , keep.rownames = FALSE), envir = .GlobalEnv)
+    
+  } else if (sep == ",") {
+    
+    assign("cnst", as.data.table(read.csv(paste0("data.raw", subdir, "k_constants_log10.csv"), stringsAsFactors = FALSE)
+                                 , keep.rownames = FALSE), envir = .GlobalEnv)
+    assign("dt.coef", as.data.table(read.csv(paste0("data.raw", subdir, "stech_coefficients.csv"), stringsAsFactors = FALSE)
+                                    , keep.rownames = FALSE), envir = .GlobalEnv)
+    assign("dt.conc", as.data.table(read.csv(paste0("data.raw", subdir, "concentrations.csv"), stringsAsFactors = FALSE)
+                                    , keep.rownames = FALSE), envir = .GlobalEnv)
+    
+  }
+  
   
 }
 
@@ -71,7 +91,8 @@ dt.preproc <- function() {
   }
   
   dt.coef[, name := str_replace(name, "^ *\\+ *", "")]
-  dt.coef[name %like% "\\+", name := paste(name, 1:.N, sep = "_"), name]
+  # dt.coef[name %like% "\\+", name := paste(name, 1:.N, sep = "_"), name]
+  dt.coef[, name := paste(name, 1:.N, sep = "_"), name]
   
   # restore constants
   
@@ -93,15 +114,23 @@ dt.preproc <- function() {
   
   assign("dt.conc.m", as.matrix(tmp), envir = .GlobalEnv)
   
+  assign("part.eq", which(dt.conc[1] == "eq"), envir = .GlobalEnv)
+  
 }
 
 # evaluating ------------------------------ #
 
-newton.evaluator <- function(cnst, dt.coef.m, dt.conc.in, max.it = 1000) {
+newton.evaluator <- function(cnst, dt.coef.m, dt.conc.in, part.eq = integer(), max.it = 1000) {
   
   dt.conc.out <- copy(dt.conc.in)
   
   for (iter in 1:max.it) {
+    
+    if (length(part.eq) > 0) {
+      
+      dt.conc.out[part.eq] <- dt.conc.in[part.eq]
+      
+    }
     
     # base concentrations equation
     conc.base.res <- t(dt.coef.m) %*% exp(cnst + dt.coef.m %*% log(dt.conc.out))
@@ -116,7 +145,9 @@ newton.evaluator <- function(cnst, dt.coef.m, dt.conc.in, max.it = 1000) {
     err.v <- t(dt.coef.m) %*% conc.prod.res - dt.conc.in
 
     # step
-    tmp <- exp(log(dt.conc.out) - 1 * solve(jc) %*% err.v)
+    # tmp <- exp(log(dt.conc.out) - 1 * as.matrix(solve(Matrix(jc))) %*% err.v)
+    tmp <- exp(log(dt.conc.out) - 1 * as.matrix(ginv(jc, tol = 0)) %*% err.v)
+    # tmp <- exp(log(dt.conc.out) - 1 * solve(jc) %*% err.v)
     
     # check accuracy
     accr <- mean(abs(log(dt.conc.out) - log(tmp)))
@@ -143,7 +174,7 @@ newton.evaluator <- function(cnst, dt.coef.m, dt.conc.in, max.it = 1000) {
 
 # loop for every solution --------------------------- #
 
-newton.wrapper <- function(cnst, dt.coef.m, dt.conc.m) {
+newton.wrapper <- function(cnst, dt.coef.m, dt.conc.m, part.eq = integer()) {
 
   dt.res <- matrix(ncol = reac.nm, nrow = 0)
   
@@ -163,16 +194,13 @@ newton.wrapper <- function(cnst, dt.coef.m, dt.conc.m) {
 
 # run -----------------------------------------------
 
-dt.load(subdir = "ds.1")
+dt.load(subdir = "ds.5p", sep = ";")
 dt.preproc()
 
-dt.res <- newton.wrapper(cnst, dt.coef.m, dt.conc.m)
+dt.res <- newton.wrapper(cnst, dt.coef.m, dt.conc.m, part.eq)
 dt.res <- data.table(dt.res)
 
-cln <- colnames(dt.conc)
-cln <- cln[!(cln %like% "is.general")]
-
-setnames(dt.res, c(cln, dt.coef[(name %like% "\\+"), name]))
+setnames(dt.res, dt.coef[, name])
 
 dt.res
 
