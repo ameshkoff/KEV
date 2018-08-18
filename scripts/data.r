@@ -71,7 +71,7 @@ dt.load <- function(subdir = "", sep = ";") {
 
 # preprocessing ----------------------------- #
 
-dt.preproc <- function(prec = 106, sep = ";") {
+dt.preproc <- function(sep = ";") {
   
   # scalars
   
@@ -228,7 +228,7 @@ newton.wrapper <- function(cnst.m, dt.coef.m, dt.conc.m, part.eq = integer()) {
 # run -----------------------------------------------
 
 dt.load(subdir = "ds.5p", sep = ";")
-dt.preproc(prec = 66, sep = ";")
+dt.preproc(sep = ";")
 
 dt.res <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq)
 dt.res <- data.table(dt.res)
