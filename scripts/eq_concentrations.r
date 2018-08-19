@@ -218,7 +218,7 @@ cond.fractions <- function(dt.coef, dt.conc.m, dt.coef.m, dt.res, bs.name) {
   cln <- cln[cln %like% bs.name]
   
   dt.frac <- t(round(100 * as.matrix(dt.res[, cln, with = FALSE]) /
-                       (dt.conc.m[, bs.name] %*% t(dt.coef.m[dt.coef[, eval(as.name(bs.name))] != 0, bs.name])), 1))
+                       (dt.conc.m[, bs.name] %*% t(dt.coef.m[dt.coef[, eval(as.name(bs.name))] != 0, bs.name])), 2))
   
   dt.frac <- data.table(dt.frac, keep.rownames = TRUE)
   
