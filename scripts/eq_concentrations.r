@@ -26,7 +26,7 @@ library(stringr)
 
 
 
-eq.conc.exec <- function(sep = ";", subdir = "", bs.name = "molecule1", verbose = FALSE) {
+eq.conc.exec <- function(sep = ";", subdir = "", bs.name = "molecule1", thr.type = c("rel", "abs"), threshold = 1e-08, verbose = FALSE) {
   
   # initialize and update helper variables
   
@@ -173,10 +173,19 @@ eq.conc.exec <- function(sep = ";", subdir = "", bs.name = "molecule1", verbose 
       tmp <- exp(log(dt.conc.out) - 1 * ginv(jc, tol = 0) %*% err.v)
       
       # check accuracy
-      accr <- mean(abs(log(dt.conc.out) - log(tmp)))
+      if (thr.type == "rel") {
+        
+        accr <- mean(abs(1 - dt.conc.out / tmp))
+        
+      } else if (thr.type == "abs") {
+        
+        accr <- mean(abs(log(dt.conc.out) - log(tmp)))
+        
+      }
+      
       dt.conc.out <- tmp
       
-      if (accr < 1e-08) {
+      if (accr < threshold) {
         
         break
         
@@ -246,11 +255,13 @@ eq.conc.exec <- function(sep = ";", subdir = "", bs.name = "molecule1", verbose 
       
       write.csv2(dt.res, file = paste0("output", subdir, "equilibrium_concentrations.csv"))
       write.csv2(dt.frac, file = paste0("output", subdir, bs.name, "_fractions.csv"))
+      write.csv2(dt.err, file = paste0("output", subdir, bs.name, "_percent_error.csv"))
       
     } else {
       
       write.csv(dt.res, file = paste0("output", subdir, "equilibrium_concentrations.csv"))
       write.csv(dt.frac, file = paste0("output", subdir, bs.name, "_fractions.csv"))
+      write.csv(dt.err, file = paste0("output", subdir, bs.name, "_percent_error.csv"))
       
     }
     
@@ -263,10 +274,16 @@ eq.conc.exec <- function(sep = ";", subdir = "", bs.name = "molecule1", verbose 
   dt.load()
   dt.preproc()
   
-  dt.res <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq)
-  dt.res <- data.table(dt.res)
+  dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq)
+  dt.res <- data.table(dt.res.m)
   
   setnames(dt.res, dt.coef[, name])
+  
+  # check errors
+  
+  dt.conc.calc <- t(exp(as.vector(cnst.m) + dt.coef.m %*% log(t(dt.res[, 1:part.nm])))) %*% dt.coef.m
+  
+  dt.err <- (dt.conc.calc - dt.conc.m) / dt.conc.m
   
   # fractions
   dt.frac <- cond.fractions()
@@ -286,7 +303,8 @@ eq.conc.exec <- function(sep = ";", subdir = "", bs.name = "molecule1", verbose 
     
   } else {
     
-    list(dt.res, dt.frac, dt.coef.m, part.eq, dt.conc.m, cnst.m)
+    list("dt.eq.conc" = dt.res, "dt.frac" = dt.frac, "dt.coef.m" = dt.coef.m, "part.eq" = part.eq
+         , "dt.bs.conc" = dt.conc.m, "k.cnst.ln" = cnst.m, "dt.err.m" = dt.err)
     
   }
   
