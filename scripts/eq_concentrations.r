@@ -12,7 +12,6 @@
 
 # I/O
 library(readr)
-library(openxlsx)
 # data structure
 library(data.table)
 # computation
@@ -255,13 +254,13 @@ eq.conc.exec <- function(sep = ";", subdir = "", bs.name = "molecule1", thr.type
       
       write.csv2(dt.res, file = paste0("output", subdir, "equilibrium_concentrations.csv"))
       write.csv2(dt.frac, file = paste0("output", subdir, bs.name, "_fractions.csv"))
-      write.csv2(dt.err, file = paste0("output", subdir, bs.name, "_percent_error.csv"))
+      write.csv2(dt.err, file = paste0("output", subdir, "percent_error.csv"))
       
     } else {
       
       write.csv(dt.res, file = paste0("output", subdir, "equilibrium_concentrations.csv"))
       write.csv(dt.frac, file = paste0("output", subdir, bs.name, "_fractions.csv"))
-      write.csv(dt.err, file = paste0("output", subdir, bs.name, "_percent_error.csv"))
+      write.csv(dt.err, file = paste0("output", subdir, "percent_error.csv"))
       
     }
     

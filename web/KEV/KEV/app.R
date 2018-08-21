@@ -1,48 +1,151 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
+# ########################################################## #
+#                                                            #
+# Name: KEV:Constant Evaluator                               #
+# Author: AMeshkov                                           #
+# Date: 2018                                                 #
+#                                                            #
+# ########################################################## #
 
+
+
+# ---------------------- load libraries ----------------------
+
+# I/O
+library(readr)
+library(openxlsx)
+# data structure
+library(data.table)
+# computation
+library(MASS)
+library(Matrix)
+library(Hmisc)
+# strings
+library(stringi)
+library(stringr)
+# reporting
 library(shiny)
+library(rhandsontable)
 
-# Define UI for application that draws a histogram
-ui <- fluidPage(
-   
-   # Application title
-   titlePanel("Old Faithful Geyser Data"),
-   
-   # Sidebar with a slider input for number of bins 
-   sidebarLayout(
-      sidebarPanel(
-         sliderInput("bins",
-                     "Number of bins:",
-                     min = 1,
-                     max = 50,
-                     value = 30)
-      ),
-      
-      # Show a plot of the generated distribution
-      mainPanel(
-         plotOutput("distPlot")
-      )
-   )
+
+
+# ------------------------- settings ------------------------
+
+if (Sys.info()['sysname'] %like% "indows")
+  Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
+
+
+
+# frontend ------------------------------------------------- #
+
+ui <- navbarPage("KEV",
+                 tabPanel("Equilibrium concentrations"
+                          , id = "page.eq.conc"
+                          
+                          , fluidPage(
+                            
+                            includeCSS("styles.css")
+                            
+                            , titlePanel("KEV: Chemistry Constant evaluator")
+                            
+                            , fluidRow(column(12), p(HTML("<br/>")))
+                            
+                            , titlePanel("Part 1: Equilibrium concentrations")
+                            
+                            , fluidRow(
+                              
+                              column(12,
+                                     wellPanel(
+                                       h4("Upload input data or insert by hand")
+                                       , h4("Stechiometric coefficients")
+                                       , rHandsontableOutput("dt.coef")
+                                       , fileInput("file.dt.coef", "Choose CSV File",
+                                                   accept = c(
+                                                     "text/csv",
+                                                     "text/comma-separated-values,text/plain",
+                                                     ".csv")
+                                       )
+                                       , fluidRow(class = "download-row"
+                                                  , downloadButton("dt.coef.csv", "csv")
+                                                  , downloadButton("dt.coef.xlsx", "xlsx"))
+                                       
+                                     ) 
+                              )
+                            )
+                          )),
+                 tabPanel("To do"),
+                 tabPanel("To do")
 )
 
-# Define server logic required to draw a histogram
+
+# backend -------------------------------------------------- #
+
 server <- function(input, output) {
    
-   output$distPlot <- renderPlot({
-      # generate bins based on input$bins from ui.R
-      x    <- faithful[, 2] 
-      bins <- seq(min(x), max(x), length.out = input$bins + 1)
+  values <- reactiveValues()
+  
+  dt.coef.data <- reactive({
+    
+    if (!is.null(input$dt.coef)) {
       
-      # draw the histogram with the specified number of bins
-      hist(x, breaks = bins, col = 'darkgray', border = 'white')
-   })
+      dt.coef <- hot_to_r(input$dt.coef)
+      
+    } else {
+      
+      if (is.null(values[["dt.coef"]])) {
+        
+        dt.coef <- as.data.table(matrix(rep(1, 16), 4))
+        setnames(dt.coef, paste0("molecule", 1:4))
+        
+      } else {
+        
+        dt.coef <- values[["dt.coef"]]
+        
+      }
+        
+    }
+    
+    values[["dt.coef"]] <- dt.coef
+    
+    dt.coef
+    
+  })
+  
+  output$dt.coef <- renderRHandsontable({
+    
+    in.file <- input$file.dt.coef
+    
+    dt.coef <- dt.coef.data()
+    
+    if (!is.null(in.file)) {
+      
+      # browser()
+      dt.coef <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+      
+    }
+      
+    if (!is.null(dt.coef))
+      rhandsontable(dt.coef, stretchH = "all", useTypes = FALSE) %>%
+        hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+  output$dt.coef.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "dt.coef.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      write.csv2(dt.coef.data(), file, row.names = FALSE)
+      
+    }
+    
+  )
+  
+  
 }
 
 # Run the application 
