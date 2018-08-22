@@ -23,7 +23,8 @@ library(stringi)
 library(stringr)
 
 
-
+# https://stackoverflow.com/questions/16496210/rotate-a-matrix-in-r
+rotate <- function(x) t(apply(x, 2, rev))
 
 eq.conc.exec <- function(sep = ";", subdir = "", bs.name = "molecule1", thr.type = c("rel", "abs"), threshold = 1e-08, verbose = FALSE) {
   
