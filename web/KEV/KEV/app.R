@@ -33,6 +33,8 @@ library(rhandsontable)
 if (Sys.info()['sysname'] %like% "indows")
   Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
 
+source("eq_concentrations.web.r", chdir = TRUE)
+
 
 
 # frontend ------------------------------------------------- #
@@ -51,15 +53,27 @@ ui <- navbarPage("KEV",
                             
                             , titlePanel("Part 1: Equilibrium concentrations")
                             
+                            , fluidRow(column(
+                              12
+                              , wellPanel(
+                                fluidRow(column(12
+                                                , h4("What column delimiter do your use in your data files?")
+                                                , radioButtons("sep", "", inline = TRUE
+                                                               , c("," = "comma"
+                                                                   , ";" = "semicolon"
+                                                                   , "tab" = "tab"))
+                                         ))
+                              )))
+                            
                             , fluidRow(
                               
                               column(
                                 12
                                 , wellPanel(
-                                  h4("Upload input data or insert by hand")
+                                  h4("Upload or type input data")
                                   ,  fluidRow(
                                     column(5
-                                           , h4("Stechiometric coefficients")
+                                           , h4("Stoichiometric coefficients")
                                            , rHandsontableOutput("dt.coef")
                                            , fileInput("file.dt.coef", "Choose CSV File",
                                                        accept = c(
@@ -97,9 +111,26 @@ ui <- navbarPage("KEV",
                                                         , downloadButton("dt.conc.xlsx", "xlsx")))
                                     )
                                   
-                                 ) 
+                                 )
                               )
                             )
+                            
+                            , fluidRow(column(
+                              12
+                              , wellPanel(
+                                fluidRow(column(12
+                                                , actionButton("eq.conc.exec.btn", "Evaluate")
+                                ))
+                              )))
+                            
+                            , fluidRow(column(
+                              12
+                              , wellPanel(
+                                fluidRow(column(12
+                                                , rHandsontableOutput("dt.res")
+                                ))
+                              )))
+                            
                           )),
                  tabPanel("To do"),
                  tabPanel("To do")
@@ -109,8 +140,19 @@ ui <- navbarPage("KEV",
 # backend -------------------------------------------------- #
 
 server <- function(input, output) {
+  
+  # technical
    
   values <- reactiveValues()
+  
+  sep <- reactive({
+    
+    switch(input$sep,
+           comma = ",",
+           semicolon = ";",
+           tab = "\\t")
+    
+  })
   
   # data --------------------- #
   
@@ -134,6 +176,8 @@ server <- function(input, output) {
       }
         
     }
+    
+    dt.coef <- as.data.table(dt.coef)
     
     values[["dt.coef"]] <- dt.coef
     
@@ -162,6 +206,8 @@ server <- function(input, output) {
       
     }
     
+    dt.conc <- as.data.table(dt.conc)
+    
     values[["dt.conc"]] <- dt.conc
     
     dt.conc
@@ -188,6 +234,8 @@ server <- function(input, output) {
       }
       
     }
+    
+    part.eq <- as.data.table(part.eq)
     
     values[["part.eq"]] <- part.eq
     
@@ -216,11 +264,27 @@ server <- function(input, output) {
       
     }
     
+    cnst <- as.data.table(cnst)
+    
     values[["cnst"]] <- cnst
     
     cnst
     
   })
+  
+  eval.data <- reactive({
+    
+    eq.conc.exec(sep(), dt.coef.data(), cnst.data(), dt.conc.data(), part.eq.data(), "molecule1", "rel", threshold = 1e-08)
+
+  })
+  
+  dt.res.data <- eventReactive(input$eq.conc.exec.btn, {
+    
+    eval.data()$dt.res
+    
+  })
+  
+  
   
   # rendering ---------------- #
   
@@ -232,8 +296,11 @@ server <- function(input, output) {
     
     if (!is.null(in.file)) {
       
-      # browser()
-      dt.coef <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+      if (sep() == ";") {
+        dt.coef <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+      } else if (sep() == ",") {
+        dt.coef <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+      }
       
     }
       
@@ -251,8 +318,11 @@ server <- function(input, output) {
     
     if (!is.null(in.file)) {
       
-      # browser()
-      dt.conc <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1)
+      if (sep() == ";") {
+        dt.conc <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1)
+      } else if (sep() == ",") {
+        dt.conc <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1)
+      }
       
     }
     
@@ -270,9 +340,18 @@ server <- function(input, output) {
     
     if (!is.null(in.file)) {
       
-      # browser()
-      part.eq <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE)
-      tmp <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)
+      
+      if (sep() == ";") {
+        part.eq <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE)
+        tmp <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)
+        
+      } else if (sep() == ",") {
+        
+        part.eq <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE)
+        tmp <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)
+        
+      }
+
       colnames(part.eq) <- colnames(tmp)
 
     }
@@ -291,8 +370,11 @@ server <- function(input, output) {
     
     if (!is.null(in.file)) {
       
-      # browser()
-      cnst <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+      if (sep() == ";") {
+        cnst <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+      } else if (sep() == ",") {
+        cnst <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+      }
       
     }
     
@@ -301,6 +383,17 @@ server <- function(input, output) {
       hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
     
   })
+
+  output$dt.res <- renderRHandsontable({
+    
+    dt.res <- dt.res.data()
+    
+    if (!is.null(dt.res))
+      rhandsontable(dt.res, stretchH = "all", useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
   
   # downloads ---------------- #
   
@@ -308,13 +401,17 @@ server <- function(input, output) {
     # ----
     filename = function() {
       
-      "input_stechiometric_coefficients.csv"
+      "input_stoichiometric_coefficients.csv"
       
     },
     
     content = function(file) {
       
-      write.csv2(dt.coef.data(), file, row.names = FALSE)
+      if (sep() == ";") {
+        write.csv2(dt.coef.data(), file, row.names = FALSE)
+      } else if (sep() == ",") {
+        write.csv(dt.coef.data(), file, row.names = FALSE)
+      }
       
     }
     
@@ -331,7 +428,11 @@ server <- function(input, output) {
     
     content = function(file) {
       
-      write.csv2(cnst.data(), file, row.names = FALSE)
+      if (sep() == ";") {
+        write.csv2(cnst.data(), file, row.names = FALSE)
+      } else if (sep() == ",") {
+        write.csv(cnst.data(), file, row.names = FALSE)
+      }
       
     }
     
@@ -348,7 +449,11 @@ server <- function(input, output) {
     
     content = function(file) {
       
-      write.csv2(dt.conc.data(), file, row.names = FALSE)
+      if (sep() == ";") {
+        write.csv2(dt.conc.data(), file, row.names = FALSE)
+      } else if (sep() == ",") {
+        write.csv(dt.conc.data(), file, row.names = FALSE)
+      }
       
     }
 
