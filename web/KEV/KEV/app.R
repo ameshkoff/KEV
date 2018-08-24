@@ -56,12 +56,16 @@ ui <- navbarPage("KEV",
                             , fluidRow(column(
                               12
                               , wellPanel(
-                                fluidRow(column(12
+                                fluidRow(column(6
                                                 , h4("What column delimiter do your use in your data files?")
                                                 , radioButtons("sep", "", inline = TRUE
                                                                , c("," = "comma"
                                                                    , ";" = "semicolon"
                                                                    , "tab" = "tab"))
+                                         )
+                                         , column(6
+                                                  , h4("Particle to get fractions of")
+                                                  , textInput("bs.name", "", "molecule1")
                                          ))
                               )))
                             
@@ -127,13 +131,33 @@ ui <- navbarPage("KEV",
                               12
                               , wellPanel(
                                 fluidRow(column(12
+                                                , h4("Equilibrium concentrations")
                                                 , rHandsontableOutput("dt.res")
-                                ))
-                              )))
+                                                , fluidRow(class = "download-row"
+                                                           , downloadButton("dt.res.csv", "csv")
+                                                           , downloadButton("dt.res.xlsx", "xlsx"))))
+
+                                , fluidRow(column(12
+                                                  , h4("Fractions per molecule")
+                                                  , rHandsontableOutput("dt.frac")
+                                                  , fluidRow(class = "download-row"
+                                                             , downloadButton("dt.frac.csv", "csv")
+                                                             , downloadButton("dt.frac.xlsx", "xlsx"))))
+                                
+                                , fluidRow(column(12
+                                                  , h4("Residuals matrix")
+                                                  , rHandsontableOutput("dt.err")
+                                                  , fluidRow(class = "download-row"
+                                                             , downloadButton("dt.err.csv", "csv")
+                                                             , downloadButton("dt.err.xlsx", "xlsx"))))
+                              ))
+                              
+                            )
                             
                           )),
                  tabPanel("To do"),
-                 tabPanel("To do")
+                 tabPanel("To do"),
+                 tabPanel("About")
 )
 
 
@@ -154,7 +178,10 @@ server <- function(input, output) {
     
   })
   
+  
   # data --------------------- #
+  
+  # input data
   
   dt.coef.data <- reactive({
     
@@ -272,11 +299,29 @@ server <- function(input, output) {
     
   })
   
+  bs.name <- reactive({
+    
+    if (!is.null(input$bs.name)) {
+      
+      input$bs.name
+      
+    } else {
+      
+      "molecule1"
+      
+    }
+    
+  })
+  
+  # raw output data
+  
   eval.data <- reactive({
     
-    eq.conc.exec(sep(), dt.coef.data(), cnst.data(), dt.conc.data(), part.eq.data(), "molecule1", "rel", threshold = 1e-08)
+    eq.conc.exec(sep(), dt.coef.data(), cnst.data(), dt.conc.data(), part.eq.data(), bs.name(), "rel", threshold = 1e-08)
 
   })
+  
+  # output data
   
   dt.res.data <- eventReactive(input$eq.conc.exec.btn, {
     
@@ -284,7 +329,19 @@ server <- function(input, output) {
     
   })
   
-  
+  dt.frac.data <- eventReactive(input$eq.conc.exec.btn, {
+    
+    eval.data()$dt.frac
+    
+  })
+
+  dt.err.data <- eventReactive(input$eq.conc.exec.btn, {
+    
+    eval.data()$dt.res
+    
+  })
+
+    
   
   # rendering ---------------- #
   
@@ -334,7 +391,7 @@ server <- function(input, output) {
 
   output$part.eq <- renderRHandsontable({
     
-    in.file <- input$file.part.eq
+    in.file <- input$file.dt.conc
     
     part.eq <- part.eq.data()
     
@@ -342,17 +399,19 @@ server <- function(input, output) {
       
       
       if (sep() == ";") {
+        
         part.eq <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE)
-        tmp <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)
+        tmp <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ]
+        # browser()
         
       } else if (sep() == ",") {
         
         part.eq <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE)
-        tmp <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)
+        tmp <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ]
         
       }
 
-      colnames(part.eq) <- colnames(tmp)
+      colnames(part.eq) <- tmp
 
     }
     
@@ -389,13 +448,48 @@ server <- function(input, output) {
     dt.res <- dt.res.data()
     
     if (!is.null(dt.res))
+      
+      # dt.res <- as.data.table(t(dt.res), keep.rownames = TRUE)
+      # cln <- colnames(dt.res)
+      # setnames(dt.res, cln, str_replace(cln, "^V", "S_"))
+      
       rhandsontable(dt.res, stretchH = "all", useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     
   })
   
-  
-  # downloads ---------------- #
+  output$dt.frac <- renderRHandsontable({
+    
+    dt.frac <- dt.frac.data()
+    
+    if (!is.null(dt.frac)) {
+      
+      dt.frac <- as.data.table(t(dt.frac), keep.rownames = TRUE)
+      setnames(dt.frac, unlist(dt.frac[1]))
+      
+      dt.frac <- dt.frac[!1]
+      # cln <- colnames(dt.res)
+      # setnames(dt.res, cln, str_replace(cln, "^V", "S_"))
+      
+      rhandsontable(dt.frac, stretchH = "all", useTypes = FALSE) %>%
+        hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+      
+    }
+    
+  })
+
+  output$dt.err <- renderRHandsontable({
+    
+    dt.err <- dt.err.data()
+    
+    if (!is.null(dt.err))
+      rhandsontable(dt.err, stretchH = "all", useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+
+    
+  # downoad ---------------- #
   
   output$dt.coef.csv <- downloadHandler(
     # ----
@@ -462,6 +556,7 @@ server <- function(input, output) {
   
 }
 
-# Run the application 
+# run
+
 shinyApp(ui = ui, server = server)
 

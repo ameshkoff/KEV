@@ -220,7 +220,7 @@ eq.conc.exec <- function(sep = ";", dt.coef, cnst, dt.conc, part.eq, bs.name = "
   # fractions
   dt.frac <- cond.fractions()
   
-  list("dt.res" = dt.res, "dt.frac" = dt.frac, "dt.err.m" = dt.err)
+  list("dt.res" = dt.res, "dt.frac" = dt.frac, "dt.err" = as.data.table(dt.err))
 
 }
 
