@@ -102,8 +102,8 @@ ui <- navbarPage("KEV",
                                                         , downloadButton("cnst.xlsx", "xlsx")))
                                     , column(5
                                              , h4("Concentrations")
-                                             , rHandsontableOutput("part.eq")
                                              , rHandsontableOutput("dt.conc")
+                                             , rHandsontableOutput("part.eq")
                                              , fileInput("file.dt.conc", "Choose CSV File",
                                                          accept = c(
                                                            "text/csv",
@@ -138,7 +138,7 @@ ui <- navbarPage("KEV",
                                                            , downloadButton("dt.res.xlsx", "xlsx"))))
 
                                 , fluidRow(column(12
-                                                  , h4("Fractions per molecule")
+                                                  , h4(textOutput("txt.frac"))
                                                   , rHandsontableOutput("dt.frac")
                                                   , fluidRow(class = "download-row"
                                                              , downloadButton("dt.frac.csv", "csv")
@@ -341,7 +341,15 @@ server <- function(input, output) {
     
   })
 
-    
+  # text ------------------- #
+  
+  output$txt.frac <- renderText(
+    {
+      paste("Fractions per ", bs.name())
+    }
+  )
+  
+  
   
   # rendering ---------------- #
   
@@ -416,7 +424,7 @@ server <- function(input, output) {
     }
     
     if (!is.null(part.eq))
-      rhandsontable(part.eq, stretchH = "all", useTypes = FALSE) %>%
+      rhandsontable(part.eq, stretchH = "all", useTypes = FALSE, colHeaders = NULL) %>%
       hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
     
   })
@@ -453,7 +461,7 @@ server <- function(input, output) {
       # cln <- colnames(dt.res)
       # setnames(dt.res, cln, str_replace(cln, "^V", "S_"))
       
-      rhandsontable(dt.res, stretchH = "all", useTypes = FALSE) %>%
+      rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
       hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     
   })
@@ -471,8 +479,8 @@ server <- function(input, output) {
       # cln <- colnames(dt.res)
       # setnames(dt.res, cln, str_replace(cln, "^V", "S_"))
       
-      rhandsontable(dt.frac, stretchH = "all", useTypes = FALSE) %>%
-        hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+      rhandsontable(dt.frac, stretchH = FALSE, useTypes = FALSE) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
       
     }
     
@@ -483,12 +491,12 @@ server <- function(input, output) {
     dt.err <- dt.err.data()
     
     if (!is.null(dt.err))
-      rhandsontable(dt.err, stretchH = "all", useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+      rhandsontable(dt.err, stretchH = FALSE, useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     
   })
 
-    
+
   # downoad ---------------- #
   
   output$dt.coef.csv <- downloadHandler(
@@ -506,6 +514,23 @@ server <- function(input, output) {
       } else if (sep() == ",") {
         write.csv(dt.coef.data(), file, row.names = FALSE)
       }
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.coef.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_stoichiometric_coefficients.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.coef.data(), file)
       
     }
     
@@ -533,26 +558,188 @@ server <- function(input, output) {
   )
   # ----
   
-  output$dt.conc.csv <- downloadHandler(
+  output$cnst.xlsx <- downloadHandler(
     # ----
     filename = function() {
       
-      "input_total_concentrations.csv"
+      "log10_K_constants.xlsx"
       
     },
     
     content = function(file) {
       
+      write.xlsx(cnst.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.conc.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_concentrations.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      tmp1 <- dt.conc.data()
+      tmp2 <- part.eq.data()
+      
+      tmp <- rbind(tmp2, tmp1, use.names = FALSE)
+      setnames(tmp, colnames(tmp1))
+      
       if (sep() == ";") {
-        write.csv2(dt.conc.data(), file, row.names = FALSE)
+        write.csv2(tmp, file, row.names = FALSE)
       } else if (sep() == ",") {
-        write.csv(dt.conc.data(), file, row.names = FALSE)
+        write.csv(tmp, file, row.names = FALSE)
       }
       
     }
 
   )
   # ----
+
+  output$dt.conc.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_concentrations.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      tmp1 <- dt.conc.data()
+      tmp2 <- part.eq.data()
+      
+      tmp <- rbind(tmp2, tmp1, use.names = FALSE)
+      setnames(tmp, colnames(tmp1))
+      
+      write.xlsx(tmp, file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.res.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_stoichiometric_coefficients.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(dt.res.data(), file, row.names = FALSE)
+      } else if (sep() == ",") {
+        write.csv(dt.res.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.res.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_stoichiometric_coefficients.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.res.data(), file)
+      
+    }
+    
+  )
+  # ----
+
+  output$dt.frac.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_stoichiometric_coefficients.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(dt.frac.data(), file, row.names = FALSE)
+      } else if (sep() == ",") {
+        write.csv(dt.frac.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.frac.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_stoichiometric_coefficients.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.frac.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.err.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_stoichiometric_coefficients.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(dt.err.data(), file, row.names = FALSE)
+      } else if (sep() == ",") {
+        write.csv(dt.err.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.err.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_stoichiometric_coefficients.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.err.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  
   
 }
 
