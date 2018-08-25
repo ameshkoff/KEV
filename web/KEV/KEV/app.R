@@ -47,7 +47,7 @@ ui <- navbarPage("KEV",
                             
                             includeCSS("styles.css")
                             
-                            , titlePanel("KEV: Chemistry Constant evaluator")
+                            , titlePanel("KEV: Chemistry Constant Evaluator")
                             
                             , fluidRow(column(12), p(HTML("<br/>")))
                             
@@ -87,7 +87,11 @@ ui <- navbarPage("KEV",
                                            )
                                            , fluidRow(class = "download-row"
                                                       , downloadButton("dt.coef.csv", "csv")
-                                                      , downloadButton("dt.coef.xlsx", "xlsx")))
+                                                      , downloadButton("dt.coef.xlsx", "xlsx"))
+                                           # , h4("Particle names, comma separated")
+                                           , p("")
+                                           , textInput("part.names", "Particle names, comma separated", paste(paste0("molecule", 1:4), collapse = ", "))
+                                           )
                                     , column(2
                                              , h4("K: lg constants")
                                              , rHandsontableOutput("cnst")
@@ -99,7 +103,8 @@ ui <- navbarPage("KEV",
                                              )
                                              , fluidRow(class = "download-row"
                                                         , downloadButton("cnst.csv", "csv")
-                                                        , downloadButton("cnst.xlsx", "xlsx")))
+                                                        , downloadButton("cnst.xlsx", "xlsx"))
+                                             )
                                     , column(5
                                              , h4("Concentrations")
                                              , rHandsontableOutput("dt.conc")
@@ -163,7 +168,7 @@ ui <- navbarPage("KEV",
 
 # backend -------------------------------------------------- #
 
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   # technical
    
@@ -182,6 +187,18 @@ server <- function(input, output) {
   # data --------------------- #
   
   # input data
+  
+  part.names.data <- reactive({
+    
+    tmp <- input$part.names
+    
+    tmp <- str_split(tmp, pattern = ",")[[1]]
+    tmp <- str_trim(tmp)
+    
+    tmp
+    
+  })
+  
   
   dt.coef.data <- reactive({
     
@@ -205,6 +222,7 @@ server <- function(input, output) {
     }
     
     dt.coef <- as.data.table(dt.coef)
+    setnames(dt.coef, part.names.data()[1:ncol(dt.coef)])
     
     values[["dt.coef"]] <- dt.coef
     
@@ -234,6 +252,7 @@ server <- function(input, output) {
     }
     
     dt.conc <- as.data.table(dt.conc)
+    setnames(dt.conc, part.names.data()[1:ncol(dt.conc)])
     
     values[["dt.conc"]] <- dt.conc
     
@@ -313,7 +332,7 @@ server <- function(input, output) {
     
   })
   
-  # raw output data
+  # execute
   
   eval.data <- reactive({
     
@@ -341,7 +360,9 @@ server <- function(input, output) {
     
   })
 
-  # text ------------------- #
+
+  
+  # text --------------------- #
   
   output$txt.frac <- renderText(
     {
@@ -351,13 +372,13 @@ server <- function(input, output) {
   
   
   
+  
+  
   # rendering ---------------- #
   
   output$dt.coef <- renderRHandsontable({
     
     in.file <- input$file.dt.coef
-    
-    dt.coef <- dt.coef.data()
     
     if (!is.null(in.file)) {
       
@@ -367,8 +388,18 @@ server <- function(input, output) {
         dt.coef <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
       }
       
-    }
+      tmp <- colnames(dt.coef)
+      updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
       
+      
+    } else {
+      
+      dt.coef <- dt.coef.data()
+      
+    }
+    
+    setnames(dt.coef, part.names.data()[1:ncol(dt.coef)])
+    
     if (!is.null(dt.coef))
       rhandsontable(dt.coef, stretchH = "all", useTypes = FALSE) %>%
         hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
@@ -379,8 +410,6 @@ server <- function(input, output) {
     
     in.file <- input$file.dt.conc
     
-    dt.conc <- dt.conc.data()
-    
     if (!is.null(in.file)) {
       
       if (sep() == ";") {
@@ -389,7 +418,17 @@ server <- function(input, output) {
         dt.conc <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1)
       }
       
+      tmp <- colnames(dt.conc)
+      updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
+      
+      
+    } else {
+      
+      dt.conc <- dt.conc.data()
+      
     }
+    
+    setnames(dt.conc, part.names.data()[1:ncol(dt.conc)])
     
     if (!is.null(dt.conc))
       rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE) %>%
@@ -496,6 +535,7 @@ server <- function(input, output) {
     
   })
 
+  
 
   # downoad ---------------- #
   
@@ -629,7 +669,7 @@ server <- function(input, output) {
     # ----
     filename = function() {
       
-      "input_stoichiometric_coefficients.csv"
+      "equilibrium_concentrations.csv"
       
     },
     
@@ -650,7 +690,7 @@ server <- function(input, output) {
     # ----
     filename = function() {
       
-      "input_stoichiometric_coefficients.xlsx"
+      "equilibrium_concentrations.xlsx"
       
     },
     
@@ -667,7 +707,7 @@ server <- function(input, output) {
     # ----
     filename = function() {
       
-      "input_stoichiometric_coefficients.csv"
+      paste0(bs.name, "_fractions.csv")
       
     },
     
@@ -688,7 +728,7 @@ server <- function(input, output) {
     # ----
     filename = function() {
       
-      "input_stoichiometric_coefficients.xlsx"
+      paste0(bs.name, "_fractions.xlsx")
       
     },
     
@@ -705,7 +745,7 @@ server <- function(input, output) {
     # ----
     filename = function() {
       
-      "input_stoichiometric_coefficients.csv"
+      "percent_error.csv"
       
     },
     
@@ -726,7 +766,7 @@ server <- function(input, output) {
     # ----
     filename = function() {
       
-      "input_stoichiometric_coefficients.xlsx"
+      "percent_error.xlsx"
       
     },
     
