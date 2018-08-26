@@ -23,52 +23,9 @@ library(stringi)
 library(stringr)
 
 
-# https://stackoverflow.com/questions/16496210/rotate-a-matrix-in-r
-rotate <- function(x) t(apply(x, 2, rev))
-
-eq.conc.exec <- function(sep = ";", subdir = "", bs.name = "molecule1", thr.type = c("rel", "abs"), threshold = 1e-08, verbose = FALSE) {
-  
-  # initialize and update helper variables
+eq.conc.exec <- function(sep = ";", dt.coef, cnst, dt.conc, part.eq, bs.name = "molecule1", thr.type = c("rel", "abs"), threshold = 1e-08) {
   
   tbl <- c("cnst", "dt.coef", "dt.conc")
-  
-  if (subdir != "")
-    subdir <- paste0("/", subdir, "/")
- 
-   
-  # load data --------------------------------- #
-  
-  dt.load <- function() {
-    
-    if (sep == ";") {
-      
-      assign(tbl[1], as.data.table(read.csv2(paste0("input", subdir, "k_constants_log10.csv"), stringsAsFactors = FALSE, colClasses = "character")
-                                   , keep.rownames = FALSE), envir = parent.frame())
-      assign(tbl[2], as.data.table(read.csv2(paste0("input", subdir, "stoich_coefficients.csv"), stringsAsFactors = FALSE, colClasses = "character")
-                                   , keep.rownames = FALSE), envir = parent.frame())
-      assign(tbl[3], as.data.table(read.csv2(paste0("input", subdir, "concentrations.csv")
-                                             , stringsAsFactors = FALSE, colClasses = "character", skip = 1)
-                                   , keep.rownames = FALSE), envir = parent.frame())
-      assign("part.eq", as.data.table(read.csv2(paste0("input", subdir, "concentrations.csv")
-                                                , stringsAsFactors = FALSE, colClasses = "character", header = FALSE , nrows = 1)
-                                      , keep.rownames = FALSE), envir = parent.frame())
-      
-    } else if (sep == ",") {
-      
-      assign(tbl[1], as.data.table(read.csv(paste0("input", subdir, "k_constants_log10.csv"), stringsAsFactors = FALSE, colClasses = "character")
-                                   , keep.rownames = FALSE), envir = parent.frame())
-      assign(tbl[2], as.data.table(read.csv(paste0("input", subdir, "stoich_coefficients.csv"), stringsAsFactors = FALSE, colClasses = "character")
-                                   , keep.rownames = FALSE), envir = parent.frame())
-      assign(tbl[3], as.data.table(read.csv(paste0("input", subdir, "concentrations.csv"), stringsAsFactors = FALSE, colClasses = "character")
-                                   , keep.rownames = FALSE), envir = parent.frame(), skip = 1)
-      assign("part.eq", as.data.table(read.csv2(paste0("input", subdir, "concentrations.csv")
-                                                , stringsAsFactors = FALSE, colClasses = "character", header = FALSE , nrows = 1)
-                                      , keep.rownames = FALSE), envir = parent.frame())
-      
-    }
-    
-  }
-  
   
   # preprocessing ----------------------------- #
   
@@ -245,33 +202,8 @@ eq.conc.exec <- function(sep = ";", subdir = "", bs.name = "molecule1", thr.type
     
   }
   
-  # save data to files -------------------------------- #
-  
-  dt.save <- function() {
-    
-    dir.create(file.path(paste0("output", subdir)), showWarnings = FALSE)
-    
-    if (sep == ";") {
-      
-      write.csv2(dt.res, file = paste0("output", subdir, "equilibrium_concentrations.csv"))
-      write.csv2(dt.frac, file = paste0("output", subdir, bs.name, "_fractions.csv"))
-      write.csv2(dt.err, file = paste0("output", subdir, "percent_error.csv"))
-      
-    } else {
-      
-      write.csv(dt.res, file = paste0("output", subdir, "equilibrium_concentrations.csv"))
-      write.csv(dt.frac, file = paste0("output", subdir, bs.name, "_fractions.csv"))
-      write.csv(dt.err, file = paste0("output", subdir, "percent_error.csv"))
-      
-    }
-    
-  }
-  
-  
   # run --------------------------------------------- #
   
-
-  dt.load()
   dt.preproc()
   
   dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq)
@@ -288,26 +220,8 @@ eq.conc.exec <- function(sep = ";", subdir = "", bs.name = "molecule1", thr.type
   # fractions
   dt.frac <- cond.fractions()
   
-  # show results and save
-  
-  dt.save()
-  
-  if (verbose) {
-  
-    print("== Equilibrium concentrations ==")
-    print(dt.res)
-    print("")
-    print("")
-    print(paste("== Fractions of", bs.name, "=="))
-    print(dt.frac)
-    
-  } else {
-    
-    list("dt.eq.conc" = dt.res, "dt.frac" = dt.frac, "dt.coef.m" = dt.coef.m, "part.eq" = part.eq
-         , "dt.bs.conc" = dt.conc.m, "k.cnst.ln" = cnst.m, "dt.err.m" = dt.err)
-    
-  }
-  
+  list("dt.res" = dt.res, "dt.frac" = dt.frac, "dt.err" = as.data.table(dt.err))
+
 }
 
 
