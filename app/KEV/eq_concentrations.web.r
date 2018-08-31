@@ -11,13 +11,13 @@
 # ---------------------- load libraries ----------------------
 
 # I/O
-library(readr)
+# library(readr)
 # data structure
 library(data.table)
 # computation
 library(MASS)
 library(Matrix)
-library(Hmisc)
+# library(Hmisc)
 # strings
 library(stringi)
 library(stringr)
@@ -113,7 +113,7 @@ eq.conc.exec <- function(sep = ";", dt.coef, cnst, dt.conc, part.eq, bs.name = "
       
       # base concentrations equation
       conc.base.res <- t(dt.coef.m) %*% exp(cnst.m + dt.coef.m %*% log(dt.conc.out))
-      
+
       # product concentrations equation
       conc.prod.res <- exp(cnst.m + dt.coef.m %*% log(dt.conc.out))
       
