@@ -1,0 +1,7 @@
+k-ev.org {
+
+	basicauth / "kevaulator" "f123p"
+	proxy / kev:3838
+
+}
+
