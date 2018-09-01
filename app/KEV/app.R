@@ -33,7 +33,7 @@ library(rhandsontable)
 if (Sys.info()['sysname'] %like% "indows")
   Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
 
-source("eq_concentrations.web.r", chdir = TRUE)
+source("eq_runner.r", chdir = TRUE)
 
 
 
@@ -335,8 +335,19 @@ server <- function(input, output, session) {
   
   eval.data <- reactive({
     
-    eq.conc.exec(sep(), dt.coef.data(), cnst.data(), dt.conc.data(), part.eq.data(), bs.name(), "rel", threshold = 1e-08)
+    # eq.conc.exec(sep(), dt.coef.data(), cnst.data(), dt.conc.data(), part.eq.data(), bs.name(), "rel", threshold = 1e-08)
 
+    eq.evaluation.runner(app = TRUE
+                         , sep = sep()
+                         , bs.name = bs.name()
+                         , thr.type = c("rel")
+                         , threshold = 1e-08
+                         , dt.list = list(dt.coef = dt.coef.data()
+                                          , cnst = cnst.data()
+                                          , dt.conc = dt.conc.data()
+                                          , part.eq = part.eq.data())
+                         , save.res = FALSE)
+    
   })
   
   # output data

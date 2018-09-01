@@ -1,0 +1,22 @@
+version: "0.1"
+services:
+  caddy:  
+    image: joshix/caddy
+    links:
+      - kev
+    volumes:
+      - /home/www/:/var/www/html
+#      - ./.caddy/:/.caddy
+    ports:
+      - 80:80
+      - 443:443
+    restart: always
+
+  kev:
+    image: kev2
+    volumes:
+      - /home/app/:/srv/shiny-server/
+      - /home/app_log/:/var/log/shiny-server/
+    ports:
+      - 3838:3838
+    restart: always
