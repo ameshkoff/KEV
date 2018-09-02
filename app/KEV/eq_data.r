@@ -11,7 +11,6 @@
 # ---------------------- load libraries ----------------------
 
 # I/O
-library(readr)
 # data structure
 library(data.table)
 # computation
