@@ -11,14 +11,14 @@
 # ---------------------- load libraries ----------------------
 
 # I/O
-library(readr)
+# library(readr)
 library(openxlsx)
 # data structure
 library(data.table)
 # computation
 library(MASS)
 library(Matrix)
-library(Hmisc)
+# library(Hmisc)
 # strings
 library(stringi)
 library(stringr)
@@ -33,7 +33,7 @@ library(rhandsontable)
 if (Sys.info()['sysname'] %like% "indows")
   Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
 
-source("eq_concentrations.web.r", chdir = TRUE)
+source("eq_runner.r", chdir = TRUE)
 
 
 
@@ -49,7 +49,7 @@ ui <- navbarPage("KEV",
                             
                             , titlePanel("KEV: Chemistry Constant Evaluator")
                             
-                            , fluidRow(column(12), p(HTML("<br/>")))
+                            , fluidRow(column(12), p(HTML(paste("<br/>"))))
                             
                             , titlePanel("Part 1: Equilibrium concentrations")
                             
@@ -88,7 +88,6 @@ ui <- navbarPage("KEV",
                                            , fluidRow(class = "download-row"
                                                       , downloadButton("dt.coef.csv", "csv")
                                                       , downloadButton("dt.coef.xlsx", "xlsx"))
-                                           # , h4("Particle names, comma separated")
                                            , p("")
                                            , textInput("part.names", "Particle names, comma separated", paste(paste0("molecule", 1:4), collapse = ", "))
                                            )
@@ -336,8 +335,19 @@ server <- function(input, output, session) {
   
   eval.data <- reactive({
     
-    eq.conc.exec(sep(), dt.coef.data(), cnst.data(), dt.conc.data(), part.eq.data(), bs.name(), "rel", threshold = 1e-08)
+    # eq.conc.exec(sep(), dt.coef.data(), cnst.data(), dt.conc.data(), part.eq.data(), bs.name(), "rel", threshold = 1e-08)
 
+    eq.evaluation.runner(app = TRUE
+                         , sep = sep()
+                         , bs.name = bs.name()
+                         , thr.type = c("rel")
+                         , threshold = 1e-08
+                         , dt.list = list(dt.coef = dt.coef.data()
+                                          , cnst = cnst.data()
+                                          , dt.conc = dt.conc.data()
+                                          , part.eq = part.eq.data())
+                         , save.res = FALSE)
+    
   })
   
   # output data
@@ -496,10 +506,6 @@ server <- function(input, output, session) {
     
     if (!is.null(dt.res))
       
-      # dt.res <- as.data.table(t(dt.res), keep.rownames = TRUE)
-      # cln <- colnames(dt.res)
-      # setnames(dt.res, cln, str_replace(cln, "^V", "S_"))
-      
       rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
       hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     
@@ -515,9 +521,7 @@ server <- function(input, output, session) {
       setnames(dt.frac, unlist(dt.frac[1]))
       
       dt.frac <- dt.frac[!1]
-      # cln <- colnames(dt.res)
-      # setnames(dt.res, cln, str_replace(cln, "^V", "S_"))
-      
+
       rhandsontable(dt.frac, stretchH = FALSE, useTypes = FALSE) %>%
         hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
       
