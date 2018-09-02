@@ -11,7 +11,6 @@
 # ---------------------- load libraries ----------------------
 
 # I/O
-# library(readr)
 library(openxlsx)
 # data structure
 library(data.table)
@@ -335,8 +334,6 @@ server <- function(input, output, session) {
   
   eval.data <- reactive({
     
-    # eq.conc.exec(sep(), dt.coef.data(), cnst.data(), dt.conc.data(), part.eq.data(), bs.name(), "rel", threshold = 1e-08)
-
     eq.evaluation.runner(app = TRUE
                          , sep = sep()
                          , bs.name = bs.name()
@@ -366,7 +363,7 @@ server <- function(input, output, session) {
 
   dt.err.data <- eventReactive(input$eq.conc.exec.btn, {
     
-    eval.data()$dt.res
+    eval.data()$dt.err
     
   })
 
@@ -629,11 +626,10 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      tmp1 <- dt.conc.data()
-      tmp2 <- part.eq.data()
+      tmp <- dt.conc.data()
+      tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
       
-      tmp <- rbind(tmp2, tmp1, use.names = FALSE)
-      setnames(tmp, colnames(tmp1))
+      setnames(tmp, unlist(part.eq.data()))
       
       if (sep() == ";") {
         write.csv2(tmp, file, row.names = FALSE)
@@ -656,11 +652,10 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      tmp1 <- dt.conc.data()
-      tmp2 <- part.eq.data()
+      tmp <- dt.conc.data()
+      tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
       
-      tmp <- rbind(tmp2, tmp1, use.names = FALSE)
-      setnames(tmp, colnames(tmp1))
+      setnames(tmp, unlist(part.eq.data()))
       
       write.xlsx(tmp, file)
       
