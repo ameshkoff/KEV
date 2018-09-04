@@ -19,3 +19,4 @@ eq.evaluation.runner(app = FALSE, sep = ",", subdir = "ds.3p.f", bs.name = "L", 
 eq.evaluation.runner(app = FALSE, sep = ";", subdir = "ds.3p", bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
 eq.evaluation.runner(app = FALSE, sep = ";", subdir = "ds.5p", bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
 eq.evaluation.runner(app = FALSE, sep = ",", subdir = "ds.sp", bs.name = "L", thr.type = c("rel"), threshold = 1e-08, save.res = FALSE)
+eq.evaluation.runner(app = FALSE, sep = ",", subdir = "ds.3p.2eq", bs.name = "L", thr.type = c("rel"), threshold = 1e-08, save.res = FALSE)

@@ -15,11 +15,14 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out, part.eq
   accr <- c()
   conv <- 0
   
-
+  # if some input concentrations are already equilibrium ones
+  
   if (length(part.eq) > 0) {
     
     part.eq.reac <- (ncol(dt.coef.m) + 1) : length(cnst.m)
-    cnst.m[part.eq.reac] <- cnst.m[part.eq.reac] + dt.coef.m[, part.eq][part.eq.reac] * log(dt.conc.in[part.eq])
+    
+    cnst.m[part.eq.reac] <- cnst.m[part.eq.reac] +
+      dt.coef.m[, part.eq, drop = FALSE][part.eq.reac, , drop = FALSE] %*% log(dt.conc.in[part.eq])
     
     dt.coef.m.back <- dt.coef.m
     dt.conc.out.back <- dt.conc.out
@@ -101,12 +104,13 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out, part.eq
   }
   
   if (length(part.eq) > 0) {
-    
-    out <- dt.conc.out.back
-    out[-part.eq] <- dt.conc.out
-    
-    conc.prod.res <- exp(cnst.m + dt.coef.m.back %*% log(out))
-    
+
+    # out <- dt.conc.out.back
+    # out[-part.eq] <- dt.conc.out
+    # browser()
+    # conc.prod.res[part.eq] <- exp(cnst.m[part.eq] + dt.coef.m.back[part.eq] %*% log(out[part.eq]))
+    conc.prod.res[part.eq] <- dt.conc.out.back[part.eq]
+
   }
   
   list(out = conc.prod.res, iter = iter, conv.code = conv)
