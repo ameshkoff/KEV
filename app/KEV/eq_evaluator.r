@@ -15,11 +15,27 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out, part.eq
   accr <- c()
   conv <- 0
   
+  # if some input concentrations are already equilibrium ones
+  
+  if (length(part.eq) > 0) {
+    
+    part.eq.reac <- (ncol(dt.coef.m) + 1) : length(cnst.m)
+    
+    cnst.m[part.eq.reac] <- cnst.m[part.eq.reac] +
+      dt.coef.m[, part.eq, drop = FALSE][part.eq.reac, , drop = FALSE] %*% log(dt.conc.in[part.eq])
+    
+    dt.coef.m.back <- dt.coef.m
+    dt.conc.out.back <- dt.conc.out
+    
+    dt.coef.m <- dt.coef.m[, -part.eq, drop = FALSE]
+    dt.conc.in <- dt.conc.in[-part.eq]
+    dt.conc.out <- dt.conc.out[-part.eq]
+    
+  }
+  
+  
   for (iter in 1:max.it) {
     
-    if (length(part.eq) > 0)
-      dt.conc.out[part.eq] <- dt.conc.in[part.eq]
-
     # base concentrations equation
     conc.base.res <- t(dt.coef.m) %*% exp(cnst.m + dt.coef.m %*% log(dt.conc.out))
     
@@ -31,10 +47,6 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out, part.eq
     
     # error vector
     err.v <- t(dt.coef.m) %*% conc.prod.res - dt.conc.in
-    
-    # correct for input equality concentrations
-    if (length(part.eq) > 0)
-      err.v[part.eq] <- as.numeric(0)
     
     # if does not converge
     if (length(err.v[is.na(err.v) | is.infinite(err.v)]) > 0) {
@@ -91,6 +103,16 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out, part.eq
     
   }
   
+  if (length(part.eq) > 0) {
+
+    # out <- dt.conc.out.back
+    # out[-part.eq] <- dt.conc.out
+    # browser()
+    # conc.prod.res[part.eq] <- exp(cnst.m[part.eq] + dt.coef.m.back[part.eq] %*% log(out[part.eq]))
+    conc.prod.res[part.eq] <- dt.conc.out.back[part.eq]
+
+  }
+  
   list(out = conc.prod.res, iter = iter, conv.code = conv)
   
 }
@@ -115,7 +137,7 @@ newton.wrapper <- function(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, thr.t
     for (j in 1:tr.nm) {
       
       if (j  > 1)
-        dt.conc.out.init <- copy(dt.conc.in) * runif(1, 1e-3, .999)
+        dt.conc.out.init <- copy(dt.conc.in) * runif(1, 1e-9, .999)
       
       out <- newton.evaluator(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out.init, part.eq, thr.type, threshold, max.it)
       
