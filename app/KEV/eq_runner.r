@@ -86,7 +86,7 @@ eq.evaluation.runner <- function(app = FALSE
   
   dt.frac <- eq.cond.fractions(dt.res, bs.name, dt.coef, dt.coef.m, dt.conc.m)
   dt.conc.calc <- eq.tot.conc.calc(dt.res, cnst.m, dt.coef.m, part.nm)
-  dt.err <- eq.residuals(dt.conc.m, dt.conc.calc)
+  dt.err <- eq.residuals(dt.conc.m, dt.conc.calc, part.eq)
   
   # save
   
