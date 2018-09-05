@@ -41,9 +41,12 @@ eq.tot.conc.calc <- function(dt.res, cnst.m, dt.coef.m, part.nm) {
 
 # residuals ---------------------------------------------- #
 
-eq.residuals <- function(dt.conc.m, dt.conc.calc) {
+eq.residuals <- function(dt.conc.m, dt.conc.calc, part.eq) {
   
-  (dt.conc.calc - dt.conc.m) / dt.conc.m
+  rtrn <- (dt.conc.calc - dt.conc.m) / dt.conc.m
+  rtrn[, part.eq] <- 0
+  
+  rtrn
   
 }
 
