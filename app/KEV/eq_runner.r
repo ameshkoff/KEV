@@ -88,6 +88,9 @@ eq.evaluation.runner <- function(app = FALSE
   dt.conc.calc <- eq.tot.conc.calc(dt.res, cnst.m, dt.coef.m, part.nm)
   dt.err <- eq.residuals(dt.conc.m, dt.conc.calc, part.eq)
   
+  dt.conc.tot <- copy(dt.conc.m)
+  dt.conc.tot[, part.eq] <- dt.conc.calc[, part.eq]
+  
   # save
   
   if (app ==  FALSE & save.res) {
@@ -101,8 +104,9 @@ eq.evaluation.runner <- function(app = FALSE
   if (app == FALSE) {
     
     list("dt.eq.conc" = dt.res
-         , "dt.bs.conc" = dt.conc.m
-         , "dt.tot.conc" = dt.conc.calc
+         , "dt.conc.input" = dt.conc.m
+         , "dt.conc.tot" = dt.conc.tot
+         , "dt.conc.calc" = dt.conc.calc
          , "dt.frac" = dt.frac
          , "dt.coef.m" = dt.coef.m
          , "part.eq" = part.eq
@@ -113,7 +117,8 @@ eq.evaluation.runner <- function(app = FALSE
     
     list("dt.res" = dt.res
          , "dt.frac" = dt.frac
-         , "dt.err" = as.data.table(dt.err))
+         , "dt.err" = as.data.table(dt.err)
+         , "dt.conc.tot" = as.data.table(dt.conc.tot))
     
   }
   
