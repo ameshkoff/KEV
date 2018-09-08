@@ -106,8 +106,12 @@ ui <- navbarPage("KEV",
                                              )
                                     , column(5
                                              , h4("Concentrations")
-                                             , rHandsontableOutput("dt.conc")
-                                             , rHandsontableOutput("part.eq")
+                                             , tabsetPanel(type = "tabs"
+                                                           , tabPanel("Input"
+                                                                      , rHandsontableOutput("dt.conc")
+                                                                      , rHandsontableOutput("part.eq"))
+                                                           , tabPanel("Total"
+                                                                      , rHandsontableOutput("dt.conc.tot")))
                                              , fileInput("file.dt.conc", "Choose CSV File",
                                                          accept = c(
                                                            "text/csv",
@@ -178,7 +182,7 @@ server <- function(input, output, session) {
     switch(input$sep,
            comma = ",",
            semicolon = ";",
-           tab = "\\t")
+           tab = "tab")
     
   })
   
@@ -368,6 +372,12 @@ server <- function(input, output, session) {
     
   })
 
+  dt.conc.tot.data <- eventReactive(input$eq.conc.exec.btn, {
+    
+    eval.data()$dt.conc.tot
+    
+  })
+  
 
   
   # text --------------------- #
@@ -394,6 +404,8 @@ server <- function(input, output, session) {
         dt.coef <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
       } else if (sep() == ",") {
         dt.coef <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+      } else if (sep() == "tab") {
+        dt.coef <- read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
       }
       
       tmp <- colnames(dt.coef)
@@ -424,6 +436,8 @@ server <- function(input, output, session) {
         dt.conc <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1)
       } else if (sep() == ",") {
         dt.conc <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1)
+      } else if (sep() == "tab") {
+        dt.conc <- read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1)
       }
       
       tmp <- colnames(dt.conc)
@@ -464,6 +478,11 @@ server <- function(input, output, session) {
         part.eq <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE)
         tmp <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ]
         
+      } else if (sep() == "tab") {
+        
+        part.eq <- read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE)
+        tmp <- read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ]
+        
       }
 
       colnames(part.eq) <- tmp
@@ -488,6 +507,8 @@ server <- function(input, output, session) {
         cnst <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
       } else if (sep() == ",") {
         cnst <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+      } else if (sep() == "tab") {
+        cnst <- read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
       }
       
     }
@@ -537,6 +558,16 @@ server <- function(input, output, session) {
     
   })
 
+  output$dt.conc.tot <- renderRHandsontable({
+    
+    dt.conc.tot <- dt.conc.tot.data()
+    
+    if (!is.null(dt.conc.tot))
+      
+      rhandsontable(dt.conc.tot, stretchH = FALSE, useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    
+  })
   
 
   # downoad ---------------- #
