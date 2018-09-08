@@ -34,6 +34,7 @@ if (Sys.info()['sysname'] %like% "indows")
 
 source("eq_runner.r", chdir = TRUE)
 
+options(shiny.sanitize.errors = TRUE)
 
 
 # frontend ------------------------------------------------- #
@@ -582,7 +583,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "log10_K_constants.csv"
+      "k_constants_log10.csv"
       
     },
     
@@ -603,7 +604,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "log10_K_constants.xlsx"
+      "k_constants_log10.xlsx"
       
     },
     

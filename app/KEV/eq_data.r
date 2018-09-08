@@ -33,26 +33,34 @@ eq.scripts.load <- function(sep = ";", subdir = "") {
   if (subdir != "")
     subdir <- paste0("/", subdir, "/")
   
+  subdir <- paste0("input", subdir)
+  fls <- list.files(subdir)
+  
+  cnst.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*k\\_constants\\_log10\\.csv"][1])
+  dt.coef.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*stoich(iometric)*\\_coefficients\\.csv"][1])
+  dt.conc.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*concentrations\\.csv"][1])
+  
+  
   if (sep == ";") {
     
-    tbl[["cnst"]] <- as.data.table(read.csv2(paste0("input", subdir, "k_constants_log10.csv"), stringsAsFactors = FALSE, colClasses = "character")
+    tbl[["cnst"]] <- as.data.table(read.csv2(cnst.fl, stringsAsFactors = FALSE, colClasses = "character")
                                  , keep.rownames = FALSE)
-    tbl[["dt.coef"]] <- as.data.table(read.csv2(paste0("input", subdir, "stoich_coefficients.csv"), stringsAsFactors = FALSE, colClasses = "character")
+    tbl[["dt.coef"]] <- as.data.table(read.csv2(dt.coef.fl, stringsAsFactors = FALSE, colClasses = "character")
                                  , keep.rownames = FALSE)
-    tbl[["dt.conc"]] <- as.data.table(read.csv2(paste0("input", subdir, "concentrations.csv"), stringsAsFactors = FALSE, colClasses = "character"
+    tbl[["dt.conc"]] <- as.data.table(read.csv2(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character"
                                                  , skip = 1), keep.rownames = FALSE)
-    tbl[["part.eq"]] <- as.data.table(read.csv2(paste0("input", subdir, "concentrations.csv"), stringsAsFactors = FALSE, colClasses = "character"
+    tbl[["part.eq"]] <- as.data.table(read.csv2(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character"
                                                 , header = FALSE , nrows = 1), keep.rownames = FALSE)
     
   } else if (sep == ",") {
     
-    tbl[["cnst"]] <- as.data.table(read.csv(paste0("input", subdir, "k_constants_log10.csv"), stringsAsFactors = FALSE, colClasses = "character")
+    tbl[["cnst"]] <- as.data.table(read.csv(cnst.fl, stringsAsFactors = FALSE, colClasses = "character")
                                    , keep.rownames = FALSE)
-    tbl[["dt.coef"]] <- as.data.table(read.csv(paste0("input", subdir, "stoich_coefficients.csv"), stringsAsFactors = FALSE, colClasses = "character")
+    tbl[["dt.coef"]] <- as.data.table(read.csv(dt.coef.fl, stringsAsFactors = FALSE, colClasses = "character")
                                       , keep.rownames = FALSE)
-    tbl[["dt.conc"]] <- as.data.table(read.csv(paste0("input", subdir, "concentrations.csv"), stringsAsFactors = FALSE, colClasses = "character"
+    tbl[["dt.conc"]] <- as.data.table(read.csv(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character"
                                                 , skip = 1), keep.rownames = FALSE)
-    tbl[["part.eq"]] <- as.data.table(read.csv(paste0("input", subdir, "concentrations.csv"), stringsAsFactors = FALSE, colClasses = "character"
+    tbl[["part.eq"]] <- as.data.table(read.csv(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character"
                                                 , header = FALSE , nrows = 1), keep.rownames = FALSE)
     
   }
