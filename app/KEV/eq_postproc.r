@@ -25,6 +25,9 @@ eq.cond.fractions <- function(dt.res, bs.name, dt.coef, dt.coef.m, dt.conc.m) {
   
   dt.frac <- rbind(tmp, dt.frac)
   
+  cln <- colnames(dt.frac)
+  setnames(dt.frac, cln, str_replace(cln, "^V", "S_"))
+  
   dt.frac  
   
 }
