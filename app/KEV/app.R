@@ -29,8 +29,15 @@ library(rhandsontable)
 
 # ------------------------- settings ------------------------
 
+# prepare environment
+
 if (Sys.info()['sysname'] %like% "indows")
   Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
+
+options(shiny.sanitize.errors = TRUE)
+`%then%` <- shiny:::`%OR%`
+
+# load algorithm
 
 source("eq_runner.r", chdir = TRUE)
 
@@ -105,8 +112,12 @@ ui <- navbarPage("KEV",
                                              )
                                     , column(5
                                              , h4("Concentrations")
-                                             , rHandsontableOutput("dt.conc")
-                                             , rHandsontableOutput("part.eq")
+                                             , tabsetPanel(type = "tabs"
+                                                           , tabPanel("Input"
+                                                                      , rHandsontableOutput("dt.conc")
+                                                                      , rHandsontableOutput("part.eq"))
+                                                           , tabPanel("Total"
+                                                                      , rHandsontableOutput("dt.conc.tot")))
                                              , fileInput("file.dt.conc", "Choose CSV File",
                                                          accept = c(
                                                            "text/csv",
@@ -177,7 +188,7 @@ server <- function(input, output, session) {
     switch(input$sep,
            comma = ",",
            semicolon = ";",
-           tab = "\\t")
+           tab = "tab")
     
   })
   
@@ -196,7 +207,6 @@ server <- function(input, output, session) {
     tmp
     
   })
-  
   
   dt.coef.data <- reactive({
     
@@ -334,6 +344,12 @@ server <- function(input, output, session) {
   
   eval.data <- reactive({
     
+    validate(
+      
+      need(length(colnames(dt.coef.data())[colnames(dt.coef.data()) == bs.name()]) > 0, "Input correct particle name to get fractions of")
+      
+    )
+    
     eq.evaluation.runner(app = TRUE
                          , sep = sep()
                          , bs.name = bs.name()
@@ -367,6 +383,12 @@ server <- function(input, output, session) {
     
   })
 
+  dt.conc.tot.data <- eventReactive(input$eq.conc.exec.btn, {
+    
+    eval.data()$dt.conc.tot
+    
+  })
+  
 
   
   # text --------------------- #
@@ -380,7 +402,6 @@ server <- function(input, output, session) {
   
   
   
-  
   # rendering ---------------- #
   
   output$dt.coef <- renderRHandsontable({
@@ -390,10 +411,19 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (sep() == ";") {
-        dt.coef <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+        dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       } else if (sep() == ",") {
-        dt.coef <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+        dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (sep() == "tab") {
+        dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
+      
+      validate(
+        
+        need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
+        need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
+        
+      )
       
       tmp <- colnames(dt.coef)
       updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
@@ -420,10 +450,14 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (sep() == ";") {
-        dt.conc <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1)
+        dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
       } else if (sep() == ",") {
-        dt.conc <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1)
+        dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+      } else if (sep() == "tab") {
+        dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
       }
+      
+      validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
       
       tmp <- colnames(dt.conc)
       updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
@@ -454,17 +488,28 @@ server <- function(input, output, session) {
       
       if (sep() == ";") {
         
-        part.eq <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE)
-        tmp <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ]
-        # browser()
+        part.eq <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
+        tmp <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
         
       } else if (sep() == ",") {
         
-        part.eq <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE)
-        tmp <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ]
+        part.eq <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
+        tmp <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
+        
+      } else if (sep() == "tab") {
+        
+        part.eq <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
+        tmp <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
         
       }
 
+      validate(
+        
+        need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
+        need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
+        
+      )
+      
       colnames(part.eq) <- tmp
 
     }
@@ -484,11 +529,18 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (sep() == ";") {
-        cnst <- read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+        cnst <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       } else if (sep() == ",") {
-        cnst <- read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character")
+        cnst <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (sep() == "tab") {
+        cnst <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
-      
+     
+      validate(
+        need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
+          need(ncol(cnst) == 1, "Check the column delimiter or content of your file")
+      )
+       
     }
     
     if (!is.null(cnst))
@@ -536,6 +588,18 @@ server <- function(input, output, session) {
     
   })
 
+  output$dt.conc.tot <- renderRHandsontable({
+    
+    dt.conc.tot <- dt.conc.tot.data()
+    
+    if (!is.null(dt.conc.tot))
+      
+      rhandsontable(dt.conc.tot, stretchH = FALSE, useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    
+  })
+  
+  
   
 
   # downoad ---------------- #
@@ -552,7 +616,7 @@ server <- function(input, output, session) {
       
       if (sep() == ";") {
         write.csv2(dt.coef.data(), file, row.names = FALSE)
-      } else if (sep() == ",") {
+      } else {
         write.csv(dt.coef.data(), file, row.names = FALSE)
       }
       
@@ -582,7 +646,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "log10_K_constants.csv"
+      "k_constants_log10.csv"
       
     },
     
@@ -590,7 +654,7 @@ server <- function(input, output, session) {
       
       if (sep() == ";") {
         write.csv2(cnst.data(), file, row.names = FALSE)
-      } else if (sep() == ",") {
+      } else {
         write.csv(cnst.data(), file, row.names = FALSE)
       }
       
@@ -603,7 +667,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "log10_K_constants.xlsx"
+      "k_constants_log10.xlsx"
       
     },
     
@@ -633,7 +697,7 @@ server <- function(input, output, session) {
       
       if (sep() == ";") {
         write.csv2(tmp, file, row.names = FALSE)
-      } else if (sep() == ",") {
+      } else {
         write.csv(tmp, file, row.names = FALSE)
       }
       
@@ -676,7 +740,7 @@ server <- function(input, output, session) {
       
       if (sep() == ";") {
         write.csv2(dt.res.data(), file, row.names = FALSE)
-      } else if (sep() == ",") {
+      } else {
         write.csv(dt.res.data(), file, row.names = FALSE)
       }
       
@@ -714,7 +778,7 @@ server <- function(input, output, session) {
       
       if (sep() == ";") {
         write.csv2(dt.frac.data(), file, row.names = FALSE)
-      } else if (sep() == ",") {
+      } else {
         write.csv(dt.frac.data(), file, row.names = FALSE)
       }
       
@@ -752,7 +816,7 @@ server <- function(input, output, session) {
       
       if (sep() == ";") {
         write.csv2(dt.err.data(), file, row.names = FALSE)
-      } else if (sep() == ",") {
+      } else {
         write.csv(dt.err.data(), file, row.names = FALSE)
       }
       
