@@ -105,10 +105,6 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out, part.eq
   
   if (length(part.eq) > 0) {
 
-    # out <- dt.conc.out.back
-    # out[-part.eq] <- dt.conc.out
-    # browser()
-    # conc.prod.res[part.eq] <- exp(cnst.m[part.eq] + dt.coef.m.back[part.eq] %*% log(out[part.eq]))
     conc.prod.res[part.eq] <- dt.conc.out.back[part.eq]
 
   }
