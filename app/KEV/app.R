@@ -115,18 +115,22 @@ ui <- navbarPage("KEV",
                                              , tabsetPanel(type = "tabs"
                                                            , tabPanel("Input"
                                                                       , rHandsontableOutput("dt.conc")
-                                                                      , rHandsontableOutput("part.eq"))
+                                                                      , rHandsontableOutput("part.eq")
+                                                                      , fluidRow(class = "download-row"
+                                                                                 , downloadButton("dt.conc.csv", "csv")
+                                                                                 , downloadButton("dt.conc.xlsx", "xlsx")))
                                                            , tabPanel("Total"
-                                                                      , rHandsontableOutput("dt.conc.tot")))
+                                                                      , rHandsontableOutput("dt.conc.tot")
+                                                                      , fluidRow(class = "download-row"
+                                                                                 , downloadButton("dt.conc.tot.csv", "csv")
+                                                                                 , downloadButton("dt.conc.tot.xlsx", "xlsx")))
+                                                           )
                                              , fileInput("file.dt.conc", "Choose CSV File",
                                                          accept = c(
                                                            "text/csv",
                                                            "text/comma-separated-values,text/plain",
-                                                           ".csv")
+                                                           ".csv"))
                                              )
-                                             , fluidRow(class = "download-row"
-                                                        , downloadButton("dt.conc.csv", "csv")
-                                                        , downloadButton("dt.conc.xlsx", "xlsx")))
                                     )
                                   
                                  )
@@ -720,6 +724,54 @@ server <- function(input, output, session) {
       tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
       
       setnames(tmp, unlist(part.eq.data()))
+      
+      write.xlsx(tmp, file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.conc.tot.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "total_concentrations.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      tmp <- try(dt.conc.tot.data())
+      
+      if (!is.data.frame(tmp))
+        tmp <- data.frame(error = "Evaluate before downloading total concentrations")
+
+      if (sep() == ";") {
+        write.csv2(tmp, file, row.names = FALSE)
+      } else {
+        write.csv(tmp, file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.conc.tot.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "total_concentrations.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      tmp <- try(dt.conc.tot.data())
+      
+      if (!is.data.frame(tmp))
+        tmp <- data.frame(error = "Evaluate before downloading total concentrations")
       
       write.xlsx(tmp, file)
       
