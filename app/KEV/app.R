@@ -46,6 +46,7 @@ source("eq_runner.r", chdir = TRUE)
 # frontend ------------------------------------------------- #
 
 ui <- navbarPage("KEV",
+                 windowTitle = "KEV: Constant evaluator",
                  tabPanel("Equilibrium concentrations"
                           , id = "page.eq.conc"
                           
@@ -57,7 +58,7 @@ ui <- navbarPage("KEV",
                             
                             , fluidRow(column(12), p(HTML(paste("<br/>"))))
                             
-                            , titlePanel("Part 1: Equilibrium concentrations")
+                            , titlePanel("Calculate Equilibrium concentrations")
                             
                             , fluidRow(column(
                               12
@@ -173,8 +174,7 @@ ui <- navbarPage("KEV",
                             )
                             
                           )),
-                 tabPanel("To do"),
-                 tabPanel("To do"),
+                 tabPanel("(2): To do"),
                  tabPanel("About")
 )
 
