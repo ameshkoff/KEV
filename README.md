@@ -3,4 +3,4 @@ composition of the chemical mixture. The reactions occurring in the mixture as
 well as their decimal logarithms of equilibrium constants and total
 (equilibrium) concentrations of the reagents should be set as input data
 in order to obtain equilibrium concentrations of reagents and products and 
-produnts yields in relation to the any chosen reagent.
+products yields in relation to any chosen reagent.
