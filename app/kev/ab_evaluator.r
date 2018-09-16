@@ -26,6 +26,10 @@ molar.ext.evaluator <- function(x.known, y.raw, dt.res.m, wght) {
   cln.unknown <- colnames(dt.res.m)
   cln.unknown <- setdiff(cln.unknown, cln.known)
   
+  cln.unknown <- colSums(dt.res.m[, cln.unknown])
+  cln.unknown <- cln.unknown[cln.unknown > 0]
+  cln.unknown <- names(cln.unknown)
+  
   dt <- data.table(y = y, dt.res.m[, cln.unknown, drop = FALSE])
   
   # formula
@@ -35,12 +39,25 @@ molar.ext.evaluator <- function(x.known, y.raw, dt.res.m, wght) {
   
   # run linear model and get coefficients from it
   
-  md <- lm(frm, dt, weights = wght)
+  # mol.coef.new <- ginv((t(dt.res.m[, cln.unknown, drop = FALSE]) %*% diag(wght)) %*% dt.res.m[, cln.unknown, drop = FALSE], tol = 0) %*%
+  #   ((t(dt.res.m[, cln.unknown, drop = FALSE]) %*% diag(wght)) %*% y)
+  # 
+  # mol.coef.new <- as.vector(mol.coef.new)
+  # names(mol.coef.new) <- cln.unknown
   
+  md <- lm(frm, dt, weights = wght)
+  # browser()
+
   mol.coef.new <- md$coefficients
   names(mol.coef.new) <- str_replace_all(names(mol.coef.new), "`", "")
   
   y.calc <- predict(md) + x.known.v
+  
+  # y.calc <- as.vector(dt.res.m[, cln.unknown, drop = FALSE] %*% mol.coef.new + x.known.v)
+  
+  # fill NAs (0 actually)
+  
+  mol.coef.new[is.na(mol.coef.new)] <- 0
   
   # now the trick to place them all in the original order (too dirty maybe)
   
@@ -101,10 +118,11 @@ worker <- function(cnst.m) {
   wght <- 1 / (as.vector(dt.ab.err.m) ^ 2)
   
   err <- sum(((observed - predicted) ^ 2) * wght)
-  
-  err
+  # browser()
+  list(err = err, mol.coef = mol.coef)
   
 }
+
 
 worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 100, debug = FALSE) {
   
@@ -130,37 +148,38 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
     
     lrate <- grid.opt[step.iter, eval(as.name(paste0(cnst.iter, "__lrate")))]
     
-    # dt.step <- data.table(cnst = numeric(), err = numeric())
+    dt.step <- data.table(cnst = cnst.back, err = err.base)
     
-    cnst.right <- cnst.back + lrate
-    cnst.m[cnst.iter] <- cnst.right
-    err.right <- worker(cnst.m)
+    for (i in 1:(search.density * 2)) {
+      
+      sgn <- i %% 2
+      if (sgn == 0) sgn <- -1
+
+      cnst.curr <- cnst.back + lrate * ((i + 1) %/% 2) * sgn
+      cnst.m[cnst.iter] <- cnst.curr
+      
+      dt.step <- rbind(dt.step, list(cnst.curr, worker(cnst.m)$err), use.names = FALSE)
+      
+    }
     
-    cnst.left <- cnst.back - lrate
-    cnst.m[cnst.iter] <- cnst.left
-    err.left <- worker(cnst.m)
+    cnst.curr <- dt.step[err == min(err), cnst][1]
+    err.curr <- dt.step[, min(err)]
     
-    print(paste(cnst.back, cnst.right, cnst.left, err.base, err.right, err.left))
+    # print(paste(cnst.back, cnst.right, cnst.left, err.base, err.right, err.left))
     
     if (debug) {
       
-      grid.opt[step.iter, `:=`(err = err.right, closed = closed + 1)]
-      grid.opt[step.iter, eval(as.character(cnst.iter)) := cnst.right]
-      cnst.m[cnst.iter] <- cnst.right
+      grid.opt[step.iter, `:=`(err = dt.step[2, err], closed = closed + 1)]
+      grid.opt[step.iter, eval(as.character(cnst.iter)) := dt.step[2, cnst]]
+      cnst.m[cnst.iter] <- dt.step[2, cnst]
       
     } else {
       
-      if (err.right < err.base & err.right <= err.left) {
+      if (err.curr < err.base) {
         
-        grid.opt[step.iter, `:=`(err = err.right, closed = closed + 1)]
-        grid.opt[step.iter, eval(as.character(cnst.iter)) := cnst.right]
-        cnst.m[cnst.iter] <- cnst.right
-        
-      } else if (err.left < err.base) {
-        
-        grid.opt[step.iter, `:=`(err = err.left, closed = closed + 1)]
-        grid.opt[step.iter, eval(as.character(cnst.iter)) := cnst.left]
-        cnst.m[cnst.iter] <- cnst.left
+        grid.opt[step.iter, `:=`(err = err.curr, closed = closed + 1)]
+        grid.opt[step.iter, eval(as.character(cnst.iter)) := cnst.curr]
+        cnst.m[cnst.iter] <- cnst.curr
         
       } else {
         
@@ -170,7 +189,6 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
       }
       
     }
-    
     
     tmp <- grid.opt[step.iter, c("step.id", paste0(cnst.tune.nm, "__lrate")), with = FALSE]
     tmp <- melt(tmp, id.vars = "step.id", measure.vars = paste0(cnst.tune.nm, "__lrate"))
@@ -199,13 +217,15 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
     
   }
   
+  mol.coef <- worker(cnst.m)$mol.coef
+  
   if (step.iter < hardstop & length(cnst.tune.wrk) != 0) {
     
     rtrn <- worker.wrapper(grid.opt, cnst.m, cnst.iter, step.iter, hardstop, debug)
     
     grid.opt <- rtrn$grid.opt
     cnst.m <- rtrn$cnst.m
-    
+
   }
 
   list(grid.opt = grid.opt, cnst.m = cnst.m)
@@ -239,23 +259,18 @@ for (i in cnst.tune.nm) {
   
 }
 
-err.v <- worker(cnst.m)
+err.v <- worker(cnst.m)$err
 grid.opt[, err := err.v]
 
 
 
 
-worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, debug = FALSE)
+res <- worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, debug = FALSE)
+res
+worker(res$cnst.m)$mol.coef
 
 
-
-
-
-
-
-
-
-
+# dbg2 <- worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, debug = TRUE)$grid.opt
 
 
 # pattern move ------------------------------------------ #
