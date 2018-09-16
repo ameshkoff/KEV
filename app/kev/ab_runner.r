@@ -31,8 +31,9 @@ mode <- "script"
 sep <- ","
 subdir <- "dsl.2"
 cnst.tune <- c("CuL2")#"SB"
-lrate.init <- .5
-ab.threshold <- 5e-8
+lrate.init <- .2
+search.density <- 3
+ab.threshold <- 5e-15
 
 # load data
 
