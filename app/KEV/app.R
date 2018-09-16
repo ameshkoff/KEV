@@ -354,7 +354,7 @@ server <- function(input, output, session) {
       
     )
     
-    eq.evaluation.runner(app = TRUE
+    eq.evaluation.runner(mode = "app"
                          , sep = sep()
                          , bs.name = bs.name()
                          , thr.type = c("rel")
