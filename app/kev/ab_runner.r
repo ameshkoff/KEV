@@ -29,8 +29,8 @@ library(stringr)
 
 mode <- "script"
 sep <- ","
-subdir <- "dsl.2"
-cnst.tune <- c("CuL2")#"SB"
+subdir <- "dsl.3"
+cnst.tune <- c("HL","H2L")#"SB"#"CuL2"
 lrate.init <- .2
 search.density <- 3
 ab.threshold <- 5e-15

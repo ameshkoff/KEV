@@ -10,16 +10,28 @@
 
 # evaluators ---------------------------------------------- #
 
-molar.ext.evaluator <- function(x.known, y.raw, dt.res.m, wght, method = c("lm", "basic wls")) {
+molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = c("lm", "basic wls")) {
   
-  # molar coefficients already known
   
-  cln.known <- names(x.known)
-
-  # subtract already known from y
+  # if some molar coefficients already known
   
-  x.known.v <- dt.res.m[, cln.known, drop = FALSE] %*% x.known
-  y <- as.vector(y.raw - x.known.v)
+  if (!is.null(x.known)) {
+    
+    cln.known <- names(x.known)
+    
+    # subtract already known from y
+    
+    x.known.v <- dt.res.m[, cln.known, drop = FALSE] %*% x.known
+    y <- as.vector(y.raw - x.known.v)
+    
+  } else {
+    
+    cln.known <- ""
+    y <- as.vector(y.raw)
+    x.known.v <- rep(0, length(y))
+    
+  }
+  
   
   # prepare data set from udated y and still unknown molar ext. coeff-s
   
@@ -73,8 +85,12 @@ molar.ext.evaluator <- function(x.known, y.raw, dt.res.m, wght, method = c("lm",
   mol.coef <- rep(1, ncol(dt.res.m))
   names(mol.coef) <- colnames(dt.res.m)
   
-  for (j in names(x.known))
-    mol.coef[names(mol.coef) == j] <- x.known[names(x.known) == j]
+  if (!is.null(x.known)) {
+    
+    for (j in names(x.known))
+      mol.coef[names(mol.coef) == j] <- x.known[names(x.known) == j]
+    
+  }
   
   for (j in names(mol.coef.new))
     mol.coef[names(mol.coef) == j] <- mol.coef.new[names(mol.coef.new) == j]
@@ -103,15 +119,25 @@ worker <- function(cnst.m, method = c("lm", "basic wls")) {
   
   for (i in 1:ncol(dt.ab.m)) {
     
-    x.known <- dt.mol.m[i, ]
     y.raw <- dt.ab.m[, i, drop = FALSE]
     
     # weights for linear model
     
     wght <- 1 / (dt.ab.err.m[, i] ^ 2)
     
-    rtrn <- molar.ext.evaluator(x.known, y.raw, dt.res.m, wght, method)
+    # if some molar coefficients are already known
     
+    if (is.matrix(dt.mol.m)) {
+      
+      x.known <- dt.mol.m[i, ]
+      rtrn <- molar.ext.evaluator(x.known, y.raw, dt.res.m, wght, method)
+      
+    } else {
+      
+      rtrn <- molar.ext.evaluator(NULL, y.raw, dt.res.m, wght, method)
+      
+    }
+
     mol.coef <- rbind(mol.coef, as.data.table(as.list(rtrn$mol.coef)))
     dt.ab.calc <- rbind(dt.ab.calc, as.data.table(as.list(rtrn$y.calc)))
     
@@ -285,7 +311,7 @@ grid.opt[, err := err.v]
 
 
 
-system.time(res <- worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, debug = FALSE, method = "lm"))
+system.time(res <- worker.wrapper(grid.opt, cnst.m, 3, 2, hardstop = 400, debug = FALSE, method = "lm"))
 res
 worker(res$cnst.m, method = "lm")$mol.coef
 
