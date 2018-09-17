@@ -10,7 +10,7 @@
 
 # evaluators ---------------------------------------------- #
 
-molar.ext.evaluator <- function(x.known, y.raw, dt.res.m, wght) {
+molar.ext.evaluator <- function(x.known, y.raw, dt.res.m, wght, method = c("lm", "basic wols")) {
   
   # molar coefficients already known
   
@@ -30,30 +30,39 @@ molar.ext.evaluator <- function(x.known, y.raw, dt.res.m, wght) {
   cln.unknown <- cln.unknown[cln.unknown > 0]
   cln.unknown <- names(cln.unknown)
   
-  dt <- data.table(y = y, dt.res.m[, cln.unknown, drop = FALSE])
-  
-  # formula
-  
-  frm <- paste("y ~ 0 +", paste(paste0("`", cln.unknown, "`"), collapse = "+"))
-  frm <- as.formula(frm)
-  
   # run linear model and get coefficients from it
   
-  # mol.coef.new <- ginv((t(dt.res.m[, cln.unknown, drop = FALSE]) %*% diag(wght)) %*% dt.res.m[, cln.unknown, drop = FALSE], tol = 0) %*%
-  #   ((t(dt.res.m[, cln.unknown, drop = FALSE]) %*% diag(wght)) %*% y)
-  # 
-  # mol.coef.new <- as.vector(mol.coef.new)
-  # names(mol.coef.new) <- cln.unknown
-  
-  md <- lm(frm, dt, weights = wght)
-  # browser()
+  if (method[1] == "lm") {
+    
+    # classic R (weighted) lm linear model
+    
+    dt <- data.table(y = y, dt.res.m[, cln.unknown, drop = FALSE])
+    
+    frm <- paste("y ~ 0 +", paste(paste0("`", cln.unknown, "`"), collapse = "+"))
+    frm <- as.formula(frm)
+    
+    md <- lm(frm, dt, weights = wght)
+    
+    mol.coef.new <- md$coefficients
+    names(mol.coef.new) <- str_replace_all(names(mol.coef.new), "`", "")
+    
+    y.calc <- predict(md) + x.known.v
+    
+  } else if (method[1] == "basic wols") {
+    
+    # basic (weighted) least squares
+    
+    dt.m <- dt.res.m[, cln.unknown, drop = FALSE]
+    
+    mol.coef.new <- ginv((t(dt.m) %*% diag(wght)) %*% dt.m, tol = 0) %*% ((t(dt.m) %*% diag(wght)) %*% y)
 
-  mol.coef.new <- md$coefficients
-  names(mol.coef.new) <- str_replace_all(names(mol.coef.new), "`", "")
+    mol.coef.new <- as.vector(mol.coef.new)
+    names(mol.coef.new) <- cln.unknown
+    
+    y.calc <- as.vector(dt.res.m[, cln.unknown, drop = FALSE] %*% mol.coef.new + x.known.v)
+    
+  }
   
-  y.calc <- predict(md) + x.known.v
-  
-  # y.calc <- as.vector(dt.res.m[, cln.unknown, drop = FALSE] %*% mol.coef.new + x.known.v)
   
   # fill NAs (0 actually)
   
@@ -77,7 +86,7 @@ molar.ext.evaluator <- function(x.known, y.raw, dt.res.m, wght) {
 
 # step function ------------------------------------------- #
 
-worker <- function(cnst.m) {
+worker <- function(cnst.m, method = c("lm", "basic wols")) {
   
   
   # run equilibrium evaluator
@@ -101,7 +110,7 @@ worker <- function(cnst.m) {
     
     wght <- 1 / (dt.ab.err.m[, i] ^ 2)
     
-    rtrn <- molar.ext.evaluator(x.known, y.raw, dt.res.m, wght)
+    rtrn <- molar.ext.evaluator(x.known, y.raw, dt.res.m, wght, method)
     
     mol.coef <- rbind(mol.coef, as.data.table(as.list(rtrn$mol.coef)))
     dt.ab.calc <- rbind(dt.ab.calc, as.data.table(as.list(rtrn$y.calc)))
@@ -124,7 +133,7 @@ worker <- function(cnst.m) {
 }
 
 
-worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 100, debug = FALSE) {
+worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 100, debug = FALSE, method = c("lm", "basic wols")) {
   
   cnst.back <- cnst.m[cnst.iter] 
   step.success <- grid.opt[closed == length(cnst.tune.nm), max(step.id)]
@@ -158,7 +167,7 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
       cnst.curr <- cnst.back + lrate * ((i + 1) %/% 2) * sgn
       cnst.m[cnst.iter] <- cnst.curr
       
-      dt.step <- rbind(dt.step, list(cnst.curr, worker(cnst.m)$err), use.names = FALSE)
+      dt.step <- rbind(dt.step, list(cnst.curr, worker(cnst.m, method)$err), use.names = FALSE)
       
     }
     
@@ -217,17 +226,17 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
     
   }
   
-  mol.coef <- worker(cnst.m)$mol.coef
+  # check conditions
   
   if (step.iter < hardstop & length(cnst.tune.wrk) != 0) {
     
-    rtrn <- worker.wrapper(grid.opt, cnst.m, cnst.iter, step.iter, hardstop, debug)
+    rtrn <- worker.wrapper(grid.opt, cnst.m, cnst.iter, step.iter, hardstop, debug, method)
     
     grid.opt <- rtrn$grid.opt
     cnst.m <- rtrn$cnst.m
 
   }
-
+  
   list(grid.opt = grid.opt, cnst.m = cnst.m)
   
 }
@@ -259,15 +268,15 @@ for (i in cnst.tune.nm) {
   
 }
 
-err.v <- worker(cnst.m)$err
+err.v <- worker(cnst.m, method = "lm")$err
 grid.opt[, err := err.v]
 
 
 
 
-res <- worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, debug = FALSE)
+system.time(res <- worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, debug = FALSE, method = "lm"))
 res
-worker(res$cnst.m)$mol.coef
+worker(res$cnst.m, method = "lm")$mol.coef
 
 
 # dbg2 <- worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, debug = TRUE)$grid.opt
