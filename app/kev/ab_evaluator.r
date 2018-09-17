@@ -10,7 +10,7 @@
 
 # evaluators ---------------------------------------------- #
 
-molar.ext.evaluator <- function(x.known, y.raw, dt.res.m, wght, method = c("lm", "basic wols")) {
+molar.ext.evaluator <- function(x.known, y.raw, dt.res.m, wght, method = c("lm", "basic wls")) {
   
   # molar coefficients already known
   
@@ -48,7 +48,7 @@ molar.ext.evaluator <- function(x.known, y.raw, dt.res.m, wght, method = c("lm",
     
     y.calc <- predict(md) + x.known.v
     
-  } else if (method[1] == "basic wols") {
+  } else if (method[1] == "basic wls") {
     
     # basic (weighted) least squares
     
@@ -86,7 +86,7 @@ molar.ext.evaluator <- function(x.known, y.raw, dt.res.m, wght, method = c("lm",
 
 # step function ------------------------------------------- #
 
-worker <- function(cnst.m, method = c("lm", "basic wols")) {
+worker <- function(cnst.m, method = c("lm", "basic wls")) {
   
   
   # run equilibrium evaluator
@@ -133,7 +133,7 @@ worker <- function(cnst.m, method = c("lm", "basic wols")) {
 }
 
 
-worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 100, debug = FALSE, method = c("lm", "basic wols")) {
+worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 100, debug = FALSE, method = c("lm", "basic wls")) {
   
   cnst.back <- cnst.m[cnst.iter] 
   step.success <- grid.opt[closed == length(cnst.tune.nm), max(step.id)]
@@ -157,6 +157,16 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
     
     lrate <- grid.opt[step.iter, eval(as.name(paste0(cnst.iter, "__lrate")))]
     
+    if (step.iter == 2) {
+      
+      mdelta <- cnst.back  
+      
+    } else {
+      
+      mdelta <- (cnst.back - grid.opt[step.iter - 2, eval(as.name(as.character(cnst.iter)))]) * 2
+      
+    }
+
     dt.step <- data.table(cnst = cnst.back, err = err.base)
     
     for (i in 1:(search.density * 2)) {
@@ -164,7 +174,7 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
       sgn <- i %% 2
       if (sgn == 0) sgn <- -1
 
-      cnst.curr <- cnst.back + lrate * ((i + 1) %/% 2) * sgn
+      cnst.curr <- cnst.back + lrate * ((i + 1) %/% 2) * sgn * mdelta
       cnst.m[cnst.iter] <- cnst.curr
       
       dt.step <- rbind(dt.step, list(cnst.curr, worker(cnst.m, method)$err), use.names = FALSE)
@@ -174,6 +184,7 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
     cnst.curr <- dt.step[err == min(err), cnst][1]
     err.curr <- dt.step[, min(err)]
     
+    # print(paste(lrate, mdelta))
     # print(paste(cnst.back, cnst.right, cnst.left, err.base, err.right, err.left))
     
     if (debug) {
@@ -264,7 +275,7 @@ grid.opt <- rbind(grid.opt, list(step.id = 1, step.type = "xpl", closed = length
 for (i in cnst.tune.nm) {
   
   grid.opt[step.id == 1, eval(as.character(i)) := cnst.m[i]]
-  grid.opt[, eval(paste0(i, "__lrate")) := lrate.init * eval(as.name(i))]
+  grid.opt[, eval(paste0(i, "__lrate")) := lrate.init]
   
 }
 
