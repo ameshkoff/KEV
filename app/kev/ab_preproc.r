@@ -29,19 +29,27 @@ ab.preproc <- function(dt.ab, dt.mol) {
   setnames(dt.ab, cln)
   setnames(dt.ab.err, cln)
   
+  tbl <- c("dt.ab", "dt.ab.err", "dt.mol")
+  
   # transpose known molar coefficients
   
-  cln <- unlist(dt.mol[, 1, with = FALSE])
+  if (is.data.table(dt.mol)) {
+    
+    cln <- unlist(dt.mol[, 1, with = FALSE])
+    
+    dt.mol <- data.table(t(dt.mol[, !1, with = FALSE]))
+    setnames(dt.mol, cln)
+    
+  } else {
+    
+    tbl <- tbl[tbl != "dt.mol"]
+    dt.mol <- NULL
+    dt.mol.m <- NULL
+    
+  }
   
-  dt.mol <- data.table(t(dt.mol[, !1, with = FALSE]))
-  setnames(dt.mol, cln)
-  
-  # convert to numerics
+  # convert to numeric matrices
 
-  tbl <- c("dt.ab", "dt.ab.err", "dt.mol")
-
-  # matrices
-  
   for (j in tbl) {
     
     f <- eval(as.name(j))
