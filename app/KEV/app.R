@@ -822,7 +822,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      paste0(bs.name, "_fractions.csv")
+      paste0(input$bs.name, "_fractions.csv")
       
     },
     
@@ -843,7 +843,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      paste0(bs.name, "_fractions.xlsx")
+      paste0(input$bs.name, "_fractions.xlsx")
       
     },
     
