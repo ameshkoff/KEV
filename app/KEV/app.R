@@ -64,7 +64,7 @@ ui <- navbarPage("KEV",
                               12
                               , wellPanel(
                                 fluidRow(column(6
-                                                , h4("What column delimiter do your use in your data files?")
+                                                , h4("Column delimiter of your data files")
                                                 , radioButtons("sep", "", inline = TRUE
                                                                , c("," = "comma"
                                                                    , ";" = "semicolon"
