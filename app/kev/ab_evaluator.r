@@ -102,7 +102,7 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
 
 # step function ------------------------------------------- #
 
-worker <- function(cnst.m, method = c("lm", "basic wls")) {
+worker <- function(cnst.m, method = c("lm", "basic wls"), final = FALSE) {
   
   
   # run equilibrium evaluator
@@ -111,7 +111,7 @@ worker <- function(cnst.m, method = c("lm", "basic wls")) {
   colnames(dt.res.m) <- dt.coef[, name]
   
   cnst.tune.nm <- which(colnames(dt.res.m) %in% cnst.tune)
-  
+
   #  run molar extinction evaluator
   
   mol.coef <- data.table()
@@ -142,7 +142,7 @@ worker <- function(cnst.m, method = c("lm", "basic wls")) {
     dt.ab.calc <- rbind(dt.ab.calc, as.data.table(as.list(rtrn$y.calc)))
     
   }
-  
+
   dt.ab.calc <- data.table(t(dt.ab.calc))
   
   
@@ -153,8 +153,17 @@ worker <- function(cnst.m, method = c("lm", "basic wls")) {
   wght <- 1 / (as.vector(dt.ab.err.m) ^ 2)
   
   err <- sum(((observed - predicted) ^ 2) * wght)
-  # browser()
-  list(err = err, mol.coef = mol.coef)
+  
+  if (final) {
+    
+    list(err = err, mol.coef = mol.coef, err.v = (predicted - observed))
+    
+  } else {
+    
+    list(err = err)
+    
+  }
+  
   
 }
 
@@ -174,6 +183,12 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
       
       grid.opt <- rbind(grid.opt, list(step.id = step.iter, step.type = "xpl", closed = 0), use.names = TRUE, fill = TRUE)
       
+      # if (grid.opt[step.success == "xpl"] & step.iter > 2){
+      #   
+      #   grid.opt[step.iter, step.type := "ptrn"]
+      #   
+      # }
+      
       for (k in cnst.tune.nm) {
         
         lrate.tmp <- grid.opt[step.success, eval(as.name(paste0(k, "__lrate")))]
@@ -184,9 +199,9 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
       
     }
     
-    # exploratory move
-    
-    if (step.success == 1 | grid.opt[step.success, step.type] == "xpl") {
+    if (grid.opt[step.iter, step.type] == "xpl") {
+      
+      # exploratory move
       
       lrate <- grid.opt[step.iter, eval(as.name(paste0(cnst.iter, "__lrate")))]
       
@@ -217,10 +232,7 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
       cnst.curr <- dt.step[err == min(err), cnst][1]
       err.curr <- dt.step[, min(err)]
       
-      # print(paste(step.iter, cnst.iter, cnst.curr, cnst.back, lrate))
-      
-      # if (step.iter == 4)
-      #   browser()
+      print(paste(step.iter, cnst.iter, cnst.curr, cnst.back, lrate))
       
       if (debug) {
         
@@ -273,6 +285,12 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
         
       }
       
+    } else if (grid.opt[step.iter, step.type] == "ptrn") {
+      
+      # pattern move
+      
+      
+      
     }
     
     # check conditions
@@ -285,7 +303,9 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
     
   }
   
-  list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = worker(cnst.m, method)$mol.coef)
+  rtrn <- worker(cnst.m, method, final = TRUE)
+  
+  list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = rtrn$mol.coef, err.v = rtrn$err.v)
   
 }
 
@@ -321,7 +341,7 @@ grid.opt[, err := err.v]
 
 
 remove(res)
-system.time(res <- worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, debug = FALSE, method = "lm"))
+system.time(res <- worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, debug = FALSE, method = "basic wls"))
 res
 
 
