@@ -102,7 +102,7 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
 
 # step function ------------------------------------------- #
 
-worker <- function(cnst.m, method = c("lm", "basic wls"), final = FALSE) {
+worker <- function(cnst.m, method = c("lm", "basic wls"), mode = c("iterator", "return", "debug")) {
   
   
   # run equilibrium evaluator
@@ -154,13 +154,17 @@ worker <- function(cnst.m, method = c("lm", "basic wls"), final = FALSE) {
   
   err <- sum(((observed - predicted) ^ 2) * wght)
   
-  if (final) {
-    
-    list(err = err, mol.coef = mol.coef, err.v = (predicted - observed))
-    
-  } else {
+  if (mode[1] == "iterator") {
     
     list(err = err)
+    
+  } else if (mode[1] == "return") {
+    
+    list(err = err, mol.coef = mol.coef)
+    
+  } else if (mode[1] == "debug") {
+    
+    list(err = err, mol.coef = mol.coef, err.v = (predicted - observed), dt.ab.calc = dt.ab.calc)
     
   }
   
@@ -168,7 +172,8 @@ worker <- function(cnst.m, method = c("lm", "basic wls"), final = FALSE) {
 }
 
 
-worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 100, debug = FALSE, method = c("lm", "basic wls")) {
+worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 100
+                           , mode = c("base", "grid", "debug"), method = c("lm", "basic wls")) {
   
   for (j in 1:(hardstop * 10)) {
     
@@ -232,9 +237,10 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
       cnst.curr <- dt.step[err == min(err), cnst][1]
       err.curr <- dt.step[, min(err)]
       
-      print(paste(step.iter, cnst.iter, cnst.curr, cnst.back, lrate))
+      if (mode[1] == "debug")
+        print(paste(step.iter, cnst.iter, cnst.curr, cnst.back, lrate))
       
-      if (debug) {
+      if (mode[1] == "grid") {
         
         grid.opt[step.iter, `:=`(err = dt.step[2, err], closed = closed + 1)]
         grid.opt[step.iter, eval(as.character(cnst.iter)) := dt.step[2, cnst]]
@@ -303,9 +309,18 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
     
   }
   
-  rtrn <- worker(cnst.m, method, final = TRUE)
   
-  list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = rtrn$mol.coef, err.v = rtrn$err.v)
+  if (mode == "debug") {
+    
+    rtrn <- worker(cnst.m, method, mode = "debug")
+    list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = rtrn$mol.coef, err.v = rtrn$err.v, dt.ab.calc = rtrn$dt.ab.calc)
+    
+  } else {
+    
+    rtrn <- worker(cnst.m, method, mode = "return")
+    list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = rtrn$mol.coef)
+    
+  }
   
 }
 
@@ -336,16 +351,13 @@ for (i in cnst.tune.nm) {
   
 }
 
-err.v <- worker(cnst.m, method = "lm")$err
+err.v <- worker(cnst.m, method = "lm", mode = "return")$err
 grid.opt[, err := err.v]
 
 
 remove(res)
-system.time(res <- worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, debug = FALSE, method = "basic wls"))
+system.time(res <- worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, mode = "base", method = "basic wls"))
 res
-
-
-# dbg2 <- worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, debug = TRUE)$grid.opt
 
 
 # pattern move ------------------------------------------ #
