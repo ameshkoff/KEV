@@ -173,7 +173,9 @@ worker <- function(cnst.m, method = c("lm", "basic wls"), mode = c("iterator", "
 
 
 worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 100
-                           , mode = c("base", "grid", "debug"), method = c("lm", "basic wls")) {
+                           , mode = c("base", "grid", "debug")
+                           , method = c("lm", "basic wls")
+                           , algorithm = c("direct search", "slow precise")) {
   
   for (j in 1:(hardstop * 10)) {
     
@@ -188,11 +190,11 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
       
       grid.opt <- rbind(grid.opt, list(step.id = step.iter, step.type = "xpl", closed = 0), use.names = TRUE, fill = TRUE)
       
-      # if (grid.opt[step.success == "xpl"] & step.iter > 2){
-      #   
-      #   grid.opt[step.iter, step.type := "ptrn"]
-      #   
-      # }
+      if (grid.opt[step.success, step.type] == "xpl" & step.iter > 2 & algorithm[1] == "direct search"){
+
+        grid.opt[step.iter, step.type := "ptrn"]
+
+      }
       
       for (k in cnst.tune.nm) {
         
@@ -295,7 +297,36 @@ worker.wrapper <- function(grid.opt, cnst.m, cnst.iter, step.iter, hardstop = 10
       
       # pattern move
       
+      cnst.back <- cnst.m
       
+      step.success.xpl.prev <- tail(which(grid.opt[, step.type] == "xpl"), 2)[1]
+      
+      cnst.m[cnst.tune.nm] <-
+        unlist(
+          grid.opt[step.iter, c(as.character(cnst.tune.nm)), with = FALSE] +
+          grid.opt[step.success, c(as.character(cnst.tune.nm)), with = FALSE] -
+            grid.opt[step.success.xpl.prev, c(as.character(cnst.tune.nm)), with = FALSE]
+        )
+      
+      # cnst.m[cnst.tune.nm] <- unlist(grid.opt[step.iter, c(as.character(cnst.tune.nm)), with = FALSE])
+      
+      err.curr <- worker(cnst.m, method)$err
+      
+      if (err.curr < err.base) {
+        
+        grid.opt[step.iter, c(as.character(cnst.tune.nm))] <- as.list(cnst.m[cnst.tune.nm])
+        grid.opt[step.iter, err := err.curr]
+        
+      } else {
+        
+        grid.opt[step.iter, c(as.character(cnst.tune.nm))] <- as.list(cnst.back[cnst.tune.nm])
+        grid.opt[step.iter, err := err.base]
+        cnst.m <- cnst.back
+        
+      }
+      
+      grid.opt[step.iter, closed := length(cnst.tune.nm)]
+      step.iter <- step.iter + 1
       
     }
     
@@ -356,7 +387,7 @@ grid.opt[, err := err.v]
 
 
 remove(res)
-system.time(res <- worker.wrapper(grid.opt, cnst.m, 16, 2, hardstop = 400, mode = "base", method = "basic wls"))
+system.time(res <- worker.wrapper(grid.opt, cnst.m, 3, 2, hardstop = 400, mode = "base", method = "basic wls", algorithm = "slow precise"))
 res
 
 
