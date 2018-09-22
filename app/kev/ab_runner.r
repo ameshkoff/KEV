@@ -30,10 +30,8 @@ library(stringr)
 mode <- "script"
 sep <- ","
 subdir <- "dsl.3"
-cnst.tune <- c("HL", "H2L")#"SB"#"CuL2"
-lrate.init <- .5
-search.density <- 1
-ab.threshold <- 5e-5
+#"SB"#"CuL2"
+
 
 # load data
 
