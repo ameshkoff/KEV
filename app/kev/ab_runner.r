@@ -30,7 +30,8 @@ library(stringr)
 mode <- "script"
 sep <- ","
 subdir <- "dsl.3"
-#"SB"#"CuL2"
+cnst.tune <- c("HL", "H2L")
+ab.threshold <- log(10 ^ 1e-5)
 
 
 # load data
@@ -47,7 +48,11 @@ source(paste0(dir.start, "eq_preproc.r"), chdir = TRUE)
 source(paste0(dir.start, "ab_preproc.r"), chdir = TRUE)
 
 source(paste0(dir.start, "eq_evaluator.r"), chdir = TRUE)
+source(paste0(dir.start, "ab_evaluator.r"), chdir = TRUE)
+
 source(paste0(dir.start, "eq_postproc.r"), chdir = TRUE)
+source(paste0(dir.start, "ab_postproc.r"), chdir = TRUE)
+
 source(paste0(dir.start, "eq_save.r"), chdir = TRUE)
 
 # load data
@@ -93,11 +98,43 @@ dt.ab.err.m <- dt.ttl[["dt.ab.err.m"]]
 dt.mol.m <- dt.ttl[["dt.mol.m"]]
 partprod.nm <- dt.ttl[["partprod.nm"]]
 
+# run evaluator
 
+exec.time <- system.time(
+  dt.ttl <- constant.optimizer(dt.coef, cnst.m, cnst.tune
+                               , dt.ab.m, dt.ab.err.m, dt.mol.m
+                               , dt.coef.m, dt.conc.m, part.eq, reac.nm
+                               , hardstop = 400
+                               , lrate.init = .5
+                               , search.density = 1
+                               , ab.threshold
+                               , eq.threshold = 1e-08
+                               , eq.thr.type = "rel"
+                               , mode = "base", method = "basic wls", algorithm = "direct search"))[3]
 
+cnst.m <- dt.ttl[["cnst.m"]]
+cnst.m.10 <- log(exp(cnst.m), 10)
+mol.coef <- dt.ttl[["mol.coef"]]
+dt.ab.calc <- dt.ttl[["dt.ab.calc"]]
+dt.res.m <- dt.ttl[["dt.res.m"]]
+ab.err <- tail(dt.ttl[["grid.opt"]][!is.na(err), err], 1)
+  
+# postprocessing
 
+dt.res <- data.table(dt.res.m)
 
+dt.conc.calc <- eq.tot.conc.calc(dt.res, cnst.m, dt.coef.m, part.nm)
+dt.err <- eq.residuals(dt.conc.m, dt.conc.calc, part.eq)
 
+dt.conc.tot <- copy(dt.conc.m)
+dt.conc.tot[, part.eq] <- dt.conc.calc[, part.eq]
+
+cob.m <- ab.cov(ab.err
+               , cnst.m
+               , cnst.tune
+               , dt.ab.err.m, dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
+               , eq.thr.type = "rel", eq.threshold = 1e-08
+               , method = "basic wls", ab.threshold)
 
 
 
