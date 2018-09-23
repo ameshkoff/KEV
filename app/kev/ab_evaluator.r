@@ -99,6 +99,56 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
   
 }
 
+# for postprocessing only : lots of data passed as arguments, too slow for loop call
+
+molar.ext.wrapper <- function(cnst.m
+                              , cnst.tune.nm
+                              , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
+                              , eq.thr.type, eq.threshold
+                              , method = c("lm", "basic wls")) {
+  
+  
+  # run equilibrium evaluator
+  
+  dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, eq.thr.type[1], eq.threshold)
+  colnames(dt.res.m) <- dt.coef[, name]
+  
+  #  run molar extinction evaluator
+  
+  mol.coef <- data.table()
+  dt.ab.calc <- data.table()
+  
+  for (i in 1:ncol(dt.ab.m)) {
+    
+    y.raw <- dt.ab.m[, i, drop = FALSE]
+    
+    # weights for linear model
+    
+    wght <- 1 / (dt.ab.err.m[, i] ^ 2)
+    
+    # if some molar coefficients are already known
+    
+    if (is.matrix(dt.mol.m)) {
+      
+      x.known <- dt.mol.m[i, ]
+      rtrn <- molar.ext.evaluator(x.known, y.raw, dt.res.m, wght, method)
+      
+    } else {
+      
+      rtrn <- molar.ext.evaluator(NULL, y.raw, dt.res.m, wght, method)
+      
+    }
+    
+    mol.coef <- rbind(mol.coef, as.data.table(as.list(rtrn$mol.coef)))
+    dt.ab.calc <- rbind(dt.ab.calc, as.data.table(as.list(rtrn$y.calc)))
+    
+  }
+
+  dt.ab.calc <- data.table(t(dt.ab.calc))
+  
+  list(dt.ab.calc = dt.ab.calc)
+
+}
 
 
 
@@ -111,6 +161,8 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
                                , lrate.init = .5
                                , search.density = 1
                                , ab.threshold = 5e-5
+                               , eq.threshold = 1e-08
+                               , eq.thr.type = c("rel", "abs")
                                , mode = c("base", "grid", "debug")
                                , method = c("lm", "basic wls")
                                , algorithm = c("direct search", "basic search")) {
@@ -127,7 +179,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
     
     # run equilibrium evaluator
     
-    dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, "abs", 1e-08)
+    dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, eq.thr.type[1], eq.threshold)
     colnames(dt.res.m) <- dt.coef[, name]
     
     cnst.tune.nm <- which(colnames(dt.res.m) %in% cnst.tune)
@@ -444,22 +496,6 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
   rtrn
   
 }
-
-
-
-remove(res)
-system.time(res <- constant.optimizer(dt.coef, cnst.m, cnst.tune = c("HL", "H2L")
-                                      , dt.ab.m, dt.ab.err.m, dt.mol.m
-                                      , dt.coef.m, dt.conc.m, part.eq, reac.nm
-                                      , hardstop = 400
-                                      , lrate.init = .5
-                                      , search.density = 2
-                                      , ab.threshold = 5e-5
-                                      , mode = "base", method = "basic wls", algorithm = "direct search"))
-res
-
-
-# pattern move ------------------------------------------ #
 
 
 
