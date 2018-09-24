@@ -31,7 +31,7 @@ mode <- "script"
 sep <- ","
 subdir <- "dsl.3"
 cnst.tune <- c("HL", "H2L")
-ab.threshold <- log(10 ^ 1e-5)
+ab.threshold <- log(10 ^ 5e-7)
 
 
 # load data
@@ -98,6 +98,9 @@ dt.ab.err.m <- dt.ttl[["dt.ab.err.m"]]
 dt.mol.m <- dt.ttl[["dt.mol.m"]]
 partprod.nm <- dt.ttl[["partprod.nm"]]
 
+cnst.tune.nm <- which(dt.coef[, name] %in% cnst.tune)
+
+
 # run evaluator
 
 exec.time <- system.time(
@@ -129,13 +132,17 @@ dt.err <- eq.residuals(dt.conc.m, dt.conc.calc, part.eq)
 dt.conc.tot <- copy(dt.conc.m)
 dt.conc.tot[, part.eq] <- dt.conc.calc[, part.eq]
 
-cob.m <- ab.cov(ab.err
+cov.m <- ab.cov(ab.err
                , cnst.m
-               , cnst.tune
+               , cnst.tune.nm
                , dt.ab.err.m, dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
                , eq.thr.type = "rel", eq.threshold = 1e-08
                , method = "basic wls", ab.threshold)
 
+cor.m <- cov.m$cor.m
+cov.m <- cov.m$cov.m
+
+cnst.dev <- constant.deviations(cnst.m, cov.m, cnst.tune.nm)
 
 
 
