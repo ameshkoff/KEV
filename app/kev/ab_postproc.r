@@ -11,14 +11,12 @@
 
 ab.cov <- function(ab.err
                    , cnst.m
-                   , cnst.tune
+                   , cnst.tune.nm
                    , dt.ab.err.m, dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
                    , eq.thr.type, eq.threshold
                    , method = c("lm", "basic wls")
                    , ab.threshold) {
 
-  cnst.tune.nm <- which(colnames(dt.res.m) %in% cnst.tune)
-  
   fr.degr <- nrow(dt.res.m) - length(cnst.tune.nm)
   wght <- 1 / (as.vector(dt.ab.err.m) ^ 2)
   
@@ -59,10 +57,22 @@ ab.cov <- function(ab.err
   
   cov.m <- (ab.err / fr.degr) * ginv(t(dt.ab.diff) %*% diag(wght) %*% dt.ab.diff, tol = 0)
 
-  cov.m
+  list(cov.m = cov.m, cor.m = cov.m / ((diag(cov.m) ^ 0.5) %*% t(diag(cov.m) ^ 0.5)))
 
 }
 
+
+# constants with standard deviations -------------------------- #
+
+constant.deviations <- function(cnst.m, cov.m, cnst.tune) {
+  
+  cnst.dev <- cbind(cnst = log(exp(cnst.m), 10), dev = rep(0, length(cnst.m)))
+  
+  cnst.dev[cnst.tune.nm, "dev"] <- cov.m[row(cov.m) == col(cov.m)] ^ .5
+  
+  cnst.dev
+  
+}
 
 
 
