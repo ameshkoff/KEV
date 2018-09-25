@@ -10,7 +10,7 @@
 
 # evaluators ---------------------------------------------- #
 
-molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = c("lm", "basic wls")) {
+molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = c("lm", "basic wls"), mode = c("base", "posptroc")) {
   
   
   # if some molar coefficients already known
@@ -60,6 +60,12 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
     
     y.calc <- predict(md) + x.known.v
     
+    if (mode[1] == "postproc") {
+      
+      mol.coef.dev <- summary(md)$coef[, "Std. Error"]
+      
+    }
+    
   } else if (method[1] == "basic wls") {
     
     # basic (weighted) least squares
@@ -73,6 +79,11 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
     
     y.calc <- as.vector(dt.res.m[, cln.unknown, drop = FALSE] %*% mol.coef.new + x.known.v)
     
+    if (mode[1] == "postproc") {
+      
+      mol.coef.dev <- sqrt(diag(sum((y - y.calc) ^ 2)/(nrow(dt.res.m) - length(cln.unknown)) * ginv((t(dt.m)) %*% dt.m, tol = 0)))
+      
+    }
   }
   
   
@@ -95,7 +106,15 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
   for (j in names(mol.coef.new))
     mol.coef[names(mol.coef) == j] <- mol.coef.new[names(mol.coef.new) == j]
   
-  list(mol.coef = mol.coef, y.calc = y.calc)
+  if (mode[1] == "postproc") {
+    
+    list(mol.coef = mol.coef, y.calc = y.calc, mol.coef.dev = mol.coef.dev)
+    
+  } else {
+   
+    list(mol.coef = mol.coef, y.calc = y.calc) 
+    
+  }
   
 }
 
@@ -105,7 +124,8 @@ molar.ext.wrapper <- function(cnst.m
                               , cnst.tune.nm
                               , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
                               , eq.thr.type, eq.threshold
-                              , method = c("lm", "basic wls")) {
+                              , method = c("lm", "basic wls")
+                              , mode = "postproc") {
   
   
   # run equilibrium evaluator
@@ -117,6 +137,7 @@ molar.ext.wrapper <- function(cnst.m
   
   mol.coef <- data.table()
   dt.ab.calc <- data.table()
+  mol.coef.dev <- data.table()
   
   for (i in 1:ncol(dt.ab.m)) {
     
@@ -131,22 +152,23 @@ molar.ext.wrapper <- function(cnst.m
     if (is.matrix(dt.mol.m)) {
       
       x.known <- dt.mol.m[i, ]
-      rtrn <- molar.ext.evaluator(x.known, y.raw, dt.res.m, wght, method)
+      rtrn <- molar.ext.evaluator(x.known, y.raw, dt.res.m, wght, method, mode = "postproc")
       
     } else {
       
-      rtrn <- molar.ext.evaluator(NULL, y.raw, dt.res.m, wght, method)
+      rtrn <- molar.ext.evaluator(NULL, y.raw, dt.res.m, wght, method, mode = "postproc")
       
     }
     
     mol.coef <- rbind(mol.coef, as.data.table(as.list(rtrn$mol.coef)))
     dt.ab.calc <- rbind(dt.ab.calc, as.data.table(as.list(rtrn$y.calc)))
+    mol.coef.dev <- rbind(mol.coef.dev, as.data.table(as.list(rtrn$mol.coef.dev)))
     
   }
 
   dt.ab.calc <- data.table(t(dt.ab.calc))
   
-  list(dt.ab.calc = dt.ab.calc)
+  list(dt.ab.calc = dt.ab.calc, mol.coef.dev = mol.coef.dev)
 
 }
 

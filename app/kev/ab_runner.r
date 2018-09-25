@@ -34,7 +34,7 @@ cnst.tune <- c("HL", "H2L")
 ab.threshold <- log(10 ^ 5e-7)
 
 
-# load data
+# source code ------------- #
 
 dir.start <- ""
 
@@ -55,7 +55,8 @@ source(paste0(dir.start, "ab_postproc.r"), chdir = TRUE)
 
 source(paste0(dir.start, "eq_save.r"), chdir = TRUE)
 
-# load data
+
+# load data ---------------- #
 
 if (mode == "script") {
   
@@ -76,7 +77,8 @@ part.eq <- dt.ttl[["part.eq"]]
 dt.ab <- dt.ttl[["dt.ab"]]
 dt.mol <- dt.ttl[["dt.mol"]]
 
-# preproc data
+
+# preproc data --------------- #
 
 dt.ttl <- c(eq.preproc(dt.coef, cnst, dt.conc, part.eq)
             , ab.preproc(dt.ab, dt.mol))
@@ -101,7 +103,7 @@ partprod.nm <- dt.ttl[["partprod.nm"]]
 cnst.tune.nm <- which(dt.coef[, name] %in% cnst.tune)
 
 
-# run evaluator
+# run evaluator --------------- #
 
 exec.time <- system.time(
   dt.ttl <- constant.optimizer(dt.coef, cnst.m, cnst.tune
@@ -121,8 +123,9 @@ mol.coef <- dt.ttl[["mol.coef"]]
 dt.ab.calc <- dt.ttl[["dt.ab.calc"]]
 dt.res.m <- dt.ttl[["dt.res.m"]]
 ab.err <- tail(dt.ttl[["grid.opt"]][!is.na(err), err], 1)
-  
-# postprocessing
+
+
+# postprocessing ---------------- #
 
 dt.res <- data.table(dt.res.m)
 
@@ -143,7 +146,12 @@ cor.m <- cov.m$cor.m
 cov.m <- cov.m$cov.m
 
 cnst.dev <- constant.deviations(cnst.m, cov.m, cnst.tune.nm)
-
+mol.coef.dev <- molar.coef.deviations(cnst.m
+                                      , cnst.tune.nm
+                                      , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
+                                      , eq.thr.type = "rel", eq.threshold = 1e-08
+                                      , method = "basic wls"
+                                      , ab.threshold)
 
 
 

@@ -17,7 +17,7 @@ ab.cov <- function(ab.err
                    , method = c("lm", "basic wls")
                    , ab.threshold) {
 
-  fr.degr <- nrow(dt.res.m) - length(cnst.tune.nm)
+  fr.degr <- nrow(dt.res.m) * ncol(dt.ab.err.m) - length(cnst.tune.nm)
   wght <- 1 / (as.vector(dt.ab.err.m) ^ 2)
   
   cnst.grid <- cnst.m
@@ -73,6 +73,28 @@ constant.deviations <- function(cnst.m, cov.m, cnst.tune) {
   cnst.dev
   
 }
+
+
+# molar coefficients standard deviations ---------------------- #
+
+
+molar.coef.deviations <- function(cnst.m
+                                  , cnst.tune.nm
+                                  , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
+                                  , eq.thr.type, eq.threshold
+                                  , method = c("lm", "basic wls")
+                                  , ab.threshold) {
+  
+  rtrn <- molar.ext.wrapper(cnst.m
+                            , cnst.tune.nm
+                            , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
+                            , eq.thr.type, eq.threshold
+                            , method)
+  
+  rtrn$mol.coef.dev
+  
+}
+
 
 
 
