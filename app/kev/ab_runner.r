@@ -138,10 +138,12 @@ dt.conc.tot[, part.eq] <- dt.conc.calc[, part.eq]
 cov.m <- ab.cov(ab.err
                , cnst.m
                , cnst.tune.nm
-               , dt.ab.err.m, dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
+               , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
+               , dt.ab.m, dt.ab.err.m
                , eq.thr.type = "rel", eq.threshold = 1e-08
                , method = "basic wls", ab.threshold)
 
+err.diff <- cov.m$err.diff
 cor.m <- cov.m$cor.m
 cov.m <- cov.m$cov.m
 
@@ -149,9 +151,18 @@ cnst.dev <- constant.deviations(cnst.m, cov.m, cnst.tune.nm)
 mol.coef.dev <- molar.coef.deviations(cnst.m
                                       , cnst.tune.nm
                                       , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
+                                      , dt.ab.m, dt.ab.err.m
                                       , eq.thr.type = "rel", eq.threshold = 1e-08
                                       , method = "basic wls"
                                       , ab.threshold)
+
+ab.res.abs <- absorbance.residuals(dt.ab.m, dt.ab.calc)
+ab.res.rel <- ab.res.abs$ab.res.rel
+ab.res.abs <- ab.res.abs$ab.res.abs
+
+
+
+
 
 
 

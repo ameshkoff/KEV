@@ -123,6 +123,7 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
 molar.ext.wrapper <- function(cnst.m
                               , cnst.tune.nm
                               , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
+                              , dt.ab.m, dt.ab.err.m
                               , eq.thr.type, eq.threshold
                               , method = c("lm", "basic wls")
                               , mode = "postproc") {
@@ -146,6 +147,7 @@ molar.ext.wrapper <- function(cnst.m
     # weights for linear model
     
     wght <- 1 / (dt.ab.err.m[, i] ^ 2)
+    wght <- wght - mean(wght, na.rm = TRUE) + 1
     
     # if some molar coefficients are already known
     
@@ -166,9 +168,21 @@ molar.ext.wrapper <- function(cnst.m
     
   }
 
+  
+  
   dt.ab.calc <- data.table(t(dt.ab.calc))
   
-  list(dt.ab.calc = dt.ab.calc, mol.coef.dev = mol.coef.dev)
+  # evaluate cost function
+  
+  observed <- as.vector(dt.ab.m)
+  predicted <- as.vector(as.matrix(dt.ab.calc))
+  
+  wght <- 1 / (as.vector(dt.ab.err.m) ^ 2)
+  wght <- wght - mean(wght, na.rm = TRUE) + 1
+  
+  err <- sum(((observed - predicted) ^ 2) * wght)
+  
+  list(dt.ab.calc = dt.ab.calc, mol.coef.dev = mol.coef.dev, err = err)
 
 }
 
@@ -218,6 +232,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
       # weights for linear model
       
       wght <- 1 / (dt.ab.err.m[, i] ^ 2)
+      wght <- wght - mean(wght, na.rm = TRUE) + 1
       
       # if some molar coefficients are already known
       
@@ -244,7 +259,9 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
     
     observed <- as.vector(dt.ab.m)
     predicted <- as.vector(as.matrix(dt.ab.calc))
+
     wght <- 1 / (as.vector(dt.ab.err.m) ^ 2)
+    wght <- wght - mean(wght, na.rm = TRUE) + 1
     
     err <- sum(((observed - predicted) ^ 2) * wght)
     
