@@ -123,7 +123,7 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
 molar.ext.wrapper <- function(cnst.m
                               , cnst.tune.nm
                               , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
-                              , dt.ab.m, dt.ab.err.m
+                              , dt.ab.m, dt.ab.err.m, dt.mol.m
                               , eq.thr.type, eq.threshold
                               , method = c("lm", "basic wls")
                               , mode = "postproc") {
@@ -150,10 +150,11 @@ molar.ext.wrapper <- function(cnst.m
     wght <- wght - mean(wght, na.rm = TRUE) + 1
     
     # if some molar coefficients are already known
-    
+    # browser()
     if (is.matrix(dt.mol.m)) {
       
       x.known <- dt.mol.m[i, ]
+      
       rtrn <- molar.ext.evaluator(x.known, y.raw, dt.res.m, wght, method, mode = "postproc")
       
     } else {
@@ -311,9 +312,18 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         
         grid.opt <- rbind(grid.opt, list(step.id = step.iter, step.type = "xpl", closed = 0), use.names = TRUE, fill = TRUE)
         
-        if (grid.opt[step.success, step.type] == "xpl" & step.iter > 2 & algorithm[1] == "direct search"){
+        # browser()
+        if (grid.opt[step.success, step.type] != "ptrn" & step.iter > 2 & algorithm[1] == "direct search"){
           
-          grid.opt[step.iter, step.type := "ptrn"]
+          step.success.xpl.prev <- tail(which(grid.opt[!is.na(err), step.type] != "ptrn"), 2)[1]
+          impr <- grid.opt[step.success.xpl.prev, err] - grid.opt[step.success, err]
+          
+          if (impr > 0)
+            grid.opt[step.iter, step.type := "ptrn"]
+          
+        } else if (grid.opt[step.success, step.type] == "ptrn") {
+          
+          grid.opt[step.iter, step.type := "ptrn.adj"]
           
         }
         
@@ -433,7 +443,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         
         cnst.back <- cnst.m
         
-        step.success.xpl.prev <- tail(which(grid.opt[, step.type] == "xpl"), 2)[1]
+        step.success.xpl.prev <- tail(which(grid.opt[, step.type] != "ptrn"), 2)[1]
         
         cnst.m[cnst.tune.nm] <-
           unlist(
@@ -463,6 +473,77 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         grid.opt[step.iter, closed := length(cnst.tune.wrk)]
         
         step.iter <- step.iter + 1
+        
+      } else if (grid.opt[step.iter, step.type] == "ptrn.adj") {
+        
+        # after pattern move
+        
+        lrate <- grid.opt[step.iter, eval(as.name(paste0(cnst.iter, "__lrate")))]
+        
+        dt.step <- data.table(cnst = cnst.back, err = err.base)
+        
+        for (i in 1:2) {
+          
+          sgn <- i %% 2
+          if (sgn == 0) sgn <- -1
+          
+          cnst.curr <- cnst.back + lrate * ((i + 1) %/% 2) * sgn #* mdelta
+          cnst.m[cnst.iter] <- cnst.curr
+          
+          dt.step <- rbind(dt.step
+                           , list(cnst.curr, constant.error.evaluator(cnst.m, method)$err)
+                           , use.names = FALSE)
+          
+        }
+        
+        cnst.curr <- dt.step[err == min(err), cnst][1]
+        err.curr <- dt.step[, min(err)]
+        
+        if (mode[1] == "debug")
+          print(paste(step.iter, cnst.iter, cnst.curr, cnst.back, lrate))
+        
+        if (err.curr < err.base) {
+          
+          grid.opt[step.iter, `:=`(err = err.curr, closed = closed + 1)]
+          grid.opt[step.iter, eval(as.character(cnst.iter)) := cnst.curr]
+          cnst.m[cnst.iter] <- cnst.curr
+          
+        } else {
+          
+          grid.opt[step.iter, `:=`(err = err.base, closed = closed + 1)]
+          cnst.m[cnst.iter] <- cnst.back
+          
+        }
+
+        tmp <- grid.opt[step.iter, c("step.id", paste0(cnst.tune.nm, "__lrate")), with = FALSE]
+        tmp <- melt(tmp, id.vars = "step.id", measure.vars = paste0(cnst.tune.nm, "__lrate"), variable.factor = FALSE)
+        
+        cnst.tune.wrk <- as.integer(str_extract(unlist(tmp[value > ab.threshold | is.na(value), variable]), "^[0-9]+"))
+        
+        if (length(cnst.tune.wrk) > 0) {
+          
+          cnst.iter <- which(cnst.tune.wrk == cnst.iter) + 1
+          
+          if (length(cnst.iter) == 0)
+            cnst.iter <- 1
+          
+          if (cnst.iter > length(cnst.tune.wrk)) {
+            
+            cnst.iter <- cnst.tune.wrk[1]
+            
+          } else {
+            
+            cnst.iter <- cnst.tune.wrk[cnst.iter]
+            
+          }
+          
+          if (grid.opt[step.iter, closed] == length(cnst.tune.wrk)) {
+            
+            step.iter <- step.iter + 1
+            
+          }
+          
+        }
         
       }
       

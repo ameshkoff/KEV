@@ -13,7 +13,7 @@ ab.cov <- function(ab.err
                    , cnst.m
                    , cnst.tune.nm
                    , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
-                   , dt.ab.m, dt.ab.err.m
+                   , dt.ab.m, dt.ab.err.m, dt.mol.m
                    , eq.thr.type, eq.threshold
                    , method = c("lm", "basic wls")
                    , ab.threshold) {
@@ -42,7 +42,7 @@ ab.cov <- function(ab.err
     rtrn <- molar.ext.wrapper(cnst.grid[, i]
                               , cnst.tune.nm
                               , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
-                              , dt.ab.m, dt.ab.err.m
+                              , dt.ab.m, dt.ab.err.m, dt.mol.m
                               , eq.thr.type, eq.threshold
                               , method)
 
@@ -70,7 +70,7 @@ ab.cov <- function(ab.err
 
 # constants with standard deviations -------------------------- #
 
-constant.deviations <- function(cnst.m, cov.m, cnst.tune) {
+constant.deviations <- function(cnst.m, cov.m, cnst.tune.nm) {
   
   cnst.dev <- cbind(cnst = log(exp(cnst.m), 10), dev = rep(0, length(cnst.m)))
   
@@ -86,7 +86,7 @@ constant.deviations <- function(cnst.m, cov.m, cnst.tune) {
 molar.coef.deviations <- function(cnst.m
                                   , cnst.tune.nm
                                   , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
-                                  , dt.ab.m, dt.ab.err.m
+                                  , dt.ab.m, dt.ab.err.m, dt.mol.m
                                   , eq.thr.type, eq.threshold
                                   , method = c("lm", "basic wls")
                                   , ab.threshold) {
@@ -94,7 +94,7 @@ molar.coef.deviations <- function(cnst.m
   rtrn <- molar.ext.wrapper(cnst.m
                             , cnst.tune.nm
                             , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
-                            , dt.ab.m, dt.ab.err.m
+                            , dt.ab.m, dt.ab.err.m, dt.mol.m
                             , eq.thr.type, eq.threshold
                             , method)
   
