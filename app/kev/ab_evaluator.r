@@ -146,9 +146,8 @@ molar.ext.wrapper <- function(cnst.m
     
     # weights for linear model
     
-    wght <- 1 / (dt.ab.err.m[, i] ^ 2)
-    wght <- wght - mean(wght, na.rm = TRUE) + 1
-    
+    wght <- sum((dt.ab.err.m[, i] ^ 2)) / ((dt.ab.err.m[, i] ^ 2) * length(dt.ab.err.m[, i]))
+
     # if some molar coefficients are already known
     # browser()
     if (is.matrix(dt.mol.m)) {
@@ -178,9 +177,8 @@ molar.ext.wrapper <- function(cnst.m
   observed <- as.vector(dt.ab.m)
   predicted <- as.vector(as.matrix(dt.ab.calc))
   
-  wght <- 1 / (as.vector(dt.ab.err.m) ^ 2)
-  wght <- wght - mean(wght, na.rm = TRUE) + 1
-  
+  wght <- sum(as.vector(dt.ab.err.m) ^ 2) / ((as.vector(dt.ab.err.m) ^ 2) * length(as.vector(dt.ab.err.m)))
+
   err <- sum(((observed - predicted) ^ 2) * wght)
   
   list(dt.ab.calc = dt.ab.calc, mol.coef.dev = mol.coef.dev, err = err)
@@ -231,10 +229,9 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
       y.raw <- dt.ab.m[, i, drop = FALSE]
       
       # weights for linear model
-      
-      wght <- 1 / (dt.ab.err.m[, i] ^ 2)
-      wght <- wght - mean(wght, na.rm = TRUE) + 1
-      
+      # browser()
+      wght <- sum((dt.ab.err.m[, i] ^ 2)) / ((dt.ab.err.m[, i] ^ 2) * length(dt.ab.err.m[, i]))
+
       # if some molar coefficients are already known
       
       if (is.matrix(dt.mol.m)) {
@@ -261,9 +258,8 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
     observed <- as.vector(dt.ab.m)
     predicted <- as.vector(as.matrix(dt.ab.calc))
 
-    wght <- 1 / (as.vector(dt.ab.err.m) ^ 2)
-    wght <- wght - mean(wght, na.rm = TRUE) + 1
-    
+    wght <- sum(as.vector(dt.ab.err.m) ^ 2) / ((as.vector(dt.ab.err.m) ^ 2) * length(as.vector(dt.ab.err.m)))
+
     err <- sum(((observed - predicted) ^ 2) * wght)
     
     if (mode[1] == "iterator") {
@@ -605,7 +601,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
   
   # get starting error
   
-  err.v <- constant.error.evaluator(cnst.m, method = "lm", mode = "return")$err
+  err.v <- constant.error.evaluator(cnst.m, method, mode = "return")$err
   grid.opt[, err := err.v]
   
   # run optimizer

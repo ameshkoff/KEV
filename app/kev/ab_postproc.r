@@ -19,7 +19,7 @@ ab.cov <- function(ab.err
                    , ab.threshold) {
 
   fr.degr <- nrow(dt.ab.m) * ncol(dt.ab.err.m) - length(cnst.tune.nm)
-  wght <- 1 / (as.vector(dt.ab.err.m) ^ 2)
+  wght <- sum(as.vector(dt.ab.err.m) ^ 2) / ((as.vector(dt.ab.err.m) ^ 2) * length(as.vector(dt.ab.err.m)))
   
   cnst.grid <- cnst.m
   
