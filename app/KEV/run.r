@@ -30,24 +30,50 @@ source("app/KEV/ab_runner.r", chdir = TRUE)
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "dsl.1"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , cnst.tune = c("SB")
-                     , algorithm = "direct search", method = "basic wls"
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
                      , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
                      , save.res = TRUE)
 
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "dsl.2"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , cnst.tune = c("CuL2")
-                     , algorithm = "direct search", method = "basic wls"
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
                      , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
                      , save.res = TRUE)
 
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "dsl.3"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , cnst.tune = c("HL", "H2L")
-                     , algorithm = "direct search", method = "basic wls"
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
                      , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
                      , save.res = TRUE)
 
+
+
+
+
+ab.evaluation.runner(mode = "script", sep = ",", subdir = "dsl.1"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , cnst.tune = c("SB")
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-2
+                     , save.res = FALSE)
+
+ab.evaluation.runner(mode = "script", sep = ",", subdir = "dsl.2"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , cnst.tune = c("CuL2")
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-2
+                     , save.res = FALSE)
+
+
+
+ab.evaluation.runner(mode = "script", sep = ",", subdir = "dsl.1"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , cnst.tune = c("SB")
+                     , algorithm = "basic search", ab.mode = "grid", method = "basic wls"
+                     , search.density = 1, lrate.init = .0005, ab.threshold = 1e-7
+                     , save.res = FALSE)
 
 
 

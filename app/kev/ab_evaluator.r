@@ -362,7 +362,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
           print(paste(step.iter, cnst.iter, cnst.curr, cnst.back, lrate))
         
         if (mode[1] == "grid") {
-          
+          # browser()
           grid.opt[step.iter, `:=`(err = dt.step[2, err], closed = closed + 1)]
           grid.opt[step.iter, eval(as.character(cnst.iter)) := dt.step[2, cnst]]
           cnst.m[cnst.iter] <- dt.step[2, cnst]
@@ -546,6 +546,12 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
       # check conditions
       
       if (length(cnst.tune.wrk) == 0) {
+        
+        break
+        
+      }
+      
+      if (mode[1] == "grid" & step.iter > 30) {
         
         break
         
