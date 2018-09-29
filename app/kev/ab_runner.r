@@ -133,6 +133,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   dt.ab.calc <- dt.ttl[["dt.ab.calc"]]
   dt.res.m <- dt.ttl[["dt.res.m"]]
   ab.err <- tail(dt.ttl[["grid.opt"]][!is.na(err), err], 1)
+  grid.opt <- dt.ttl[["grid.opt"]]
   
   
   # postprocessing ---------------- #
@@ -182,7 +183,8 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   
   if (mode %in% c("script", "api")) {
     
-    list("dt.eq.conc" = dt.res
+    list("grid.opt" = grid.opt
+         ,"dt.eq.conc" = dt.res
          , "dt.ab.calc" = dt.ab.calc
          , "ab.res.abs" = ab.res.abs
          , "ab.res.rel" = ab.res.rel
