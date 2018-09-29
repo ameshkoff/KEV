@@ -33,6 +33,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
                                  , cnst.tune = c("HL", "H2L")
                                  , algorithm = "direct search"
                                  , method = "basic wls"
+                                 , ab.mode = c("base", "grid", "debug")
                                  , search.density = 1
                                  , lrate.init = .5
                                  , ab.threshold = 5e-7
@@ -125,7 +126,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
                                  , ab.threshold
                                  , eq.threshold
                                  , eq.thr.type
-                                 , mode = "base", method, algorithm))[3]
+                                 , mode = ab.mode, method, algorithm))[3]
   
   cnst.m <- dt.ttl[["cnst.m"]]
   cnst.m.10 <- log(exp(cnst.m), 10)
