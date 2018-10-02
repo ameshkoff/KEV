@@ -47,6 +47,9 @@ source("eq_runner.r", chdir = TRUE)
 
 ui <- navbarPage("KEV",
                  windowTitle = "KEV: Constant evaluator",
+                 
+# equilibrium concentrations -------------------------
+
                  tabPanel("Equilibrium concentrations"
                           , id = "page.eq.conc"
                           
@@ -174,7 +177,137 @@ ui <- navbarPage("KEV",
                             )
                             
                           )),
-                 tabPanel("(2): To do"),
+
+# absorbance ----------------------------------
+
+                 tabPanel("Absorbance"
+                          , id = "page.ab"
+                          
+                          , fluidPage(
+                            
+                            includeCSS("styles.css")
+                            
+                            , titlePanel("KEV: Chemistry Constant Evaluator")
+                            
+                            , fluidRow(column(12), p(HTML(paste("<br/>"))))
+                            
+                            , titlePanel("Calculate Equilibrium Constants")
+                            
+                            , fluidRow(column(
+                              12
+                              , wellPanel(
+                                fluidRow(column(3
+                                                , h4("Column delimiter")
+                                                , radioButtons("ab.sep", "", inline = TRUE
+                                                               , c("," = "comma"
+                                                                   , ";" = "semicolon"
+                                                                   , "tab" = "tab")))
+                                         , column(3
+                                                  , HTML("<h4>Constants to evaluate</h4><p>Particle names, comma separated</p>")
+                                                  , textInput("cnst.tune", "", "molecule1"))
+                                         , column(3
+                                                  , HTML(paste("<h4>Threshold</h4><p>Search algorithm precision"
+                                                                ,"0&nbsp;&#60;&nbsp;&#950;&nbsp;&#60;&nbsp;1</p>"))
+                                                  , textInput("cnst.tune", "", "1e-7"))
+                                         , column(3
+                                                  , HTML("<h4>Search density</h4><p>Do not change untill you fully understand what you do</p>")
+                                                  , textInput("cnst.tune", "", "1"))
+                                )
+                              )))
+                            
+                            , fluidRow(
+                              
+                              column(
+                                12
+                                , wellPanel(
+                                  h4("Upload or type input data")
+                                  ,  fluidRow(
+                                    column(5
+                                           , h4("Stoichiometric coefficients")
+                                           , rHandsontableOutput("ab.dt.coef")
+                                           , fileInput("file.ab.dt.coef", "Choose CSV File",
+                                                       accept = c(
+                                                         "text/csv",
+                                                         "text/comma-separated-values,text/plain",
+                                                         ".csv")
+                                           )
+                                           , fluidRow(class = "download-row"
+                                                      , downloadButton("ab.dt.coef.csv", "csv")
+                                                      , downloadButton("ab.dt.coef.xlsx", "xlsx"))
+                                           , p("")
+                                           , textInput("ab.part.names", "Particle names, comma separated"
+                                                       , paste(paste0("molecule", 1:4), collapse = ", "))
+                                    )
+                                    , column(2
+                                             , h4("K: lg constants")
+                                             , rHandsontableOutput("ab.cnst")
+                                             , fileInput("ab.file.cnst", "Choose CSV File",
+                                                         accept = c(
+                                                           "text/csv",
+                                                           "text/comma-separated-values,text/plain",
+                                                           ".csv")
+                                             )
+                                             , fluidRow(class = "download-row"
+                                                        , downloadButton("ab.cnst.csv", "csv")
+                                                        , downloadButton("ab.cnst.xlsx", "xlsx"))
+                                    )
+                                    , column(5
+                                             , h4("Concentrations")
+                                             , tabsetPanel(type = "tabs"
+                                                           , tabPanel("Input"
+                                                                      , rHandsontableOutput("ab.dt.conc")
+                                                                      , rHandsontableOutput("ab.part.eq")
+                                                                      , fluidRow(class = "download-row"
+                                                                                 , downloadButton("ab.dt.conc.csv", "csv")
+                                                                                 , downloadButton("ab.dt.conc.xlsx", "xlsx")))
+                                                           , tabPanel("Total"
+                                                                      , rHandsontableOutput("ab.dt.conc.tot")
+                                                                      , fluidRow(class = "download-row"
+                                                                                 , downloadButton("ab.dt.conc.tot.csv", "csv")
+                                                                                 , downloadButton("ab.dt.conc.tot.xlsx", "xlsx")))
+                                             )
+                                             , fileInput("ab.file.dt.conc", "Choose CSV File",
+                                                         accept = c(
+                                                           "text/csv",
+                                                           "text/comma-separated-values,text/plain",
+                                                           ".csv"))
+                                    )
+                                  )
+                                  , fluidRow(
+                                    column(5
+                                             , h4("Absorbance and deviations")
+                                             , rHandsontableOutput("dt.ab.raw")
+                                             , fileInput("file.dt.ab.raw", "Choose CSV File",
+                                                         accept = c(
+                                                           "text/csv",
+                                                           "text/comma-separated-values,text/plain",
+                                                           ".csv")
+                                             )
+                                             , fluidRow(class = "download-row"
+                                                        , downloadButton("dt.ab.raw.csv", "csv")
+                                                        , downloadButton("dt.ab.raw.xlsx", "xlsx"))
+
+                                    )
+                                    , column(5
+                                             , h4("Molar extinction coefficients")
+                                             , rHandsontableOutput("dt.mol")
+                                             , fileInput("file.dt.mol", "Choose CSV File",
+                                                         accept = c(
+                                                           "text/csv",
+                                                           "text/comma-separated-values,text/plain",
+                                                           ".csv")
+                                             )
+                                             , fluidRow(class = "download-row"
+                                                        , downloadButton("dt.mol.csv", "csv")
+                                                        , downloadButton("dt.mol.xlsx", "xlsx"))
+                                    )
+                                  )
+                                )
+                              )
+                            )
+                          )
+                 ),
+# about ---------------------------------------
                  tabPanel("About")
 )
 
@@ -182,11 +315,15 @@ ui <- navbarPage("KEV",
 # backend -------------------------------------------------- #
 
 server <- function(input, output, session) {
+
+  
+  values <- reactiveValues()
+  
+  
+  # equilibrium concentrations -------------------------
   
   # technical
    
-  values <- reactiveValues()
-  
   sep <- reactive({
     
     switch(input$sep,
@@ -405,7 +542,6 @@ server <- function(input, output, session) {
   
   
   
-  
   # rendering ---------------- #
   
   output$dt.coef <- renderRHandsontable({
@@ -603,6 +739,183 @@ server <- function(input, output, session) {
     
   })
   
+  
+  # absorbance -----------------------------------------
+  
+  # technical
+  
+  ab.sep <- reactive({
+    
+    switch(input$ab.sep,
+           comma = ",",
+           semicolon = ";",
+           tab = "tab")
+    
+  })
+  
+  
+  # data --------------------- #
+  
+  # input data
+  
+  ab.dt.coef.data <- reactive({
+    
+    if (!is.null(input$ab.dt.coef)) {
+      
+      dt.coef <- hot_to_r(input$ab.dt.coef)
+      
+    } else {
+      
+      if (is.null(values[["ab.dt.coef"]])) {
+        
+        dt.coef <- as.data.table(matrix(rep(1, 16), 4))
+        setnames(dt.coef, paste0("molecule", 1:4))
+        
+      } else {
+        
+        dt.coef <- values[["ab.dt.coef"]]
+        
+      }
+      
+    }
+    
+    dt.coef <- as.data.table(dt.coef)
+    setnames(dt.coef, part.names.data()[1:ncol(dt.coef)])
+    
+    values[["ab.dt.coef"]] <- dt.coef
+    
+    dt.coef
+    
+  })
+  
+  ab.dt.conc.data <- reactive({
+    
+    if (!is.null(input$ab.dt.conc)) {
+      
+      dt.conc <- hot_to_r(input$ab.dt.conc)
+      
+    } else {
+      
+      if (is.null(values[["ab.dt.conc"]])) {
+        
+        dt.conc <- as.data.table(matrix(rep(1e-03, 20), ncol = 4))
+        setnames(dt.conc, paste0("molecule", 1:4))
+        
+      } else {
+        
+        dt.conc <- values[["ab.dt.conc"]]
+        
+      }
+      
+    }
+    
+    dt.conc <- as.data.table(dt.conc)
+    setnames(dt.conc, part.names.data()[1:ncol(dt.conc)])
+    
+    values[["ab.dt.conc"]] <- dt.conc
+    
+    dt.conc
+    
+  })
+  
+  ab.part.eq.data <- reactive({
+    
+    if (!is.null(input$ab.part.eq)) {
+      
+      part.eq <- hot_to_r(input$ab.part.eq)
+      
+    } else {
+      
+      if (is.null(values[["ab.part.eq"]])) {
+        
+        part.eq <- as.data.table(matrix(rep("tot", 4), ncol = 4))
+        setnames(part.eq, paste0("molecule", 1:4))
+        
+      } else {
+        
+        part.eq <- values[["ab.part.eq"]]
+        
+      }
+      
+    }
+    
+    part.eq <- as.data.table(part.eq)
+    
+    values[["ab.part.eq"]] <- part.eq
+    
+    part.eq
+    
+  })
+  
+  ab.cnst.data <- reactive({
+    
+    if (!is.null(input$ab.cnst)) {
+      
+      cnst <- hot_to_r(input$ab.cnst)
+      
+    } else {
+      
+      if (is.null(values[["ab.cnst"]])) {
+        
+        cnst <- as.data.table(matrix(rep(1, 4), ncol = 1))
+        setnames(cnst, "log10(K)")
+        
+      } else {
+        
+        cnst <- values[["ab.cnst"]]
+        
+      }
+      
+    }
+    
+    cnst <- as.data.table(cnst)
+    
+    values[["ab.cnst"]] <- cnst
+    
+    cnst
+    
+  })
+  
+  dt.ab.raw.data <- reactive({
+    
+    if (!is.null(input$dt.ab.raw)) {
+      
+      dt.ab.raw <- hot_to_r(input$dt.ab.raw)
+      
+    } else {
+      
+      if (is.null(values[["dt.ab.raw"]])) {
+        
+        dt.ab.raw <- as.data.table(matrix(rep(100, 30), 5))
+        dt.ab.raw[, which((1:ncol(dt.ab.raw) %% 2 == 1))] <- .001
+        
+        names(dt.ab.raw[, which((1:ncol(dt.ab.raw) %% 2 == 0))]) <- paste("V", 1:(ncol(dt.ab.raw) / 2), sep = "_")
+        names(dt.ab.raw[, which((1:ncol(dt.ab.raw) %% 2 == 1))]) <- paste("V", 1:(ncol(dt.ab.raw) / 2), "dev", sep = "_")
+        
+      } else {
+        
+        dt.ab.raw <- values[["dt.ab.raw"]]
+        
+      }
+      
+    }
+    
+    dt.ab.raw <- as.data.table(dt.ab.raw)
+
+    values[["dt.ab.raw"]] <- dt.ab.raw
+    
+    dt.ab.raw
+    
+  })
+  
+  
+  
+  
+  
+  
+  
+  
+  # end of main server part ----------------------------
   
   
 
