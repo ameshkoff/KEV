@@ -208,10 +208,10 @@ ui <- navbarPage("KEV",
                                          , column(3
                                                   , HTML(paste("<h4>Threshold</h4><p>Search algorithm precision"
                                                                 ,"0&nbsp;&#60;&nbsp;&#950;&nbsp;&#60;&nbsp;1</p>"))
-                                                  , textInput("cnst.tune", "", "1e-7"))
+                                                  , textInput("ab.threshold", "", "1e-7"))
                                          , column(3
                                                   , HTML("<h4>Search density</h4><p>Do not change untill you fully understand what you do</p>")
-                                                  , textInput("cnst.tune", "", "1"))
+                                                  , textInput("search.density", "", "1"))
                                 )
                               )))
                             
@@ -253,39 +253,32 @@ ui <- navbarPage("KEV",
                                     )
                                     , column(5
                                              , h4("Concentrations")
-                                             , tabsetPanel(type = "tabs"
-                                                           , tabPanel("Input"
-                                                                      , rHandsontableOutput("ab.dt.conc")
-                                                                      , rHandsontableOutput("ab.part.eq")
-                                                                      , fluidRow(class = "download-row"
-                                                                                 , downloadButton("ab.dt.conc.csv", "csv")
-                                                                                 , downloadButton("ab.dt.conc.xlsx", "xlsx")))
-                                                           , tabPanel("Total"
-                                                                      , rHandsontableOutput("ab.dt.conc.tot")
-                                                                      , fluidRow(class = "download-row"
-                                                                                 , downloadButton("ab.dt.conc.tot.csv", "csv")
-                                                                                 , downloadButton("ab.dt.conc.tot.xlsx", "xlsx")))
-                                             )
+                                             , rHandsontableOutput("ab.dt.conc")
+                                             , rHandsontableOutput("ab.part.eq")
                                              , fileInput("ab.file.dt.conc", "Choose CSV File",
-                                                         accept = c(
-                                                           "text/csv",
-                                                           "text/comma-separated-values,text/plain",
-                                                           ".csv"))
-                                    )
-                                  )
-                                  , fluidRow(
-                                    column(5
-                                             , h4("Absorbance and deviations")
-                                             , rHandsontableOutput("dt.ab.raw")
-                                             , fileInput("file.dt.ab.raw", "Choose CSV File",
                                                          accept = c(
                                                            "text/csv",
                                                            "text/comma-separated-values,text/plain",
                                                            ".csv")
                                              )
                                              , fluidRow(class = "download-row"
-                                                        , downloadButton("dt.ab.raw.csv", "csv")
-                                                        , downloadButton("dt.ab.raw.xlsx", "xlsx"))
+                                                        , downloadButton("ab.dt.conc.csv", "csv")
+                                                        , downloadButton("ab.dt.conc.xlsx", "xlsx"))
+                                    )
+                                  )
+                                  , fluidRow(
+                                    column(5
+                                             , h4("Absorbance and deviations")
+                                             , rHandsontableOutput("dt.ab")
+                                             , fileInput("file.dt.ab", "Choose CSV File",
+                                                         accept = c(
+                                                           "text/csv",
+                                                           "text/comma-separated-values,text/plain",
+                                                           ".csv")
+                                             )
+                                             , fluidRow(class = "download-row"
+                                                        , downloadButton("dt.ab.csv", "csv")
+                                                        , downloadButton("dt.ab.xlsx", "xlsx"))
 
                                     )
                                     , column(5
@@ -305,7 +298,15 @@ ui <- navbarPage("KEV",
                                 )
                               )
                             )
+                            , fluidRow(column(
+                              12
+                              , wellPanel(
+                                fluidRow(column(12
+                                                , actionButton("ab.conc.exec.btn", "Evaluate")
+                                ))
+                              )))
                           )
+                          
                  ),
 # about ---------------------------------------
                  tabPanel("About")
@@ -876,42 +877,346 @@ server <- function(input, output, session) {
     
   })
   
-  dt.ab.raw.data <- reactive({
+  dt.ab.data <- reactive({
     
-    if (!is.null(input$dt.ab.raw)) {
+    if (!is.null(input$dt.ab)) {
       
-      dt.ab.raw <- hot_to_r(input$dt.ab.raw)
+      dt.ab <- hot_to_r(input$dt.ab)
       
     } else {
       
-      if (is.null(values[["dt.ab.raw"]])) {
+      if (is.null(values[["dt.ab"]])) {
         
-        dt.ab.raw <- as.data.table(matrix(rep(100, 30), 5))
-        dt.ab.raw[, which((1:ncol(dt.ab.raw) %% 2 == 1))] <- .001
+        dt.ab <- matrix(rep(100, 30), 5)
+        dt.ab[, which((1:ncol(dt.ab) %% 2 == 0))] <- .001
         
-        names(dt.ab.raw[, which((1:ncol(dt.ab.raw) %% 2 == 0))]) <- paste("V", 1:(ncol(dt.ab.raw) / 2), sep = "_")
-        names(dt.ab.raw[, which((1:ncol(dt.ab.raw) %% 2 == 1))]) <- paste("V", 1:(ncol(dt.ab.raw) / 2), "dev", sep = "_")
+        dt.ab <- as.data.table(dt.ab)
+        
+        setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 1)], paste("W", 1:(ncol(dt.ab) / 2), sep = "_"))
+        setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 0)], paste("W", 1:(ncol(dt.ab) / 2), "dev", sep = "_"))
         
       } else {
         
-        dt.ab.raw <- values[["dt.ab.raw"]]
+        dt.ab <- values[["dt.ab"]]
         
       }
       
     }
     
-    dt.ab.raw <- as.data.table(dt.ab.raw)
+    dt.ab <- as.data.table(dt.ab)
 
-    values[["dt.ab.raw"]] <- dt.ab.raw
+    values[["dt.ab"]] <- dt.ab
     
-    dt.ab.raw
+    dt.ab
+    
+  })
+  
+  dt.mol.data <- reactive({
+    
+    if (!is.null(input$dt.mol)) {
+      
+      dt.mol <- hot_to_r(input$dt.mol)
+      
+    } else {
+      
+      if (is.null(values[["dt.mol"]])) {
+        
+        dt.mol <- as.data.table(matrix(rep(0, 6), 2))
+        dt.mol <- as.data.table(dt.mol)
+
+        setnames(dt.mol, paste0("W_", 1:ncol(dt.mol)))
+        
+        dt.mol <- cbind(particle = c("molecule1", "molecule2"), dt.mol)
+
+      } else {
+        
+        dt.mol <- values[["dt.mol"]]
+        
+      }
+      
+    }
+    
+    dt.mol <- as.data.table(dt.mol)
+    
+    values[["dt.mol"]] <- dt.mol
+    
+    dt.mol
+    
+  })
+  
+  cnst.tune <- reactive({
+    
+    if (!is.null(input$cnst.tune)) {
+      
+      cnst.tune <- input$cnst.tune
+      cnst.tune <- str_split(cnst.tune, "\\, *")
+      cnst.tune <- unlist(cnst.tune)
+      
+    } else {
+      
+      "molecule1"
+      
+    }
+    
+  })
+  
+  
+  # execute
+  
+  ab.eval.data <- reactive({
+    
+    validate(
+      
+      need(length(colnames(dt.coef.data())[colnames(dt.coef.data()) %in% cnst.tune()]) > 0, "Input correct particle names for constants evaluation")
+      
+    )
+    
+    ab.evaluation.runner(mode = "app"
+                         , sep = sep()
+                         , eq.thr.type = "rel"
+                         , eq.threshold = 1e-08
+                         , cnst.tune = cnst.tune()
+                         , algorithm = "direct search"
+                         , ab.mode = "base"
+                         , method = "basic wls"
+                         , search.density = input$search.density
+                         , lrate.init = .5
+                         , ab.threshold = input$ab.threshold
+                         , dt.list = list(dt.coef = ab.dt.coef.data()
+                                          , cnst = ab.cnst.data()
+                                          , dt.conc = ab.dt.conc.data()
+                                          , part.eq = ab.part.eq.data()
+                                          , dt.ab = dt.ab.data()
+                                          , dt.mol = dt.mol.data())
+                         , save.res = FALSE)
+    
+  })
+  
+  
+  # output data
+  
+  ab.dt.res.data <- eventReactive(input$ab.conc.exec.btn, {
+    
+    ab.eval.data()$dt.res
     
   })
   
   
   
+  # rendering ---------------- #
   
+  output$ab.dt.coef <- renderRHandsontable({
+    
+    in.file <- input$file.ab.dt.coef
+    
+    if (!is.null(in.file)) {
+      
+      if (sep() == ";") {
+        dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (sep() == ",") {
+        dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (sep() == "tab") {
+        dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      }
+      
+      validate(
+        
+        need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
+          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
+        
+      )
+      
+      tmp <- colnames(dt.coef)
+      updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
+      
+      
+    } else {
+      
+      dt.coef <- ab.dt.coef.data()
+      
+    }
+    
+    setnames(dt.coef, part.names.data()[1:ncol(dt.coef)])
+    
+    if (!is.null(dt.coef))
+      rhandsontable(dt.coef, stretchH = "all", useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
   
+  output$ab.dt.conc <- renderRHandsontable({
+    
+    in.file <- input$file.ab.dt.conc
+    
+    if (!is.null(in.file)) {
+      
+      if (sep() == ";") {
+        dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+      } else if (sep() == ",") {
+        dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+      } else if (sep() == "tab") {
+        dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+      }
+      
+      validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
+      
+      tmp <- colnames(dt.conc)
+      updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
+      
+      
+    } else {
+      
+      dt.conc <- ab.dt.conc.data()
+      
+    }
+    
+    setnames(dt.conc, part.names.data()[1:ncol(dt.conc)])
+    
+    if (!is.null(dt.conc))
+      rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+  output$ab.part.eq <- renderRHandsontable({
+    
+    in.file <- input$file.ab.dt.conc
+    
+    part.eq <- ab.part.eq.data()
+    
+    if (!is.null(in.file)) {
+      
+      
+      if (sep() == ";") {
+        
+        part.eq <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
+        tmp <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
+        
+      } else if (sep() == ",") {
+        
+        part.eq <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
+        tmp <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
+        
+      } else if (sep() == "tab") {
+        
+        part.eq <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
+        tmp <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
+        
+      }
+      
+      validate(
+        
+        need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
+          need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
+        
+      )
+      
+      colnames(part.eq) <- tmp
+      
+    }
+    
+    if (!is.null(part.eq))
+      rhandsontable(part.eq, stretchH = "all", useTypes = FALSE, colHeaders = NULL) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+  output$ab.cnst <- renderRHandsontable({
+    
+    in.file <- input$file.ab.cnst
+    
+    cnst <- ab.cnst.data()
+    
+    if (!is.null(in.file)) {
+      
+      if (sep() == ";") {
+        cnst <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (sep() == ",") {
+        cnst <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (sep() == "tab") {
+        cnst <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      }
+      
+      validate(
+        need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
+          need(ncol(cnst) == 1, "Check the column delimiter or content of your file")
+      )
+      
+    }
+    
+    if (!is.null(cnst))
+      rhandsontable(cnst, stretchH = "all", useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+  output$dt.ab <- renderRHandsontable({
+    
+    in.file <- input$file.dt.ab
+    
+    if (!is.null(in.file)) {
+      
+      if (sep() == ";") {
+        dt.ab <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (sep() == ",") {
+        dt.ab <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (sep() == "tab") {
+        dt.ab <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      }
+      
+      validate(
+        
+        need(is.data.frame(dt.abf), "Your file doesn't look like an absorbance file")
+        
+      )
+      
+
+    } else {
+      
+      dt.ab <- dt.ab.data()
+      
+    }
+    
+    if (!is.null(dt.ab))
+      rhandsontable(dt.ab, stretchH = "all", useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+  output$dt.mol <- renderRHandsontable({
+    
+    in.file <- input$file.dt.mol
+    
+    if (!is.null(in.file)) {
+      
+      if (sep() == ";") {
+        dt.mol <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (sep() == ",") {
+        dt.mol <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (sep() == "tab") {
+        dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      }
+      
+      validate(
+        
+        need(is.data.frame(dt.mol), "Your file doesn't look like an absorbance file")
+        
+      )
+      
+      
+    } else {
+      
+      dt.mol <- dt.mol.data()
+      
+    }
+    
+    if (!is.null(dt.mol))
+      rhandsontable(dt.mol, stretchH = "all", useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+    
   
   
   
