@@ -40,6 +40,7 @@ options(shiny.sanitize.errors = TRUE)
 # load algorithm
 
 source("eq_runner.r", chdir = TRUE)
+source("ab_runner.r", chdir = TRUE)
 
 
 
@@ -215,6 +216,18 @@ ui <- navbarPage("KEV",
                                 )
                               )))
                             
+                            , fluidRow(column(
+                              12
+                              , wellPanel(
+                                fluidRow(column(12
+                                                , h4("Bulk upload / download (optional)")))
+                                
+                                , fluidRow(column(6
+                                                  , h4("Upload all input data"))
+                                           , column(6
+                                                    , h4("Download all input data")))
+                              )))
+                            
                             , fluidRow(
                               
                               column(
@@ -241,7 +254,7 @@ ui <- navbarPage("KEV",
                                     , column(2
                                              , h4("K: lg constants")
                                              , rHandsontableOutput("ab.cnst")
-                                             , fileInput("ab.file.cnst", "Choose CSV File",
+                                             , fileInput("file.ab.cnst", "Choose CSV File",
                                                          accept = c(
                                                            "text/csv",
                                                            "text/comma-separated-values,text/plain",
@@ -255,7 +268,7 @@ ui <- navbarPage("KEV",
                                              , h4("Concentrations")
                                              , rHandsontableOutput("ab.dt.conc")
                                              , rHandsontableOutput("ab.part.eq")
-                                             , fileInput("ab.file.dt.conc", "Choose CSV File",
+                                             , fileInput("file.ab.dt.conc", "Choose CSV File",
                                                          accept = c(
                                                            "text/csv",
                                                            "text/comma-separated-values,text/plain",
@@ -298,6 +311,7 @@ ui <- navbarPage("KEV",
                                 )
                               )
                             )
+                            
                             , fluidRow(column(
                               12
                               , wellPanel(
@@ -305,6 +319,63 @@ ui <- navbarPage("KEV",
                                                 , actionButton("ab.conc.exec.btn", "Evaluate")
                                 ))
                               )))
+                            
+                            , fluidRow(column(
+                              12
+                              , wellPanel(
+                                fluidRow(column(12
+                                                , h4("Equilibrium concentrations")
+                                                , rHandsontableOutput("ab.dt.res")
+                                                , fluidRow(class = "download-row"
+                                                           , downloadButton("ab.dt.res.csv", "csv")
+                                                           , downloadButton("ab.dt.res.xlsx", "xlsx"))))
+                                
+                                , fluidRow(column(12
+                                                  , h4("Calculated Absorbance")
+                                                  , tabsetPanel(type = "tabs"
+                                                                , tabPanel("Absolute Errors"
+                                                                           , rHandsontableOutput("dt.ab.abs")
+                                                                           , fluidRow(class = "download-row"
+                                                                                      , downloadButton("dt.ab.abs.csv", "csv")
+                                                                                      , downloadButton("dt.ab.abs.xlsx", "xlsx")))
+                                                                , tabPanel("Relative Errors"
+                                                                           , rHandsontableOutput("dt.ab.rel")
+                                                                           , fluidRow(class = "download-row"
+                                                                                      , downloadButton("dt.ab.rel.csv", "csv")
+                                                                                      , downloadButton("dt.ab.rel.xlsx", "xlsx")))
+                                                  )))
+                                
+                                , fluidRow(column(12)
+                                           , column(4
+                                                    , h4("Evaluated Constants")
+                                                    , rHandsontableOutput("cnst.dev")
+                                                    , fluidRow(class = "download-row"
+                                                               , downloadButton("cnst.dev.csv", "csv")
+                                                               , downloadButton("cnst.dev.xlsx", "xlsx")))
+                                           , column(4
+                                                    , h4("Correlation Matrix")
+                                                    , rHandsontableOutput("cor.m")
+                                                    , fluidRow(class = "download-row"
+                                                               , downloadButton("cor.m.csv", "csv")
+                                                               , downloadButton("cor.m.xlsx", "xlsx")))
+                                           , column(4
+                                                    , h4("Last Fmin Step")
+                                                    , rHandsontableOutput("err.diff")
+                                                    , fluidRow(class = "download-row"
+                                                               , downloadButton("err.diff.csv", "csv")
+                                                               , downloadButton("err.diff.xlsx", "xlsx"))))
+                                
+                                , fluidRow(column(12
+                                                  , h4("Extinction Molar Coefficients with St.Deviations")
+                                                  , rHandsontableOutput("mol.coef")
+                                                  , fluidRow(class = "download-row"
+                                                             , downloadButton("mol.coef.csv", "csv")
+                                                             , downloadButton("mol.coef.xlsx", "xlsx"))))
+                                
+                                
+                              ))
+                            )
+                            
                           )
                           
                  ),
@@ -759,6 +830,17 @@ server <- function(input, output, session) {
   
   # input data
   
+  ab.part.names.data <- reactive({
+    
+    tmp <- input$ab.part.names
+    
+    tmp <- str_split(tmp, pattern = ",")[[1]]
+    tmp <- str_trim(tmp)
+    
+    tmp
+    
+  })
+  
   ab.dt.coef.data <- reactive({
     
     if (!is.null(input$ab.dt.coef)) {
@@ -772,6 +854,9 @@ server <- function(input, output, session) {
         dt.coef <- as.data.table(matrix(rep(1, 16), 4))
         setnames(dt.coef, paste0("molecule", 1:4))
         
+        dt.coef <- as.data.table(dt.coef)
+        dt.coef <- cbind(dt.coef, name = paste0("product", 1:4))
+        
       } else {
         
         dt.coef <- values[["ab.dt.coef"]]
@@ -781,7 +866,8 @@ server <- function(input, output, session) {
     }
     
     dt.coef <- as.data.table(dt.coef)
-    setnames(dt.coef, part.names.data()[1:ncol(dt.coef)])
+    
+    setnames(dt.coef, c(ab.part.names.data()[1:(ncol(dt.coef) - 1)], "name"))
     
     values[["ab.dt.coef"]] <- dt.coef
     
@@ -811,7 +897,7 @@ server <- function(input, output, session) {
     }
     
     dt.conc <- as.data.table(dt.conc)
-    setnames(dt.conc, part.names.data()[1:ncol(dt.conc)])
+    setnames(dt.conc, ab.part.names.data()[1:ncol(dt.conc)])
     
     values[["ab.dt.conc"]] <- dt.conc
     
@@ -924,7 +1010,7 @@ server <- function(input, output, session) {
         dt.mol <- as.data.table(matrix(rep(0, 6), 2))
         dt.mol <- as.data.table(dt.mol)
 
-        setnames(dt.mol, paste0("W_", 1:ncol(dt.mol)))
+        setnames(dt.mol, c("Particle", paste0("W_", (2:ncol(dt.mol)) - 1)))
         
         dt.mol <- cbind(particle = c("molecule1", "molecule2"), dt.mol)
 
@@ -964,10 +1050,12 @@ server <- function(input, output, session) {
   # execute
   
   ab.eval.data <- reactive({
+
+    particles <- c(colnames(ab.dt.coef.data()), ab.dt.coef.data()[, name])
     
     validate(
       
-      need(length(colnames(dt.coef.data())[colnames(dt.coef.data()) %in% cnst.tune()]) > 0, "Input correct particle names for constants evaluation")
+      need(length(particles %in% cnst.tune()) > 0, "Input correct particle names for constants evaluation")
       
     )
     
@@ -979,9 +1067,9 @@ server <- function(input, output, session) {
                          , algorithm = "direct search"
                          , ab.mode = "base"
                          , method = "basic wls"
-                         , search.density = input$search.density
+                         , search.density = as.numeric(input$search.density)
                          , lrate.init = .5
-                         , ab.threshold = input$ab.threshold
+                         , ab.threshold = as.numeric(input$ab.threshold)
                          , dt.list = list(dt.coef = ab.dt.coef.data()
                                           , cnst = ab.cnst.data()
                                           , dt.conc = ab.dt.conc.data()
@@ -997,10 +1085,104 @@ server <- function(input, output, session) {
   
   ab.dt.res.data <- eventReactive(input$ab.conc.exec.btn, {
     
-    ab.eval.data()$dt.res
+    ab.eval.data()$dt.eq.conc
     
   })
   
+  dt.ab.abs.data <- eventReactive(input$ab.conc.exec.btn, {
+    
+    dt <- ab.eval.data()$dt.ab.calc
+    dt.err <- as.data.table(ab.eval.data()$ab.res.abs)
+    
+    dt.comb <- data.table(rn = NA)
+    
+    for (i in 1:ncol(dt)) {
+      
+      dt.comb <- data.table(dt.comb, dt[, i, with = FALSE], dt.err[, i, with = FALSE])
+      
+    }
+    
+    dt.comb[, rn := NULL]
+    
+    setnames(dt.comb, as.character(1:ncol(dt.comb)))
+    
+    setnames(dt.comb, colnames(dt.comb)[which(1:ncol(dt.comb) %% 2 == 1)], paste("W", 1:(ncol(dt.comb) / 2), sep = "_"))
+    setnames(dt.comb, colnames(dt.comb)[which(1:ncol(dt.comb) %% 2 == 0)], paste("W", 1:(ncol(dt.comb) / 2), "err", sep = "_"))
+    
+    dt.comb
+    
+  })
+  
+  dt.ab.rel.data <- eventReactive(input$ab.conc.exec.btn, {
+    
+    dt <- ab.eval.data()$dt.ab.calc
+    dt.err <- as.data.table(ab.eval.data()$ab.res.rel)
+    
+    dt.comb <- data.table(rn = NA)
+    
+    for (i in 1:ncol(dt)) {
+      
+      dt.comb <- data.table(dt.comb, dt[, i, with = FALSE], dt.err[, i, with = FALSE])
+      
+    }
+    
+    dt.comb[, rn := NULL]
+    
+    setnames(dt.comb, as.character(1:ncol(dt.comb)))
+    
+    setnames(dt.comb, colnames(dt.comb)[which(1:ncol(dt.comb) %% 2 == 1)], paste("W", 1:(ncol(dt.comb) / 2), sep = "_"))
+    setnames(dt.comb, colnames(dt.comb)[which(1:ncol(dt.comb) %% 2 == 0)], paste("W", 1:(ncol(dt.comb) / 2), "err", sep = "_"))
+    
+    dt.comb
+    
+  })
+
+  cnst.dev.data <- eventReactive(input$ab.conc.exec.btn, {
+    
+    cnst.dev <- ab.eval.data()$cnst.dev
+    cnst.dev <- as.data.table(cnst.dev)
+    
+    setnames(cnst.dev, c("Particle", "Constant", "St.Deviation"))
+    
+  })
+
+  cor.m.data <- eventReactive(input$ab.conc.exec.btn, {
+    
+    cor.m <- ab.eval.data()$cor.m
+    
+  })
+  
+  mol.coef.data <- eventReactive(input$ab.conc.exec.btn, {
+    
+    dt <- as.data.table(t(ab.eval.data()$mol.coef))
+    dt.err <- as.data.table(t(ab.eval.data()$mol.coef.dev))
+    
+    setnames(dt, paste("W", 1:ncol(dt), sep = "_"))
+    setnames(dt.err, paste("W", 1:ncol(dt.err), "dev", sep = "_"))
+    
+    dt.comb <- data.table(rn = NA)
+    
+    for (i in 1:ncol(dt)) {
+      
+      dt.comb <- data.table(dt.comb, dt[, i, with = FALSE], dt.err[, i, with = FALSE])
+
+    }
+    
+    dt.comb[, rn := NULL]
+    dt.comb <- data.table(Particle = cnst.dev.data()[, Particle], dt.comb)
+    
+    dt.comb
+    
+  })
+
+  err.diff.data <- eventReactive(input$ab.conc.exec.btn, {
+    
+    err.diff <- ab.eval.data()$err.diff
+    err.diff <- data.table(Particle = cnst.tune(), Fmin.Last = err.diff)
+    
+    err.diff
+    
+  })
   
   
   # rendering ---------------- #
@@ -1027,7 +1209,7 @@ server <- function(input, output, session) {
       )
       
       tmp <- colnames(dt.coef)
-      updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
+      updateTextInput(session, "ab.part.names", value = paste(tmp[1:(length(tmp) - 1)], collapse = ", "))
       
       
     } else {
@@ -1036,7 +1218,7 @@ server <- function(input, output, session) {
       
     }
     
-    setnames(dt.coef, part.names.data()[1:ncol(dt.coef)])
+    setnames(dt.coef, c(ab.part.names.data()[1:(ncol(dt.coef) - 1)], "name"))
     
     if (!is.null(dt.coef))
       rhandsontable(dt.coef, stretchH = "all", useTypes = FALSE) %>%
@@ -1061,7 +1243,7 @@ server <- function(input, output, session) {
       validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
       
       tmp <- colnames(dt.conc)
-      updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
+      updateTextInput(session, "ab.part.names", value = paste(tmp, collapse = ", "))
       
       
     } else {
@@ -1070,7 +1252,7 @@ server <- function(input, output, session) {
       
     }
     
-    setnames(dt.conc, part.names.data()[1:ncol(dt.conc)])
+    setnames(dt.conc, ab.part.names.data()[1:ncol(dt.conc)])
     
     if (!is.null(dt.conc))
       rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE) %>%
@@ -1157,16 +1339,16 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (sep() == ";") {
-        dt.ab <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.ab <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
       } else if (sep() == ",") {
-        dt.ab <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.ab <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
       } else if (sep() == "tab") {
-        dt.ab <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.ab <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
       }
       
       validate(
         
-        need(is.data.frame(dt.abf), "Your file doesn't look like an absorbance file")
+        need(is.data.frame(dt.ab), "Your file doesn't look like an absorbance file")
         
       )
       
@@ -1176,6 +1358,9 @@ server <- function(input, output, session) {
       dt.ab <- dt.ab.data()
       
     }
+    
+    setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 1)], paste("W", 1:(ncol(dt.ab) / 2), sep = "_"))
+    setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 0)], paste("W", 1:(ncol(dt.ab) / 2), "dev", sep = "_"))
     
     if (!is.null(dt.ab))
       rhandsontable(dt.ab, stretchH = "all", useTypes = FALSE) %>%
@@ -1190,11 +1375,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (sep() == ";") {
-        dt.mol <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.mol <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
       } else if (sep() == ",") {
-        dt.mol <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.mol <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
       } else if (sep() == "tab") {
-        dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
       }
       
       validate(
@@ -1210,21 +1395,97 @@ server <- function(input, output, session) {
       
     }
     
+    setnames(dt.mol, paste0("W_", 1:ncol(dt.mol)))
+    
     if (!is.null(dt.mol))
       rhandsontable(dt.mol, stretchH = "all", useTypes = FALSE) %>%
       hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
     
   })
   
+  output$ab.dt.res <- renderRHandsontable({
     
+    dt.res <- ab.dt.res.data()
+    
+    if (!is.null(dt.res))
+      
+      rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    
+  })
   
+  output$dt.ab.abs <- renderRHandsontable({
+    
+    dt.ab.abs <- dt.ab.abs.data()
+    
+    if (!is.null(dt.ab.abs))
+      
+      rhandsontable(dt.ab.abs, stretchH = FALSE, useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    
+  })
+  
+  output$dt.ab.rel <- renderRHandsontable({
+    
+    dt.ab.rel <- dt.ab.rel.data()
+    
+    if (!is.null(dt.ab.rel))
+      
+      rhandsontable(dt.ab.rel, stretchH = FALSE, useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    
+  })
+  
+  output$cnst.dev <- renderRHandsontable({
+    
+    cnst.dev <- cnst.dev.data()
+    
+    if (!is.null(cnst.dev))
+      
+      rhandsontable(cnst.dev, stretchH = FALSE, useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    
+  })
+
+  output$cor.m <- renderRHandsontable({
+    
+    cor.m <- cor.m.data()
+    
+    if (!is.null(cor.m))
+      
+      rhandsontable(cor.m, stretchH = FALSE, useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    
+  })
+
+  output$mol.coef <- renderRHandsontable({
+    
+    mol.coef <- mol.coef.data()
+    
+    if (!is.null(mol.coef))
+      
+      rhandsontable(mol.coef, stretchH = FALSE, useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    
+  })
+
+  output$err.diff <- renderRHandsontable({
+    
+    err.diff <- err.diff.data()
+    
+    if (!is.null(err.diff))
+      
+      rhandsontable(err.diff, stretchH = FALSE, useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    
+  })
   
   
   # end of main server part ----------------------------
   
   
 
-  # downoad ---------------- #
+  # equilibrium downoad ---------------- #
   
   output$dt.coef.csv <- downloadHandler(
     # ----
@@ -1512,6 +1773,522 @@ server <- function(input, output, session) {
   )
   # ----
   
+
+  # absorbance downoad ---------------- #
+  
+  output$ab.dt.coef.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_stoichiometric_coefficients.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(ab.dt.coef.data(), file, row.names = FALSE)
+      } else {
+        write.csv(ab.dt.coef.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$ab.dt.coef.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_stoichiometric_coefficients.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(ab.dt.coef.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$ab.cnst.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "k_constants_log10.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(ab.cnst.data(), file, row.names = FALSE)
+      } else {
+        write.csv(ab.cnst.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$ab.cnst.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "k_constants_log10.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(ab.cnst.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$ab.dt.conc.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_concentrations.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      tmp <- ab.dt.conc.data()
+      tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
+      
+      setnames(tmp, unlist(ab.part.eq.data()))
+      
+      if (sep() == ";") {
+        write.csv2(tmp, file, row.names = FALSE)
+      } else {
+        write.csv(tmp, file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$ab.dt.conc.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_concentrations.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      tmp <- ab.dt.conc.data()
+      tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
+      
+      setnames(tmp, unlist(ab.part.eq.data()))
+      
+      write.xlsx(tmp, file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$ab.dt.conc.tot.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "total_concentrations.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      tmp <- try(ab.dt.conc.tot.data())
+      
+      if (!is.data.frame(tmp))
+        tmp <- data.frame(error = "Evaluate before downloading total concentrations")
+      
+      if (sep() == ";") {
+        write.csv2(tmp, file, row.names = FALSE)
+      } else {
+        write.csv(tmp, file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$ab.dt.conc.tot.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "total_concentrations.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      tmp <- try(ab.dt.conc.tot.data())
+      
+      if (!is.data.frame(tmp))
+        tmp <- data.frame(error = "Evaluate before downloading total concentrations")
+      
+      write.xlsx(tmp, file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.ab.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "absorbance.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(dt.ab.data(), file, row.names = FALSE)
+      } else {
+        write.csv(dt.ab.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.ab.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "absorbance.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.ab.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.mol.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "mol_ext_coefficients.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(dt.mol.data(), file, row.names = FALSE)
+      } else {
+        write.csv(dt.mol.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.mol.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "mol_ext_coefficients.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.mol.data(), file)
+      
+    }
+    
+  )
+  # ----
+
+  output$ab.dt.res.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "equilibrium_concentrations.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(ab.dt.res.data(), file, row.names = FALSE)
+      } else {
+        write.csv(ab.dt.res.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$ab.dt.res.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "equilibrium_concentrations.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(ab.dt.res.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.ab.abs.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "absorbance_calculated_abs_errors.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(dt.ab.abs.data(), file, row.names = FALSE)
+      } else {
+        write.csv(dt.ab.abs.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.ab.abs.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "absorbance_calculated_abs_errors.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.ab.abs.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.ab.rel.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "absorbance_calculated_rel_errors.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(dt.ab.rel.data(), file, row.names = FALSE)
+      } else {
+        write.csv(dt.ab.rel.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.ab.rel.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "absorbance_calculated_rel_errors.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.ab.rel.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$cnst.dev.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "constants_evaluated.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(cnst.dev.data(), file, row.names = FALSE)
+      } else {
+        write.csv(cnst.dev.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$cnst.dev.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "constants_evaluated.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(cnst.dev.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$cor.m.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "correlation_matrix.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(cor.m.data(), file, row.names = FALSE)
+      } else {
+        write.csv(cor.m.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$cor.m.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "correlation_matrix.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(cor.m.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$err.diff.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "fmin_last_step.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(err.diff.data(), file, row.names = FALSE)
+      } else {
+        write.csv(err.diff.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$err.diff.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "fmin_last_step.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(err.diff.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$mol.coef.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "mol_ext_coefficients_calculated.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(mol.coef.data(), file, row.names = FALSE)
+      } else {
+        write.csv(mol.coef.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$mol.coef.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "mol_ext_coefficients_calculated.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(mol.coef.data(), file)
+      
+    }
+    
+  )
+  # ----
   
   
 }
@@ -1519,4 +2296,7 @@ server <- function(input, output, session) {
 # run
 
 shinyApp(ui = ui, server = server)
+
+
+
 

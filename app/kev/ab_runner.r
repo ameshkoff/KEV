@@ -200,15 +200,54 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
     
   } else {
     
+    # constants to data table
+    
+    dt.cnst.dev <- as.data.table(cnst.dev)
+    dt.cnst.dev <- cbind(name = dt.coef[, name], dt.cnst.dev)
+    
+    # correlation matrix to data table
+    
+    dt.cor.m <- as.data.table(cor.m)
+    setnames(dt.cor.m, cnst.tune)
+    
+    dt.cor.m <- as.data.frame(dt.cor.m)
+    rownames(dt.cor.m) <- cnst.tune
+    
+    # molar coefficients to data table
+    
+    cln <- colnames(mol.coef)
+    cln <- cln[!(cln %in% colnames(dt.mol))]
+    
+    setnames(mol.coef.dev, cln)
+    
+    mol.coef.dev.full <- copy(mol.coef)
+    
+    for (i in colnames(mol.coef.dev.full)) {
+      
+      if (i %in% cln) {
+        
+        mol.coef.dev.full[, eval(i) := mol.coef.dev[, eval(as.name(i))]]
+        
+      } else {
+        
+        mol.coef.dev.full[, eval(i) := 0]
+        
+      }
+      
+    }
+    
+    
+    # return
+    
     list("dt.eq.conc" = dt.res
          , "dt.ab.calc" = dt.ab.calc
          , "ab.res.abs" = ab.res.abs
          , "ab.res.rel" = ab.res.rel
          , "ab.err" = ab.err
-         , "cnst.dev" = cnst.dev
-         , "cor.m" = cor.m
+         , "cnst.dev" = dt.cnst.dev # return data table with additional field for particle names
+         , "cor.m" = dt.cor.m
          , "mol.coef" = mol.coef
-         , "mol.coef.dev" = mol.coef.dev
+         , "mol.coef.dev" = mol.coef.dev.full
          , "err.diff" = err.diff
          , "cnst.tune" = cnst.tune)
     
