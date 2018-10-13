@@ -1162,7 +1162,7 @@ server <- function(input, output, session) {
     
   })
   
-  cnst.tune <- reactive({
+  cnst.tune.data <- reactive({
     
     if (!is.null(input$cnst.tune)) {
       
@@ -1256,7 +1256,7 @@ server <- function(input, output, session) {
     
     validate(
       
-      need(length(particles %in% cnst.tune()) > 0, "Input correct particle names for constants evaluation")
+      need(length(particles %in% cnst.tune.data()) > 0, "Input correct particle names for constants evaluation")
       
     )
     
@@ -1273,7 +1273,7 @@ server <- function(input, output, session) {
                          , sep = sep()
                          , eq.thr.type = "rel"
                          , eq.threshold = 1e-08
-                         , cnst.tune = cnst.tune()
+                         , cnst.tune = cnst.tune.data()
                          , algorithm = "direct search"
                          , ab.mode = "base"
                          , method = "basic wls"
@@ -1388,7 +1388,7 @@ server <- function(input, output, session) {
   err.diff.data <- eventReactive(input$ab.conc.exec.btn, {
     
     err.diff <- ab.eval.data()$err.diff
-    err.diff <- data.table(Particle = cnst.tune(), Fmin.Last = err.diff)
+    err.diff <- data.table(Particle = cnst.tune.data(), Fmin.Last = err.diff)
     
     err.diff
     
@@ -2717,6 +2717,7 @@ server <- function(input, output, session) {
         , cor.m = "correlation_matrix.csv"
         , err.diff = "fmin_last_step.csv"
         , mol.coef = "mol_ext_coefficients_calculated.csv"
+        , cnst.tune = "constants_names.csv"
         
       )
       
@@ -2778,6 +2779,7 @@ server <- function(input, output, session) {
         , ab.dt.conc = "input_concentrations"
         , dt.ab = "input_absorbance"
         , dt.mol = "input_mol_ext_coefficients"
+        , cnst.tune = "constant_names"
         , ab.dt.res = "equilibrium_concentrations"
         , dt.ab.abs = "absorbance_calc_abs_errors"
         , dt.ab.rel = "absorbance_calc_rel_errors"
