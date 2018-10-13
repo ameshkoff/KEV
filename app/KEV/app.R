@@ -31,7 +31,7 @@ library(rhandsontable)
 
 # prepare environment
 
-if (Sys.info()['sysname'] %like% "indows")
+if (Sys.info()["sysname"] %like% "indows")
   Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
 
 options(shiny.sanitize.errors = TRUE)
@@ -223,9 +223,20 @@ ui <- navbarPage("KEV",
                                                 , h4("Bulk upload / download (optional)")))
                                 
                                 , fluidRow(column(6
-                                                  , h4("Upload all input data"))
+                                                  , h4("Upload all data")
+                                                  , fileInput("file.bulk.input", "Choose CSV files or XLSX file with multiple sheets",
+                                                              accept = c(
+                                                                "text/csv"
+                                                                , "text/comma-separated-values,text/plain"
+                                                                , ".csv"
+                                                                , ".xlsx")
+                                                              , multiple = TRUE
+                                                  ))
                                            , column(6
-                                                    , h4("Download all input data")))
+                                                    , h4("Download all data")
+                                                    , fluidRow(class = "download-row"
+                                                               , downloadButton("kev.data.zip", "zip")
+                                                               , downloadButton("kev.data.xlsx", "xlsx"))))
                               )))
                             
                             , fluidRow(
@@ -825,6 +836,127 @@ server <- function(input, output, session) {
     
   })
   
+  input.source <- reactiveValues(
+    
+    ab.dt.coef.bulk = FALSE
+    , ab.dt.conc.bulk = FALSE
+    , ab.cnst.bulk = FALSE
+    , dt.ab.bulk = FALSE
+    , dt.mol.bulk = FALSE
+    
+  )
+  
+  observeEvent(input$file.bulk.input, {
+    
+    # stoichiometric coefficients
+    
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*stoich(iometric)*\\_coefficients(\\.csv|\\.txt)*"]) > 0){
+      input.source$ab.dt.coef.bulk <- TRUE
+    }
+    
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]) > 0){
+      
+      shts <- getSheetNames(input$file.bulk.input$datapath)
+      
+      if (length(shts[shts %in% "stoich_coefficients"]))
+        input.source$ab.dt.coef.bulk <- TRUE
+      
+    }
+    
+    # concentrations
+    
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*"]) > 0){
+      input.source$ab.dt.conc.bulk <- TRUE
+    }
+    
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]) > 0){
+      
+      shts <- getSheetNames(input$file.bulk.input$datapath)
+      
+      if (length(shts[shts %in% "concentrations"]))
+        input.source$ab.dt.conc.bulk <- TRUE
+      
+    }
+    
+    # constants
+    
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*k\\_constants\\_log10(\\.csv|\\.txt)*"]) > 0){
+      input.source$ab.cnst.bulk <- TRUE
+    }
+    
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]) > 0){
+      
+      shts <- getSheetNames(input$file.bulk.input$datapath)
+      
+      if (length(shts[shts %in% "k_constants_log10"]))
+        input.source$ab.cnst.bulk <- TRUE
+      
+    }
+    
+    # absorbance
+    
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*absorbance(\\.csv|\\.txt)*"]) > 0){
+      input.source$dt.ab.bulk <- TRUE
+    }
+    
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]) > 0){
+      
+      shts <- getSheetNames(input$file.bulk.input$datapath)
+      
+      if (length(shts[shts %in% "absorbance"]))
+        input.source$dt.ab.bulk <- TRUE
+      
+    }
+    
+    # molar extinction coefficients
+    
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*mol(ar)*\\_ext(inction)*\\_coefficients(\\.csv|\\.txt)*"]) > 0){
+      input.source$dt.mol.bulk <- TRUE
+    }
+    
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]) > 0){
+      
+      shts <- getSheetNames(input$file.bulk.input$datapath)
+      
+      if (length(shts[shts %in% "mol_ext_coefficients"]))
+        input.source$dt.mol.bulk <- TRUE
+      
+    }
+    
+    
+    
+  }, priority = 1000)
+
+  observeEvent(input$file.ab.dt.coef, {
+    
+    input.source$ab.dt.coef.bulk <- FALSE
+    
+  }, priority = 1000)
+  
+  observeEvent(input$file.ab.dt.conc, {
+    
+    input.source$ab.dt.conc.bulk <- FALSE
+    
+  }, priority = 1000)
+  
+  observeEvent(input$file.ab.cnst, {
+    
+    input.source$ab.cnst.bulk <- FALSE
+    
+  }, priority = 1000)
+  
+  observeEvent(input$file.dt.ab, {
+    
+    input.source$dt.ab.bulk <- FALSE
+    
+  }, priority = 1000)
+  
+  observeEvent(input$file.dt.mol, {
+    
+    input.source$dt.mol.bulk <- FALSE
+    
+  }, priority = 1000)
+  
   
   # data --------------------- #
   
@@ -1190,6 +1322,34 @@ server <- function(input, output, session) {
   output$ab.dt.coef <- renderRHandsontable({
     
     in.file <- input$file.ab.dt.coef
+    in.file.bulk <- input$file.bulk.input
+    in.file.xlsx <- NULL
+    
+    # bulk input
+    
+    if (input.source$ab.dt.coef.bulk) {
+      
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*stoich(iometric)*\\_coefficients(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
     
     if (!is.null(in.file)) {
       
@@ -1200,7 +1360,7 @@ server <- function(input, output, session) {
       } else if (sep() == "tab") {
         dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
-      
+
       validate(
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
@@ -1211,6 +1371,20 @@ server <- function(input, output, session) {
       tmp <- colnames(dt.coef)
       updateTextInput(session, "ab.part.names", value = paste(tmp[1:(length(tmp) - 1)], collapse = ", "))
       
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      dt.coef <- try(read.xlsx(in.file.xlsx$datapath, sheet = "stoich_coefficients"), silent = TRUE)
+      
+      validate(
+        
+        need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
+          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
+        
+      )
+      
+      tmp <- colnames(dt.coef)
+      updateTextInput(session, "ab.part.names", value = paste(tmp[1:(length(tmp) - 1)], collapse = ", "))
       
     } else {
       
@@ -1229,6 +1403,34 @@ server <- function(input, output, session) {
   output$ab.dt.conc <- renderRHandsontable({
     
     in.file <- input$file.ab.dt.conc
+    in.file.bulk <- input$file.bulk.input
+    in.file.xlsx <- NULL
+    
+    # bulk input
+    
+    if (input.source$ab.dt.conc.bulk) {
+      
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
     
     if (!is.null(in.file)) {
       
@@ -1245,6 +1447,15 @@ server <- function(input, output, session) {
       tmp <- colnames(dt.conc)
       updateTextInput(session, "ab.part.names", value = paste(tmp, collapse = ", "))
       
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      dt.conc <- try(read.xlsx(in.file.xlsx$datapath, sheet = "concentrations", startRow = 2), silent = TRUE)
+      
+      validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
+      
+      tmp <- colnames(dt.conc)
+      updateTextInput(session, "ab.part.names", value = paste(tmp, collapse = ", "))
       
     } else {
       
@@ -1263,6 +1474,34 @@ server <- function(input, output, session) {
   output$ab.part.eq <- renderRHandsontable({
     
     in.file <- input$file.ab.dt.conc
+    in.file.bulk <- input$file.bulk.input
+    in.file.xlsx <- NULL
+    
+    # bulk input
+    
+    if (input.source$ab.dt.conc.bulk) {
+      
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
     
     part.eq <- ab.part.eq.data()
     
@@ -1295,6 +1534,20 @@ server <- function(input, output, session) {
       
       colnames(part.eq) <- tmp
       
+    } else if (!is.null(in.file.xlsx)) {
+      
+      part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = "concentrations", colNames = FALSE, rows = 1), silent = TRUE)
+      tmp <- try(read.xlsx(in.file.xlsx$datapath, sheet = "concentrations", colNames = FALSE, rows = 2), silent = TRUE)
+      
+      validate(
+        
+        need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
+          need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
+        
+      )
+      
+      colnames(part.eq) <- tmp
+      
     }
     
     if (!is.null(part.eq))
@@ -1306,6 +1559,34 @@ server <- function(input, output, session) {
   output$ab.cnst <- renderRHandsontable({
     
     in.file <- input$file.ab.cnst
+    in.file.bulk <- input$file.bulk.input
+    in.file.xlsx <- NULL
+    
+    # bulk input
+    
+    if (input.source$ab.cnst.bulk) {
+      
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*k\\_constants\\_log10(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
     
     cnst <- ab.cnst.data()
     
@@ -1324,6 +1605,15 @@ server <- function(input, output, session) {
           need(ncol(cnst) == 1, "Check the column delimiter or content of your file")
       )
       
+    } else if (!is.null(in.file.xlsx)) {
+      
+      cnst <- try(read.xlsx(in.file.xlsx$datapath, sheet = "k_constants_log10"), silent = TRUE)
+      
+      validate(
+        need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
+          need(ncol(cnst) == 1, "Check the column delimiter or content of your file")
+      )
+      
     }
     
     if (!is.null(cnst))
@@ -1335,6 +1625,34 @@ server <- function(input, output, session) {
   output$dt.ab <- renderRHandsontable({
     
     in.file <- input$file.dt.ab
+    in.file.bulk <- input$file.bulk.input
+    in.file.xlsx <- NULL
+    
+    # bulk input
+    
+    if (input.source$dt.ab.bulk) {
+      
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*absorbance(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
     
     if (!is.null(in.file)) {
       
@@ -1353,6 +1671,16 @@ server <- function(input, output, session) {
       )
       
 
+    } else if (!is.null(in.file.xlsx)) {
+      
+      dt.ab <- try(read.xlsx(in.file.xlsx$datapath, sheet = "absorbance", colNames = FALSE), silent = TRUE)
+      
+      validate(
+        
+        need(is.data.frame(dt.ab), "Your file doesn't look like an absorbance file")
+        
+      )
+      
     } else {
       
       dt.ab <- dt.ab.data()
@@ -1371,6 +1699,34 @@ server <- function(input, output, session) {
   output$dt.mol <- renderRHandsontable({
     
     in.file <- input$file.dt.mol
+    in.file.bulk <- input$file.bulk.input
+    in.file.xlsx <- NULL
+    
+    # bulk input
+    
+    if (input.source$dt.mol.bulk) {
+      
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*mol(ar)*\\_ext(inction)*\\_coefficients(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
     
     if (!is.null(in.file)) {
       
@@ -1384,10 +1740,20 @@ server <- function(input, output, session) {
       
       validate(
         
-        need(is.data.frame(dt.mol), "Your file doesn't look like an absorbance file")
+        need(is.data.frame(dt.mol), "Your file doesn't look like a molar extinction coefficients file")
         
       )
       
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      dt.mol <- try(read.xlsx(in.file.xlsx$datapath, sheet = "mol_ext_coefficients", colNames = FALSE), silent = TRUE)
+      
+      validate(
+        
+        need(is.data.frame(dt.mol), "Your file doesn't look like a molar extinction coefficients file")
+        
+      )
       
     } else {
       
@@ -1818,7 +2184,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "k_constants_log10.csv"
+      "input_k_constants_log10.csv"
       
     },
     
@@ -1839,7 +2205,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "k_constants_log10.xlsx"
+      "input_k_constants_log10.xlsx"
       
     },
     
@@ -1900,59 +2266,11 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$ab.dt.conc.tot.csv <- downloadHandler(
-    # ----
-    filename = function() {
-      
-      "total_concentrations.csv"
-      
-    },
-    
-    content = function(file) {
-      
-      tmp <- try(ab.dt.conc.tot.data())
-      
-      if (!is.data.frame(tmp))
-        tmp <- data.frame(error = "Evaluate before downloading total concentrations")
-      
-      if (sep() == ";") {
-        write.csv2(tmp, file, row.names = FALSE)
-      } else {
-        write.csv(tmp, file, row.names = FALSE)
-      }
-      
-    }
-    
-  )
-  # ----
-  
-  output$ab.dt.conc.tot.xlsx <- downloadHandler(
-    # ----
-    filename = function() {
-      
-      "total_concentrations.xlsx"
-      
-    },
-    
-    content = function(file) {
-      
-      tmp <- try(ab.dt.conc.tot.data())
-      
-      if (!is.data.frame(tmp))
-        tmp <- data.frame(error = "Evaluate before downloading total concentrations")
-      
-      write.xlsx(tmp, file)
-      
-    }
-    
-  )
-  # ----
-  
   output$dt.ab.csv <- downloadHandler(
     # ----
     filename = function() {
       
-      "absorbance.csv"
+      "input_absorbance.csv"
       
     },
     
@@ -1973,7 +2291,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "absorbance.xlsx"
+      "input_absorbance.xlsx"
       
     },
     
@@ -1990,7 +2308,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "mol_ext_coefficients.csv"
+      "input_mol_ext_coefficients.csv"
       
     },
     
@@ -2011,7 +2329,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "mol_ext_coefficients.xlsx"
+      "input_mol_ext_coefficients.xlsx"
       
     },
     
@@ -2284,6 +2602,125 @@ server <- function(input, output, session) {
     content = function(file) {
       
       write.xlsx(mol.coef.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$kev.data.zip <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "kev.constants.data.zip"
+      
+    },
+    
+    content = function(file) {
+      
+      data.files <- c(
+        
+        ab.dt.coef = "input_stoichiometric_coefficients.csv"
+        , ab.cnst = "input_k_constants_log10.csv"
+        , ab.dt.conc = "input_concentrations.csv"
+        , dt.ab = "input_absorbance.csv"
+        , dt.mol = "input_mol_ext_coefficients.csv"
+        , ab.dt.res = "equilibrium_concentrations.csv"
+        , dt.ab.abs = "absorbance_calculated_abs_errors.csv"
+        , dt.ab.rel = "absorbance_calculated_rel_errors.csv"
+        , cnst.dev = "constants_evaluated.csv"
+        , cor.m = "correlation_matrix.csv"
+        , err.diff = "fmin_last_step.csv"
+        , mol.coef = "mol_ext_coefficients_calculated.csv"
+        
+      )
+      
+      for (i in length(data.files):1) {
+        
+        # check if all files are present (in case run before evaluation)
+        
+        dt <- NULL
+        try(dt <- eval(expr = parse(text = paste0(names(data.files)[i], ".data()"))), silent = TRUE)
+        
+        if (sep() == ";") {
+
+          if (!is.null(dt)) {
+            
+            write.csv2(dt, data.files[i], row.names = FALSE)
+            
+          } else {
+            
+            data.files <- data.files[-i]
+            
+          }
+          
+        } else {
+          
+          if (!is.null(dt)) {
+            
+            write.csv(dt, data.files[i], row.names = FALSE)
+            
+          } else {
+            
+            data.files <- data.files[-i]
+            
+          }
+        }
+        
+      }
+      
+      utils::zip(file, data.files)
+
+    }
+    
+  )
+  # ----
+  
+  output$kev.data.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "kev.constants.data.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      data.files <- c(
+        
+        ab.dt.coef = "input_stoich_coefficients"
+        , ab.cnst = "input_k_constants_log10"
+        , ab.dt.conc = "input_concentrations"
+        , dt.ab = "input_absorbance"
+        , dt.mol = "input_mol_ext_coefficients"
+        , ab.dt.res = "equilibrium_concentrations"
+        , dt.ab.abs = "absorbance_calc_abs_errors"
+        , dt.ab.rel = "absorbance_calc_rel_errors"
+        , cnst.dev = "constants_evaluated"
+        , cor.m = "correlation_matrix"
+        , err.diff = "fmin_last_step"
+        , mol.coef = "mol_ext_coefficients_calc"
+        
+      )
+      
+      dt.list <- list()
+      
+      for (i in 1:length(data.files)) {
+        
+        # check if all files are present (in case run before evaluation)
+        
+        dt <- NULL
+        try(dt <- eval(expr = parse(text = paste0(names(data.files)[i], ".data()"))), silent = TRUE)
+        
+        if (!is.null(dt)) {
+          
+          dt.list[[eval(data.files[i])]] <- dt
+          
+        }
+        
+      }
+      
+      write.xlsx(dt.list, file)
       
     }
     
