@@ -1260,6 +1260,15 @@ server <- function(input, output, session) {
       
     )
     
+    # check if no molar extinction coefficients are known
+    
+    dt.mol <- dt.mol.data()
+    
+    if (ncol(dt.mol) <= 1)
+      dt.mol <- "no.data"
+    
+    # run
+    
     ab.evaluation.runner(mode = "app"
                          , sep = sep()
                          , eq.thr.type = "rel"
@@ -1276,7 +1285,7 @@ server <- function(input, output, session) {
                                           , dt.conc = ab.dt.conc.data()
                                           , part.eq = ab.part.eq.data()
                                           , dt.ab = dt.ab.data()
-                                          , dt.mol = dt.mol.data())
+                                          , dt.mol = dt.mol)
                          , save.res = FALSE)
     
   })
@@ -1809,28 +1818,33 @@ server <- function(input, output, session) {
         dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
       }
       
-      validate(
-        
-        need(is.data.frame(dt.mol), "Your file doesn't look like a molar extinction coefficients file")
-        
-      )
+      # browser()
+      
+      # validate(
+      #   
+      #   need(is.data.frame(dt.mol), "Your file doesn't look like a molar extinction coefficients file")
+      #   
+      # )
       
       
     } else if (!is.null(in.file.xlsx)) {
       
       dt.mol <- try(read.xlsx(in.file.xlsx$datapath, sheet = "mol_ext_coefficients", colNames = FALSE), silent = TRUE)
       
-      validate(
-        
-        need(is.data.frame(dt.mol), "Your file doesn't look like a molar extinction coefficients file")
-        
-      )
+      # validate(
+      #   
+      #   need(is.data.frame(dt.mol), "Your file doesn't look like a molar extinction coefficients file")
+      #   
+      # )
       
     } else {
       
       dt.mol <- dt.mol.data()
       
     }
+    
+    if (!is.data.frame(dt.mol))
+      dt.mol <- data.frame(no.data = "no.data")
     
     setnames(dt.mol, paste0("W_", 1:ncol(dt.mol)))
     
