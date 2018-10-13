@@ -1172,9 +1172,78 @@ server <- function(input, output, session) {
       
     } else {
       
-      "molecule1"
+      if (is.null(values[["cnst.tune"]])) {
+        
+        cnst.tune <- "molecule1"
+        
+      } else {
+        
+        cnst.tune <- values[["cnst.tune"]]
+        
+      }
       
     }
+    
+    values[["cnst.tune"]] <- cnst.tune
+    
+    cnst.tune
+    
+  })
+  
+  cnst.tune.load <- reactive({
+    
+    in.file.bulk <- input$file.bulk.input
+    in.file.xlsx <- NULL
+    in.file <- NULL
+    
+    # bulk input
+    
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^constants_names(\\.csv|\\.txt)*"]) > 0){
+
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^constants_names(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.frame(in.file)
+      
+    }
+    
+    in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
+    
+    if (nrow(in.file.xlsx) > 0) {
+      
+      in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+      
+    } else {
+      
+      in.file.xlsx <- NULL
+      
+    }
+    
+    if (!is.null(in.file.xlsx))
+      in.file <- NULL
+      
+    if (!is.null(in.file)) {
+      
+      if (sep() == ";") {
+        cnst.tune <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+      } else if (sep() == ",") {
+        cnst.tune <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+      } else if (sep() == "tab") {
+        cnst.tune <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+      }
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      cnst.tune <- try(read.xlsx(in.file.xlsx$datapath, sheet = "constant_names", colNames = FALSE), silent = TRUE)
+      
+    } else {
+      
+      cnst.tune <- values[["cnst.tune"]]
+      
+    }
+    
+    cnst.tune <- unlist(cnst.tune)
+    
+    values[["cnst.tune"]] <- cnst.tune
+    updateTextInput(session, "cnst.tune", value = paste(cnst.tune, collapse = ", "))
     
   })
   
@@ -1190,6 +1259,15 @@ server <- function(input, output, session) {
       need(length(particles %in% cnst.tune()) > 0, "Input correct particle names for constants evaluation")
       
     )
+    
+    # check if no molar extinction coefficients are known
+    
+    dt.mol <- dt.mol.data()
+    
+    if (ncol(dt.mol) <= 1)
+      dt.mol <- "no.data"
+    
+    # run
     
     ab.evaluation.runner(mode = "app"
                          , sep = sep()
@@ -1207,7 +1285,7 @@ server <- function(input, output, session) {
                                           , dt.conc = ab.dt.conc.data()
                                           , part.eq = ab.part.eq.data()
                                           , dt.ab = dt.ab.data()
-                                          , dt.mol = dt.mol.data())
+                                          , dt.mol = dt.mol)
                          , save.res = FALSE)
     
   })
@@ -1328,6 +1406,8 @@ server <- function(input, output, session) {
     # bulk input
     
     if (input.source$ab.dt.coef.bulk) {
+      
+      cnst.tune.load()
       
       in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*stoich(iometric)*\\_coefficients(\\.csv|\\.txt)*"][1]
       in.file <- as.data.frame(in.file)
@@ -1738,28 +1818,33 @@ server <- function(input, output, session) {
         dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
       }
       
-      validate(
-        
-        need(is.data.frame(dt.mol), "Your file doesn't look like a molar extinction coefficients file")
-        
-      )
+      # browser()
+      
+      # validate(
+      #   
+      #   need(is.data.frame(dt.mol), "Your file doesn't look like a molar extinction coefficients file")
+      #   
+      # )
       
       
     } else if (!is.null(in.file.xlsx)) {
       
       dt.mol <- try(read.xlsx(in.file.xlsx$datapath, sheet = "mol_ext_coefficients", colNames = FALSE), silent = TRUE)
       
-      validate(
-        
-        need(is.data.frame(dt.mol), "Your file doesn't look like a molar extinction coefficients file")
-        
-      )
+      # validate(
+      #   
+      #   need(is.data.frame(dt.mol), "Your file doesn't look like a molar extinction coefficients file")
+      #   
+      # )
       
     } else {
       
       dt.mol <- dt.mol.data()
       
     }
+    
+    if (!is.data.frame(dt.mol))
+      dt.mol <- data.frame(no.data = "no.data")
     
     setnames(dt.mol, paste0("W_", 1:ncol(dt.mol)))
     
