@@ -15,7 +15,9 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
   
   # scalars
   
-  part.nm <- ncol(dt.coef)
+  part.nm <- colnames(dt.coef)
+  part.nm <- length(part.nm[part.nm != "name"])
+  
   reac.nm <- nrow(dt.coef) + part.nm
   
   cnst <- rbind(rep(0, part.nm), cnst, use.names = FALSE)
@@ -23,8 +25,13 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
   # complete coefficients data table
   
   cln <- colnames(dt.coef)
+  tmp <- as.data.table(diag(part.nm))
   
-  dt.coef <-  rbind(as.data.table(diag(part.nm)), dt.coef, use.names = FALSE)
+  if (length(cln[cln == "name"]) != 0)
+    tmp[, name := cln[cln != "name"]]
+    
+  dt.coef <- rbind(tmp, dt.coef, use.names = FALSE)
+  
   setnames(dt.coef, cln)
   
   # matrices
@@ -34,6 +41,7 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
     f <- eval(as.name(j))
     
     cln <- colnames(f)
+    cln <- cln[cln != "name"]
     
     for (i in cln) {
       
@@ -44,7 +52,7 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
     
     # to numbers
     
-    f <- as.matrix(f)
+    f <- as.matrix(f[, cln, with = FALSE])
     f <- apply(f, 2, as.numeric)
     
     assign(paste0(j, ".m"), f)
@@ -55,21 +63,28 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
   
   # create names
   
-  dt.coef[, name := ""]
-  
   cln <- colnames(dt.coef)
-  cln <- cln[cln != "name"]
   
-  for (i in cln) {
+  if (length(cln[cln == "name"]) == 0) {
     
-    dt.coef[eval(as.name(i)) > 0, name := paste0(name, " + ", i)]
-    dt.coef[eval(as.name(i)) < 0, name := paste0(name, " - ", i)]
+    dt.coef[, name := ""]
+    
+    cln <- colnames(dt.coef)
+    cln <- cln[cln != "name"]
+    
+    for (i in cln) {
+      
+      dt.coef[eval(as.name(i)) > 0, name := paste0(name, " + ", i)]
+      dt.coef[eval(as.name(i)) < 0, name := paste0(name, " - ", i)]
+      
+    }
+    
+    dt.coef[, name := str_replace(name, "^ *\\+ *", "")]
+    dt.coef[, name := str_replace(name, "^ *\\-", "-")]
+    dt.coef[, name := paste(name, 1:.N, sep = "_"), name]
     
   }
   
-  dt.coef[, name := str_replace(name, "^ *\\+ *", "")]
-  dt.coef[, name := str_replace(name, "^ *\\-", "-")]
-  dt.coef[, name := paste(name, 1:.N, sep = "_"), name]
   
   # restore constants
   

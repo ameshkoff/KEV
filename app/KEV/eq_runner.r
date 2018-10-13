@@ -25,7 +25,7 @@ library(stringr)
 
 # runner -------------------------------------------- #
 
-eq.evaluation.runner <- function(app = FALSE
+eq.evaluation.runner <- function(mode = c("api", "script", "app")
                                  , sep = ";"
                                  , subdir = ""
                                  , bs.name = "molecule1"
@@ -36,7 +36,7 @@ eq.evaluation.runner <- function(app = FALSE
   
   dir.start <- ""
   
-  if (app == FALSE)
+  if (mode %in% c("script", "api"))
     dir.start <- "app/KEV/"
 
   source(paste0(dir.start, "eq_data.r"), chdir = TRUE)
@@ -47,11 +47,11 @@ eq.evaluation.runner <- function(app = FALSE
 
   # load data
   
-  if (app == FALSE) {
+  if (mode == "script") {
     
     dt.ttl <- eq.scripts.load(sep, subdir)
     
-  } else {
+  } else if (mode %in% c("app", "api")) {
     
     dt.ttl <- dt.list
     
@@ -93,7 +93,7 @@ eq.evaluation.runner <- function(app = FALSE
   
   # save
   
-  if (app ==  FALSE & save.res) {
+  if (mode == "script" & save.res) {
     
     eq.save(subdir, sep, dt.res, dt.frac, dt.err, bs.name)  
     
@@ -101,7 +101,7 @@ eq.evaluation.runner <- function(app = FALSE
   
   # return data
   
-  if (app == FALSE) {
+  if (mode %in% c("script", "api")) {
     
     list("dt.eq.conc" = dt.res
          , "dt.conc.input" = dt.conc.m

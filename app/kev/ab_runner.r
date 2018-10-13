@@ -1,0 +1,262 @@
+# ########################################################## #
+#                                                            #
+# Name: KEV:Constant Evaluator                               #
+# Author: AMeshkov                                           #
+# Date: 2018                                                 #
+#                                                            #
+# ########################################################## #
+
+
+
+# ---------------------- load libraries ----------------------
+
+# I/O
+# data structure
+library(data.table)
+# computation
+library(MASS)
+library(Matrix)
+library(Hmisc)
+# strings
+library(stringi)
+library(stringr)
+
+
+
+# runner -------------------------------------------- #
+
+ab.evaluation.runner <- function(mode = c("api", "script", "app")
+                                 , sep = ";"
+                                 , subdir = ""
+                                 , eq.thr.type = c("rel", "abs")
+                                 , eq.threshold = 1e-08
+                                 , cnst.tune = c("HL", "H2L")
+                                 , algorithm = "direct search"
+                                 , method = "basic wls"
+                                 , ab.mode = c("base", "grid", "debug")
+                                 , search.density = 1
+                                 , lrate.init = .5
+                                 , ab.threshold = 5e-7
+                                 , save.res = TRUE
+                                 , dt.list = NULL) {
+
+  #
+  
+  ab.threshold <- log(10 ^ ab.threshold)
+  
+  
+  # source code ------------- #
+  
+  dir.start <- ""
+  
+  if (mode %in% c("script", "api"))
+    dir.start <- "app/KEV/"
+  
+  source(paste0(dir.start, "eq_data.r"), chdir = TRUE)
+  source(paste0(dir.start, "ab_data.r"), chdir = TRUE)
+  
+  source(paste0(dir.start, "eq_preproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "ab_preproc.r"), chdir = TRUE)
+  
+  source(paste0(dir.start, "eq_evaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "ab_evaluator.r"), chdir = TRUE)
+  
+  source(paste0(dir.start, "eq_postproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "ab_postproc.r"), chdir = TRUE)
+  
+  source(paste0(dir.start, "ab_save.r"), chdir = TRUE)
+  
+  
+  # load data ---------------- #
+  
+  if (mode == "script") {
+    
+    dt.ttl <- c(eq.scripts.load(sep, subdir)
+                , ab.scripts.load(sep, subdir))
+    
+  } else if (mode %in% c("app", "api")) {
+    
+    dt.ttl <- dt.list
+    
+  }
+  
+  dt.coef <- dt.ttl[["dt.coef"]]
+  dt.conc <- dt.ttl[["dt.conc"]]
+  cnst <- dt.ttl[["cnst"]]
+  part.eq <- dt.ttl[["part.eq"]]
+  
+  dt.ab <- dt.ttl[["dt.ab"]]
+  dt.mol <- dt.ttl[["dt.mol"]]
+  
+  
+  # preproc data --------------- #
+  
+  dt.ttl <- c(eq.preproc(dt.coef, cnst, dt.conc, part.eq)
+              , ab.preproc(dt.ab, dt.mol))
+  
+  dt.coef <- dt.ttl[["dt.coef"]]
+  dt.conc <- dt.ttl[["dt.conc"]]
+  cnst.m <- dt.ttl[["cnst.m"]]
+  part.eq <- dt.ttl[["part.eq"]]
+  dt.coef.m <- dt.ttl[["dt.coef.m"]]
+  dt.conc.m <- dt.ttl[["dt.conc.m"]]
+  reac.nm <- dt.ttl[["reac.nm"]]
+  part.nm <- dt.ttl[["part.nm"]]
+  
+  dt.ab <- dt.ttl[["dt.ab"]]
+  dt.ab.err <- dt.ttl[["dt.ab.err"]]
+  dt.mol <- dt.ttl[["dt.mol"]]
+  dt.ab.m <- dt.ttl[["dt.ab.m"]]
+  dt.ab.err.m <- dt.ttl[["dt.ab.err.m"]]
+  dt.mol.m <- dt.ttl[["dt.mol.m"]]
+  partprod.nm <- dt.ttl[["partprod.nm"]]
+  
+  cnst.tune.nm <- which(dt.coef[, name] %in% cnst.tune)
+  
+  
+  # run evaluator --------------- #
+  
+  exec.time <- system.time(
+    dt.ttl <- constant.optimizer(dt.coef, cnst.m, cnst.tune
+                                 , dt.ab.m, dt.ab.err.m, dt.mol.m
+                                 , dt.coef.m, dt.conc.m, part.eq, reac.nm
+                                 , hardstop = 1000
+                                 , lrate.init
+                                 , search.density
+                                 , ab.threshold
+                                 , eq.threshold
+                                 , eq.thr.type
+                                 , mode = ab.mode, method, algorithm))[3]
+  
+  cnst.m <- dt.ttl[["cnst.m"]]
+  cnst.m.10 <- log(exp(cnst.m), 10)
+  mol.coef <- dt.ttl[["mol.coef"]]
+  dt.ab.calc <- dt.ttl[["dt.ab.calc"]]
+  dt.res.m <- dt.ttl[["dt.res.m"]]
+  ab.err <- tail(dt.ttl[["grid.opt"]][!is.na(err), err], 1)
+  grid.opt <- dt.ttl[["grid.opt"]]
+  
+  
+  # postprocessing ---------------- #
+  
+  dt.res <- data.table(dt.res.m)
+  
+  dt.conc.calc <- eq.tot.conc.calc(dt.res, cnst.m, dt.coef.m, part.nm)
+  dt.err <- eq.residuals(dt.conc.m, dt.conc.calc, part.eq)
+  
+  dt.conc.tot <- copy(dt.conc.m)
+  dt.conc.tot[, part.eq] <- dt.conc.calc[, part.eq]
+  
+  cov.m <- ab.cov(ab.err
+                 , cnst.m
+                 , cnst.tune.nm
+                 , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
+                 , dt.ab.m, dt.ab.err.m, dt.mol.m
+                 , eq.thr.type, eq.threshold
+                 , method, ab.threshold)
+  
+  err.diff <- cov.m$err.diff
+  cor.m <- cov.m$cor.m
+  cov.m <- cov.m$cov.m
+  
+  cnst.dev <- constant.deviations(cnst.m, cov.m, cnst.tune.nm)
+  mol.coef.dev <- molar.coef.deviations(cnst.m
+                                        , cnst.tune.nm
+                                        , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
+                                        , dt.ab.m, dt.ab.err.m, dt.mol.m
+                                        , eq.thr.type, eq.threshold
+                                        , method
+                                        , ab.threshold)
+  
+  ab.res.abs <- absorbance.residuals(dt.ab.m, dt.ab.calc)
+  ab.res.rel <- ab.res.abs$ab.res.rel
+  ab.res.abs <- ab.res.abs$ab.res.abs
+  
+  # save
+  
+  if (mode == "script" & save.res) {
+    
+    ab.save(subdir, sep, dt.res, dt.ab.calc, ab.res.abs, ab.res.rel, ab.err, cnst.dev, cor.m, mol.coef, mol.coef.dev, err.diff, cnst.tune)
+    
+  }
+
+  # return data
+  
+  if (mode %in% c("script", "api")) {
+    
+    list("grid.opt" = grid.opt
+         ,"dt.eq.conc" = dt.res
+         , "dt.ab.calc" = dt.ab.calc
+         , "ab.res.abs" = ab.res.abs
+         , "ab.res.rel" = ab.res.rel
+         , "ab.err" = ab.err
+         , "cnst.dev" = cnst.dev
+         , "cor.m" = cor.m
+         , "mol.coef" = mol.coef
+         , "mol.coef.dev" = mol.coef.dev
+         , "err.diff" = err.diff
+         , "cnst.tune" = cnst.tune
+         , "exec.time" = exec.time)
+    
+  } else {
+    
+    # constants to data table
+    
+    dt.cnst.dev <- as.data.table(cnst.dev)
+    dt.cnst.dev <- cbind(name = dt.coef[, name], dt.cnst.dev)
+    
+    # correlation matrix to data table
+    
+    dt.cor.m <- as.data.table(cor.m)
+    setnames(dt.cor.m, cnst.tune)
+    
+    dt.cor.m <- as.data.frame(dt.cor.m)
+    rownames(dt.cor.m) <- cnst.tune
+    
+    # molar coefficients to data table
+    
+    cln <- colnames(mol.coef)
+    cln <- cln[!(cln %in% colnames(dt.mol))]
+    
+    setnames(mol.coef.dev, cln)
+    
+    mol.coef.dev.full <- copy(mol.coef)
+    
+    for (i in colnames(mol.coef.dev.full)) {
+      
+      if (i %in% cln) {
+        
+        mol.coef.dev.full[, eval(i) := mol.coef.dev[, eval(as.name(i))]]
+        
+      } else {
+        
+        mol.coef.dev.full[, eval(i) := 0]
+        
+      }
+      
+    }
+    
+    
+    # return
+    
+    list("dt.eq.conc" = dt.res
+         , "dt.ab.calc" = dt.ab.calc
+         , "ab.res.abs" = ab.res.abs
+         , "ab.res.rel" = ab.res.rel
+         , "ab.err" = ab.err
+         , "cnst.dev" = dt.cnst.dev # return data table with additional field for particle names
+         , "cor.m" = dt.cor.m
+         , "mol.coef" = mol.coef
+         , "mol.coef.dev" = mol.coef.dev.full
+         , "err.diff" = err.diff
+         , "cnst.tune" = cnst.tune)
+    
+  }
+  
+}
+
+
+
+
+
+

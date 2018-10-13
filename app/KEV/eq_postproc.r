@@ -21,7 +21,10 @@ eq.cond.fractions <- function(dt.res, bs.name, dt.coef, dt.coef.m, dt.conc.m) {
   dt.frac <- data.table(t(dt.frac))
   dt.frac <- data.table(rn = colnames(dt.res[, cln, with = FALSE]), dt.frac)
   
-  tmp <- data.table(rn = paste0("-lg(C(", bs.name, "))"), t(data.table(round(-log10(dt.res[, eval(as.name(paste0(bs.name, "_1")))]), 2))))
+  cln <- colnames(dt.res)
+  cln <- cln[cln %in% c(bs.name, paste0(bs.name, "_1"))]
+  
+  tmp <- data.table(rn = paste0("-lg(C(", bs.name, "))"), t(data.table(round(-log10(dt.res[, cln, with = FALSE]), 2))))
   
   dt.frac <- rbind(tmp, dt.frac)
   
