@@ -1142,9 +1142,9 @@ server <- function(input, output, session) {
         dt.mol <- as.data.table(matrix(rep(0, 6), 2))
         dt.mol <- as.data.table(dt.mol)
 
-        setnames(dt.mol, c("Particle", paste0("W_", (2:ncol(dt.mol)) - 1)))
+        setnames(dt.mol, paste0("W_", (1:ncol(dt.mol))))
         
-        dt.mol <- cbind(particle = c("molecule1", "molecule2"), dt.mol)
+        dt.mol <- cbind(Particle = c("molecule1", "molecule2"), dt.mol)
 
       } else {
         
@@ -1767,8 +1767,8 @@ server <- function(input, output, session) {
       
     }
     
-    setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 1)], paste("W", 1:(ncol(dt.ab) / 2), sep = "_"))
-    setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 0)], paste("W", 1:(ncol(dt.ab) / 2), "dev", sep = "_"))
+    try(setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 1)], paste("W", 1:(ncol(dt.ab) / 2), sep = "_")), silent = TRUE)
+    try(setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 0)], paste("W", 1:(ncol(dt.ab) / 2), "dev", sep = "_")), silent = TRUE)
     
     if (!is.null(dt.ab))
       rhandsontable(dt.ab, stretchH = "all", useTypes = FALSE) %>%
@@ -1846,7 +1846,7 @@ server <- function(input, output, session) {
     if (!is.data.frame(dt.mol))
       dt.mol <- data.frame(no.data = "no.data")
     
-    setnames(dt.mol, paste0("W_", 1:ncol(dt.mol)))
+    setnames(dt.mol, c("Particle", paste0("W_", 1:(ncol(dt.mol) - 1))))
     
     if (!is.null(dt.mol))
       rhandsontable(dt.mol, stretchH = "all", useTypes = FALSE) %>%
@@ -1936,7 +1936,7 @@ server <- function(input, output, session) {
   
   
 
-  # equilibrium downoad ---------------- #
+  # equilibrium download ---------------- #
   
   output$dt.coef.csv <- downloadHandler(
     # ----

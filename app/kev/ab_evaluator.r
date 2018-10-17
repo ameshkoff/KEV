@@ -81,7 +81,7 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
     
     if (mode[1] == "postproc") {
       
-      mol.coef.dev <- sqrt(diag(sum((y - y.calc) ^ 2)/(nrow(dt.res.m) - length(cln.unknown)) * ginv((t(dt.m)) %*% dt.m, tol = 0)))
+      mol.coef.dev <- (diag(sum((y.raw - y.calc) ^ 2)/(length(y) - length(cln.unknown)) * ginv((t(dt.m)) %*% diag(wght) %*% dt.m, tol = 0))) ^ .5
       
     }
   }
