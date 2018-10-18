@@ -1067,7 +1067,7 @@ server <- function(input, output, session) {
   })
   
   ab.cnst.data <- reactive({
-    
+    # browser()
     if (!is.null(input$ab.cnst)) {
       
       cnst <- hot_to_r(input$ab.cnst)
@@ -1090,7 +1090,7 @@ server <- function(input, output, session) {
     cnst <- as.data.table(cnst)
     
     values[["ab.cnst"]] <- cnst
-    
+    # browser()
     cnst
     
   })
@@ -1448,6 +1448,8 @@ server <- function(input, output, session) {
         
       )
       
+      # dt.coef <- as.data.table(dt.coef)
+      
       tmp <- colnames(dt.coef)
       updateTextInput(session, "ab.part.names", value = paste(tmp[1:(length(tmp) - 1)], collapse = ", "))
       
@@ -1462,6 +1464,8 @@ server <- function(input, output, session) {
           need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
         
       )
+      
+      # dt.coef <- as.data.table(dt.coef)
       
       tmp <- colnames(dt.coef)
       updateTextInput(session, "ab.part.names", value = paste(tmp[1:(length(tmp) - 1)], collapse = ", "))
@@ -1668,8 +1672,6 @@ server <- function(input, output, session) {
     
     # choose source
     
-    cnst <- ab.cnst.data()
-    
     if (!is.null(in.file)) {
       
       if (sep() == ";") {
@@ -1693,6 +1695,10 @@ server <- function(input, output, session) {
         need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
           need(ncol(cnst) == 1, "Check the column delimiter or content of your file")
       )
+      
+    } else {
+      
+      cnst <- ab.cnst.data()
       
     }
     
