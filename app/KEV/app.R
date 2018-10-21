@@ -1251,7 +1251,7 @@ server <- function(input, output, session) {
   # execute
   
   ab.eval.data <- reactive({
-
+    
     particles <- c(colnames(ab.dt.coef.data()), ab.dt.coef.data()[, name])
     
     validate(
