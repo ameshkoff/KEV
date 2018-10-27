@@ -568,22 +568,34 @@ server <- function(input, output, session) {
   
   eval.data <- reactive({
     
-    validate(
+    withProgress(message = "Computation... It may take some time", value = 0, {
       
-      need(length(colnames(dt.coef.data())[colnames(dt.coef.data()) == bs.name()]) > 0, "Input correct particle name to get fractions of")
+      incProgress(.1)
+        
+      validate(
+        
+        need(length(colnames(dt.coef.data())[colnames(dt.coef.data()) == bs.name()]) > 0, "Input correct particle name to get fractions of")
+        
+      )
       
-    )
+      incProgress(.3)
+      
+      res <- eq.evaluation.runner(mode = "app"
+                                 , sep = sep()
+                                 , bs.name = bs.name()
+                                 , thr.type = c("rel")
+                                 , threshold = 1e-08
+                                 , dt.list = list(dt.coef = dt.coef.data()
+                                                  , cnst = cnst.data()
+                                                  , dt.conc = dt.conc.data()
+                                                  , part.eq = part.eq.data())
+                                 , save.res = FALSE)
     
-    eq.evaluation.runner(mode = "app"
-                         , sep = sep()
-                         , bs.name = bs.name()
-                         , thr.type = c("rel")
-                         , threshold = 1e-08
-                         , dt.list = list(dt.coef = dt.coef.data()
-                                          , cnst = cnst.data()
-                                          , dt.conc = dt.conc.data()
-                                          , part.eq = part.eq.data())
-                         , save.res = FALSE)
+      incProgress(.6)
+      
+    })
+    
+    res
     
   })
   
@@ -1252,41 +1264,53 @@ server <- function(input, output, session) {
   
   ab.eval.data <- reactive({
     
-    particles <- c(colnames(ab.dt.coef.data()), ab.dt.coef.data()[, name])
+    withProgress(message = "Computation... It may take some time", value = 0, {
     
-    validate(
+      incProgress(.1)
       
-      need(length(particles %in% cnst.tune.data()) > 0, "Input correct particle names for constants evaluation")
+      particles <- c(colnames(ab.dt.coef.data()), ab.dt.coef.data()[, name])
       
-    )
+      validate(
+        
+        need(length(particles %in% cnst.tune.data()) > 0, "Input correct particle names for constants evaluation")
+        
+      )
+      
+      # check if no molar extinction coefficients are known
+      
+      dt.mol <- dt.mol.data()
+      
+      if (ncol(dt.mol) <= 1)
+        dt.mol <- "no.data"
+      
+      incProgress(.3)
+      
+      # run
+      
+      res <- ab.evaluation.runner(mode = "app"
+                             , sep = sep()
+                             , eq.thr.type = "rel"
+                             , eq.threshold = 1e-08
+                             , cnst.tune = cnst.tune.data()
+                             , algorithm = "direct search"
+                             , ab.mode = "base"
+                             , method = "basic wls"
+                             , search.density = as.numeric(input$search.density)
+                             , lrate.init = .5
+                             , ab.threshold = as.numeric(input$ab.threshold)
+                             , dt.list = list(dt.coef = ab.dt.coef.data()
+                                              , cnst = ab.cnst.data()
+                                              , dt.conc = ab.dt.conc.data()
+                                              , part.eq = ab.part.eq.data()
+                                              , dt.ab = dt.ab.data()
+                                              , dt.mol = dt.mol)
+                             , save.res = FALSE)
     
-    # check if no molar extinction coefficients are known
+      incProgress(.6)
+      
+    })
     
-    dt.mol <- dt.mol.data()
-    
-    if (ncol(dt.mol) <= 1)
-      dt.mol <- "no.data"
-    
-    # run
-    
-    ab.evaluation.runner(mode = "app"
-                         , sep = sep()
-                         , eq.thr.type = "rel"
-                         , eq.threshold = 1e-08
-                         , cnst.tune = cnst.tune.data()
-                         , algorithm = "direct search"
-                         , ab.mode = "base"
-                         , method = "basic wls"
-                         , search.density = as.numeric(input$search.density)
-                         , lrate.init = .5
-                         , ab.threshold = as.numeric(input$ab.threshold)
-                         , dt.list = list(dt.coef = ab.dt.coef.data()
-                                          , cnst = ab.cnst.data()
-                                          , dt.conc = ab.dt.conc.data()
-                                          , part.eq = ab.part.eq.data()
-                                          , dt.ab = dt.ab.data()
-                                          , dt.mol = dt.mol)
-                         , save.res = FALSE)
+    res
     
   })
   
