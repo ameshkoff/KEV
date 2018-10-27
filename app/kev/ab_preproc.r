@@ -11,20 +11,40 @@
 
 ab.preproc <- function(dt.ab, dt.mol) {
   
+  # check consistence
+  
+  ab.w <- dt.ab[data %like% "^obs", wave.length]
+  mol.w <- dt.mol[, wave.length]
+
+  if (!is.logical(all.equal(ab.w, mol.w, check.attributes = FALSE))) {
+    
+    stop("absorbance data is inconsistent with molar extinction coefficients")
+    
+  }
+  
+  # transpose absorbance data
+  
+  cln <- dt.ab[, paste0(data, "_", wave.length)]
+  
+  dt.ab <- data.table(t(dt.ab[, !c("data", "wave.length"), with = FALSE]))
+  setnames(dt.ab, cln)
+
   # scalars
   
   partprod.nm <- ncol(dt.ab) + nrow(dt.ab)
 
   # split absorbance data.table in absorbance matrix and error tables
   
-  cln <- 1:ncol(dt.ab)
-  cln.val <- cln[cln %% 2 == 1]
-  cln.err <- cln[cln %% 2 == 0]
+  cln <- colnames(dt.ab)
+  cln.val <- cln[cln %like% "^obs"]
+  cln.err <- cln[cln %like% "^dev"]
   
   dt.ab.err <- dt.ab[, cln.err, with = FALSE]
   dt.ab <- dt.ab[, cln.val, with = FALSE]
   
-  cln <- paste0("V", 1:ncol(dt.ab))
+  cln <- colnames(dt.ab)
+  cln <- str_replace(cln, "obs(ervation)*", "")
+  cln <- paste0("L", cln)
   
   setnames(dt.ab, cln)
   setnames(dt.ab.err, cln)
@@ -35,10 +55,7 @@ ab.preproc <- function(dt.ab, dt.mol) {
   
   if (is.data.table(dt.mol)) {
     
-    cln <- unlist(dt.mol[, 1, with = FALSE])
-    
-    dt.mol <- data.table(t(dt.mol[, !1, with = FALSE]))
-    setnames(dt.mol, cln)
+    dt.mol[, wave.length := NULL]
     
   } else {
     
