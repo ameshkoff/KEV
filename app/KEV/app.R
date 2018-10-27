@@ -1067,7 +1067,7 @@ server <- function(input, output, session) {
   })
   
   ab.cnst.data <- reactive({
-    
+    # browser()
     if (!is.null(input$ab.cnst)) {
       
       cnst <- hot_to_r(input$ab.cnst)
@@ -1090,7 +1090,7 @@ server <- function(input, output, session) {
     cnst <- as.data.table(cnst)
     
     values[["ab.cnst"]] <- cnst
-    
+    # browser()
     cnst
     
   })
@@ -1142,9 +1142,9 @@ server <- function(input, output, session) {
         dt.mol <- as.data.table(matrix(rep(0, 6), 2))
         dt.mol <- as.data.table(dt.mol)
 
-        setnames(dt.mol, c("Particle", paste0("W_", (2:ncol(dt.mol)) - 1)))
+        setnames(dt.mol, paste0("W_", (1:ncol(dt.mol))))
         
-        dt.mol <- cbind(particle = c("molecule1", "molecule2"), dt.mol)
+        dt.mol <- cbind(Particle = c("molecule1", "molecule2"), dt.mol)
 
       } else {
         
@@ -1162,7 +1162,7 @@ server <- function(input, output, session) {
     
   })
   
-  cnst.tune <- reactive({
+  cnst.tune.data <- reactive({
     
     if (!is.null(input$cnst.tune)) {
       
@@ -1251,12 +1251,12 @@ server <- function(input, output, session) {
   # execute
   
   ab.eval.data <- reactive({
-
+    
     particles <- c(colnames(ab.dt.coef.data()), ab.dt.coef.data()[, name])
     
     validate(
       
-      need(length(particles %in% cnst.tune()) > 0, "Input correct particle names for constants evaluation")
+      need(length(particles %in% cnst.tune.data()) > 0, "Input correct particle names for constants evaluation")
       
     )
     
@@ -1273,7 +1273,7 @@ server <- function(input, output, session) {
                          , sep = sep()
                          , eq.thr.type = "rel"
                          , eq.threshold = 1e-08
-                         , cnst.tune = cnst.tune()
+                         , cnst.tune = cnst.tune.data()
                          , algorithm = "direct search"
                          , ab.mode = "base"
                          , method = "basic wls"
@@ -1388,7 +1388,7 @@ server <- function(input, output, session) {
   err.diff.data <- eventReactive(input$ab.conc.exec.btn, {
     
     err.diff <- ab.eval.data()$err.diff
-    err.diff <- data.table(Particle = cnst.tune(), Fmin.Last = err.diff)
+    err.diff <- data.table(Particle = cnst.tune.data(), Fmin.Last = err.diff)
     
     err.diff
     
@@ -1448,6 +1448,8 @@ server <- function(input, output, session) {
         
       )
       
+      # dt.coef <- as.data.table(dt.coef)
+      
       tmp <- colnames(dt.coef)
       updateTextInput(session, "ab.part.names", value = paste(tmp[1:(length(tmp) - 1)], collapse = ", "))
       
@@ -1462,6 +1464,8 @@ server <- function(input, output, session) {
           need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
         
       )
+      
+      # dt.coef <- as.data.table(dt.coef)
       
       tmp <- colnames(dt.coef)
       updateTextInput(session, "ab.part.names", value = paste(tmp[1:(length(tmp) - 1)], collapse = ", "))
@@ -1668,8 +1672,6 @@ server <- function(input, output, session) {
     
     # choose source
     
-    cnst <- ab.cnst.data()
-    
     if (!is.null(in.file)) {
       
       if (sep() == ";") {
@@ -1693,6 +1695,10 @@ server <- function(input, output, session) {
         need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
           need(ncol(cnst) == 1, "Check the column delimiter or content of your file")
       )
+      
+    } else {
+      
+      cnst <- ab.cnst.data()
       
     }
     
@@ -1767,8 +1773,8 @@ server <- function(input, output, session) {
       
     }
     
-    setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 1)], paste("W", 1:(ncol(dt.ab) / 2), sep = "_"))
-    setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 0)], paste("W", 1:(ncol(dt.ab) / 2), "dev", sep = "_"))
+    try(setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 1)], paste("W", 1:(ncol(dt.ab) / 2), sep = "_")), silent = TRUE)
+    try(setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 0)], paste("W", 1:(ncol(dt.ab) / 2), "dev", sep = "_")), silent = TRUE)
     
     if (!is.null(dt.ab))
       rhandsontable(dt.ab, stretchH = "all", useTypes = FALSE) %>%
@@ -1846,7 +1852,7 @@ server <- function(input, output, session) {
     if (!is.data.frame(dt.mol))
       dt.mol <- data.frame(no.data = "no.data")
     
-    setnames(dt.mol, paste0("W_", 1:ncol(dt.mol)))
+    setnames(dt.mol, c("Particle", paste0("W_", 1:(ncol(dt.mol) - 1))))
     
     if (!is.null(dt.mol))
       rhandsontable(dt.mol, stretchH = "all", useTypes = FALSE) %>%
@@ -1936,7 +1942,7 @@ server <- function(input, output, session) {
   
   
 
-  # equilibrium downoad ---------------- #
+  # equilibrium download ---------------- #
   
   output$dt.coef.csv <- downloadHandler(
     # ----
@@ -2717,6 +2723,7 @@ server <- function(input, output, session) {
         , cor.m = "correlation_matrix.csv"
         , err.diff = "fmin_last_step.csv"
         , mol.coef = "mol_ext_coefficients_calculated.csv"
+        , cnst.tune = "constants_names.csv"
         
       )
       
@@ -2778,6 +2785,7 @@ server <- function(input, output, session) {
         , ab.dt.conc = "input_concentrations"
         , dt.ab = "input_absorbance"
         , dt.mol = "input_mol_ext_coefficients"
+        , cnst.tune = "constant_names"
         , ab.dt.res = "equilibrium_concentrations"
         , dt.ab.abs = "absorbance_calc_abs_errors"
         , dt.ab.rel = "absorbance_calc_rel_errors"
