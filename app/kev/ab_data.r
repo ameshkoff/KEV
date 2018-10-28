@@ -44,7 +44,7 @@ ab.scripts.load <- function(sep = ";", subdir = "") {
     tbl[["dt.ab"]] <- as.data.table(read.csv2(dt.ab.fl, stringsAsFactors = FALSE, colClasses = "character")
                                       , keep.rownames = FALSE)
     if (file.size(dt.mol.fl) > 0)
-      tbl[["dt.mol"]] <- as.data.table(read.csv2(dt.mol.fl, stringsAsFactors = FALSE, colClasses = "character")
+      tbl[["dt.mol"]] <- as.data.table(read.csv2(dt.mol.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE)
                                      , keep.rownames = FALSE)
 
   } else if (sep == ",") {
@@ -52,7 +52,7 @@ ab.scripts.load <- function(sep = ";", subdir = "") {
     tbl[["dt.ab"]] <- as.data.table(read.csv(dt.ab.fl, stringsAsFactors = FALSE, colClasses = "character")
                                       , keep.rownames = FALSE)
     if (file.size(dt.mol.fl) > 0)
-      tbl[["dt.mol"]] <- as.data.table(read.csv(dt.mol.fl, stringsAsFactors = FALSE, colClasses = "character")
+      tbl[["dt.mol"]] <- as.data.table(read.csv(dt.mol.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE)
                                        , keep.rownames = FALSE)
 
   } else if (sep == "tab") {
@@ -60,7 +60,7 @@ ab.scripts.load <- function(sep = ";", subdir = "") {
     tbl[["dt.ab"]] <- as.data.table(read.delim(dt.ab.fl, stringsAsFactors = FALSE, colClasses = "character")
                                       , keep.rownames = FALSE)
     if (file.size(dt.mol.fl) > 0)
-      tbl[["dt.mol"]] <- as.data.table(read.delim(dt.mol.fl, stringsAsFactors = FALSE, colClasses = "character")
+      tbl[["dt.mol"]] <- as.data.table(read.delim(dt.mol.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE)
                                      , keep.rownames = FALSE)
 
   }

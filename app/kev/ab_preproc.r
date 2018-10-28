@@ -92,7 +92,8 @@ ab.preproc <- function(dt.ab, dt.mol) {
   list("dt.ab" = dt.ab, "dt.ab.m" = dt.ab.m
        , "dt.ab.err" = dt.ab.err, "dt.ab.err.m" = dt.ab.err.m
        , "dt.mol" = dt.mol, "dt.mol.m" = dt.mol.m
-       , "partprod.nm" = partprod.nm)
+       , "partprod.nm" = partprod.nm
+       , "wave.length" = ab.w)
   
 }
 
