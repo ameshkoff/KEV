@@ -110,6 +110,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   dt.ab.err.m <- dt.ttl[["dt.ab.err.m"]]
   dt.mol.m <- dt.ttl[["dt.mol.m"]]
   partprod.nm <- dt.ttl[["partprod.nm"]]
+  wave.length <- dt.ttl[["wave.length"]]
   
   cnst.tune.nm <- which(dt.coef[, name] %in% cnst.tune)
   
@@ -172,6 +173,40 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   ab.res.rel <- ab.res.abs$ab.res.rel
   ab.res.abs <- ab.res.abs$ab.res.abs
   
+  # prepare data to return (transpose wave data)
+
+  tbl <- objects()
+  tbl <- tbl[tbl %in% c("dt.ab.calc", "ab.res.abs", "ab.res.rel")]
+  
+  for (i in tbl) {
+    
+    dt <- data.table("wave.length" = wave.length, t(get(i)))
+    
+    cln <- colnames(dt)
+    cln <- cln[cln %like% "^V[0-9]"]
+    
+    setnames(dt, cln, str_replace(cln, "^V", "S"))
+    
+    assign(i, dt)
+    
+  }
+  
+  tbl <- objects()
+  tbl <- tbl[tbl %in% c("mol.coef", "mol.coef.dev")]
+  
+  cln <- colnames(mol.coef)
+  cln <- cln[!(cln %in% colnames(dt.mol))]
+  
+  setnames(mol.coef.dev, cln)
+  
+  for (i in tbl) {
+    
+    dt <- data.table("wave.length" = wave.length, get(i))
+    assign(i, dt)
+    
+  }
+  
+  
   # save
   
   if (mode == "script" & save.res) {
@@ -179,6 +214,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
     ab.save(subdir, sep, dt.res, dt.ab.calc, ab.res.abs, ab.res.rel, ab.err, cnst.dev, cor.m, mol.coef, mol.coef.dev, err.diff, cnst.tune)
     
   }
+  
 
   # return data
   
@@ -214,11 +250,6 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
     rownames(dt.cor.m) <- cnst.tune
     
     # molar coefficients to data table
-    
-    cln <- colnames(mol.coef)
-    cln <- cln[!(cln %in% colnames(dt.mol))]
-    
-    setnames(mol.coef.dev, cln)
     
     mol.coef.dev.full <- copy(mol.coef)
     
