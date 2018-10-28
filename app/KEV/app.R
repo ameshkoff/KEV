@@ -377,7 +377,7 @@ ui <- navbarPage("KEV",
                                                                , downloadButton("err.diff.xlsx", "xlsx"))))
                                 
                                 , fluidRow(column(12
-                                                  , h4("Extinction Molar Coefficients with St.Deviations")
+                                                  , h4("Extinction Molar Coefficients with St.Errors")
                                                   , rHandsontableOutput("mol.coef")
                                                   , fluidRow(class = "download-row"
                                                              , downloadButton("mol.coef.csv", "csv")
@@ -568,22 +568,34 @@ server <- function(input, output, session) {
   
   eval.data <- reactive({
     
-    validate(
+    withProgress(message = "Computation... It may take some time", value = 0, {
       
-      need(length(colnames(dt.coef.data())[colnames(dt.coef.data()) == bs.name()]) > 0, "Input correct particle name to get fractions of")
+      incProgress(.1)
+        
+      validate(
+        
+        need(length(colnames(dt.coef.data())[colnames(dt.coef.data()) == bs.name()]) > 0, "Input correct particle name to get fractions of")
+        
+      )
       
-    )
+      incProgress(.3)
+      
+      res <- eq.evaluation.runner(mode = "app"
+                                 , sep = sep()
+                                 , bs.name = bs.name()
+                                 , thr.type = c("rel")
+                                 , threshold = 1e-08
+                                 , dt.list = list(dt.coef = dt.coef.data()
+                                                  , cnst = cnst.data()
+                                                  , dt.conc = dt.conc.data()
+                                                  , part.eq = part.eq.data())
+                                 , save.res = FALSE)
     
-    eq.evaluation.runner(mode = "app"
-                         , sep = sep()
-                         , bs.name = bs.name()
-                         , thr.type = c("rel")
-                         , threshold = 1e-08
-                         , dt.list = list(dt.coef = dt.coef.data()
-                                          , cnst = cnst.data()
-                                          , dt.conc = dt.conc.data()
-                                          , part.eq = part.eq.data())
-                         , save.res = FALSE)
+      incProgress(.6)
+      
+    })
+    
+    res
     
   })
   
@@ -1105,13 +1117,17 @@ server <- function(input, output, session) {
       
       if (is.null(values[["dt.ab"]])) {
         
-        dt.ab <- matrix(rep(100, 30), 5)
-        dt.ab[, which((1:ncol(dt.ab) %% 2 == 0))] <- .001
+        dt.ab <- matrix(rep(100, 30), 6)
+        dt.ab[(nrow(dt.ab) / 2 + 1):nrow(dt.ab), 1:ncol(dt.ab)] <- .001
         
-        dt.ab <- as.data.table(dt.ab)
+        dt.ab <- data.table(data = c(rep("observation", nrow(dt.ab) / 2), rep("deviation", nrow(dt.ab) / 2))
+                               , wave.length = c(100 + seq(10, 10 * nrow(dt.ab) / 2, 10), 100 + seq(10, 10 * nrow(dt.ab) / 2, 10))
+                               , dt.ab)
         
-        setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 1)], paste("W", 1:(ncol(dt.ab) / 2), sep = "_"))
-        setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 0)], paste("W", 1:(ncol(dt.ab) / 2), "dev", sep = "_"))
+        cln <- colnames(dt.ab)
+        cln <- cln[cln %like% "^V[0-9]"]
+        
+        setnames(dt.ab, cln, paste0("S", 1:length(cln)))
         
       } else {
         
@@ -1139,13 +1155,14 @@ server <- function(input, output, session) {
       
       if (is.null(values[["dt.mol"]])) {
         
-        dt.mol <- as.data.table(matrix(rep(0, 6), 2))
-        dt.mol <- as.data.table(dt.mol)
+        dt.mol <- as.data.table(matrix(rep(0, 6), 3))
+        dt.mol <- data.table(wave.length = 100 + seq(10, 10 * nrow(dt.mol), 10), dt.mol)
 
-        setnames(dt.mol, paste0("W_", (1:ncol(dt.mol))))
+        cln <- colnames(dt.mol)
+        cln <- cln[cln %like% "^V[0-9]"]
         
-        dt.mol <- cbind(Particle = c("molecule1", "molecule2"), dt.mol)
-
+        setnames(dt.mol, cln, paste0("molecule", 1:length(cln)))
+        
       } else {
         
         dt.mol <- values[["dt.mol"]]
@@ -1252,41 +1269,53 @@ server <- function(input, output, session) {
   
   ab.eval.data <- reactive({
     
-    particles <- c(colnames(ab.dt.coef.data()), ab.dt.coef.data()[, name])
+    withProgress(message = "Computation... It may take some time", value = 0, {
     
-    validate(
+      incProgress(.1)
       
-      need(length(particles %in% cnst.tune.data()) > 0, "Input correct particle names for constants evaluation")
+      particles <- c(colnames(ab.dt.coef.data()), ab.dt.coef.data()[, name])
       
-    )
+      validate(
+        
+        need(length(particles %in% cnst.tune.data()) > 0, "Input correct particle names for constants evaluation")
+        
+      )
+      
+      # check if no molar extinction coefficients are known
+      
+      dt.mol <- dt.mol.data()
+      
+      if (ncol(dt.mol) <= 1)
+        dt.mol <- "no.data"
+      
+      incProgress(.3)
+      
+      # run
+      
+      res <- ab.evaluation.runner(mode = "app"
+                             , sep = sep()
+                             , eq.thr.type = "rel"
+                             , eq.threshold = 1e-08
+                             , cnst.tune = cnst.tune.data()
+                             , algorithm = "direct search"
+                             , ab.mode = "base"
+                             , method = "basic wls"
+                             , search.density = as.numeric(input$search.density)
+                             , lrate.init = .5
+                             , ab.threshold = as.numeric(input$ab.threshold)
+                             , dt.list = list(dt.coef = ab.dt.coef.data()
+                                              , cnst = ab.cnst.data()
+                                              , dt.conc = ab.dt.conc.data()
+                                              , part.eq = ab.part.eq.data()
+                                              , dt.ab = dt.ab.data()
+                                              , dt.mol = dt.mol)
+                             , save.res = FALSE)
     
-    # check if no molar extinction coefficients are known
+      incProgress(.6)
+      
+    })
     
-    dt.mol <- dt.mol.data()
-    
-    if (ncol(dt.mol) <= 1)
-      dt.mol <- "no.data"
-    
-    # run
-    
-    ab.evaluation.runner(mode = "app"
-                         , sep = sep()
-                         , eq.thr.type = "rel"
-                         , eq.threshold = 1e-08
-                         , cnst.tune = cnst.tune.data()
-                         , algorithm = "direct search"
-                         , ab.mode = "base"
-                         , method = "basic wls"
-                         , search.density = as.numeric(input$search.density)
-                         , lrate.init = .5
-                         , ab.threshold = as.numeric(input$ab.threshold)
-                         , dt.list = list(dt.coef = ab.dt.coef.data()
-                                          , cnst = ab.cnst.data()
-                                          , dt.conc = ab.dt.conc.data()
-                                          , part.eq = ab.part.eq.data()
-                                          , dt.ab = dt.ab.data()
-                                          , dt.mol = dt.mol)
-                         , save.res = FALSE)
+    res
     
   })
   
@@ -1302,22 +1331,10 @@ server <- function(input, output, session) {
   dt.ab.abs.data <- eventReactive(input$ab.conc.exec.btn, {
     
     dt <- ab.eval.data()$dt.ab.calc
-    dt.err <- as.data.table(ab.eval.data()$ab.res.abs)
+    dt.err <- ab.eval.data()$ab.res.abs
     
-    dt.comb <- data.table(rn = NA)
-    
-    for (i in 1:ncol(dt)) {
-      
-      dt.comb <- data.table(dt.comb, dt[, i, with = FALSE], dt.err[, i, with = FALSE])
-      
-    }
-    
-    dt.comb[, rn := NULL]
-    
-    setnames(dt.comb, as.character(1:ncol(dt.comb)))
-    
-    setnames(dt.comb, colnames(dt.comb)[which(1:ncol(dt.comb) %% 2 == 1)], paste("W", 1:(ncol(dt.comb) / 2), sep = "_"))
-    setnames(dt.comb, colnames(dt.comb)[which(1:ncol(dt.comb) %% 2 == 0)], paste("W", 1:(ncol(dt.comb) / 2), "err", sep = "_"))
+    dt.comb <- data.table(data = c(rep("observation", nrow(dt)), rep("error", nrow(dt.err)))
+                          , rbind(dt, dt.err, use.names = TRUE))
     
     dt.comb
     
@@ -1326,22 +1343,10 @@ server <- function(input, output, session) {
   dt.ab.rel.data <- eventReactive(input$ab.conc.exec.btn, {
     
     dt <- ab.eval.data()$dt.ab.calc
-    dt.err <- as.data.table(ab.eval.data()$ab.res.rel)
+    dt.err <- ab.eval.data()$ab.res.rel
     
-    dt.comb <- data.table(rn = NA)
-    
-    for (i in 1:ncol(dt)) {
-      
-      dt.comb <- data.table(dt.comb, dt[, i, with = FALSE], dt.err[, i, with = FALSE])
-      
-    }
-    
-    dt.comb[, rn := NULL]
-    
-    setnames(dt.comb, as.character(1:ncol(dt.comb)))
-    
-    setnames(dt.comb, colnames(dt.comb)[which(1:ncol(dt.comb) %% 2 == 1)], paste("W", 1:(ncol(dt.comb) / 2), sep = "_"))
-    setnames(dt.comb, colnames(dt.comb)[which(1:ncol(dt.comb) %% 2 == 0)], paste("W", 1:(ncol(dt.comb) / 2), "err", sep = "_"))
+    dt.comb <- data.table(data = c(rep("observation", nrow(dt)), rep("error", nrow(dt.err)))
+                          , rbind(dt, dt.err, use.names = TRUE))
     
     dt.comb
     
@@ -1364,22 +1369,11 @@ server <- function(input, output, session) {
   
   mol.coef.data <- eventReactive(input$ab.conc.exec.btn, {
     
-    dt <- as.data.table(t(ab.eval.data()$mol.coef))
-    dt.err <- as.data.table(t(ab.eval.data()$mol.coef.dev))
+    dt <- ab.eval.data()$mol.coef
+    dt.err <- ab.eval.data()$mol.coef.dev
     
-    setnames(dt, paste("W", 1:ncol(dt), sep = "_"))
-    setnames(dt.err, paste("W", 1:ncol(dt.err), "dev", sep = "_"))
-    
-    dt.comb <- data.table(rn = NA)
-    
-    for (i in 1:ncol(dt)) {
-      
-      dt.comb <- data.table(dt.comb, dt[, i, with = FALSE], dt.err[, i, with = FALSE])
-
-    }
-    
-    dt.comb[, rn := NULL]
-    dt.comb <- data.table(Particle = cnst.dev.data()[, Particle], dt.comb)
+    dt.comb <- data.table(data = c(rep("observation", nrow(dt)), rep("error", nrow(dt.err)))
+                          , rbind(dt, dt.err, use.names = TRUE))
     
     dt.comb
     
@@ -1743,11 +1737,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (sep() == ";") {
-        dt.ab <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+        dt.ab <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       } else if (sep() == ",") {
-        dt.ab <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+        dt.ab <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       } else if (sep() == "tab") {
-        dt.ab <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+        dt.ab <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
       
       validate(
@@ -1759,7 +1753,7 @@ server <- function(input, output, session) {
 
     } else if (!is.null(in.file.xlsx)) {
       
-      dt.ab <- try(read.xlsx(in.file.xlsx$datapath, sheet = "absorbance", colNames = FALSE), silent = TRUE)
+      dt.ab <- try(read.xlsx(in.file.xlsx$datapath, sheet = "absorbance"), silent = TRUE)
       
       validate(
         
@@ -1772,9 +1766,6 @@ server <- function(input, output, session) {
       dt.ab <- dt.ab.data()
       
     }
-    
-    try(setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 1)], paste("W", 1:(ncol(dt.ab) / 2), sep = "_")), silent = TRUE)
-    try(setnames(dt.ab, colnames(dt.ab)[which(1:ncol(dt.ab) %% 2 == 0)], paste("W", 1:(ncol(dt.ab) / 2), "dev", sep = "_")), silent = TRUE)
     
     if (!is.null(dt.ab))
       rhandsontable(dt.ab, stretchH = "all", useTypes = FALSE) %>%
@@ -1817,11 +1808,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (sep() == ";") {
-        dt.mol <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+        dt.mol <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       } else if (sep() == ",") {
-        dt.mol <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+        dt.mol <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       } else if (sep() == "tab") {
-        dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+        dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
       
       # browser()
@@ -1835,7 +1826,7 @@ server <- function(input, output, session) {
       
     } else if (!is.null(in.file.xlsx)) {
       
-      dt.mol <- try(read.xlsx(in.file.xlsx$datapath, sheet = "mol_ext_coefficients", colNames = FALSE), silent = TRUE)
+      dt.mol <- try(read.xlsx(in.file.xlsx$datapath, sheet = "mol_ext_coefficients"), silent = TRUE)
       
       # validate(
       #   
@@ -1851,8 +1842,6 @@ server <- function(input, output, session) {
     
     if (!is.data.frame(dt.mol))
       dt.mol <- data.frame(no.data = "no.data")
-    
-    setnames(dt.mol, c("Particle", paste0("W_", 1:(ncol(dt.mol) - 1))))
     
     if (!is.null(dt.mol))
       rhandsontable(dt.mol, stretchH = "all", useTypes = FALSE) %>%

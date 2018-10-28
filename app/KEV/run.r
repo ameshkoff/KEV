@@ -48,9 +48,7 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "dsl.3"
                      , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
                      , save.res = TRUE)
 
-
-
-
+#
 
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "dsl.1"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
@@ -66,7 +64,14 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "dsl.2"
                      , search.density = 1, lrate.init = .5, ab.threshold = 1e-2
                      , save.res = FALSE)
 
+ab.evaluation.runner(mode = "script", sep = ",", subdir = "dsl.3"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , cnst.tune = c("HL", "H2L")
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
+                     , save.res = FALSE)
 
+#
 
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "dsl.1"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
