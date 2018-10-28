@@ -252,6 +252,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
     # molar coefficients to data table
     
     mol.coef.dev.full <- copy(mol.coef)
+    cln <- colnames(mol.coef.dev)
     
     for (i in colnames(mol.coef.dev.full)) {
       
