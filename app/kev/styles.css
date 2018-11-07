@@ -1,0 +1,22 @@
+.shiny-notification{
+  position:fixed;
+  bottom:50%;
+  left:40%;
+  width:30%;
+  padding:2%;
+}
+
+.progress-text{
+  font-size:18px;
+}
+
+.download-row{
+  padding: 15px 10px 15px 20px;
+}
+
+
+
+
+
+
+
