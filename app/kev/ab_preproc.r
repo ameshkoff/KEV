@@ -11,10 +11,20 @@
 
 ab.preproc <- function(dt.ab, dt.mol) {
   
+  # backward compatibility
+  
+  cln <- colnames(dt.ab)
+  if (length(cln[cln == "wave.length"]) > 0)
+    setnames(dt.ab, "wave.length", "wavelength")
+  
+  cln <- colnames(dt.mol)
+  if (length(cln[cln == "wave.length"]) > 0)
+    setnames(dt.mol, "wave.length", "wavelength")
+  
   # check consistence
   
-  ab.w <- dt.ab[data %like% "^obs", wave.length]
-  mol.w <- dt.mol[, wave.length]
+  ab.w <- dt.ab[data %like% "^obs", wavelength]
+  mol.w <- dt.mol[, wavelength]
 
   if (length(mol.w) != length(mol.w %in% ab.w)) {
     
@@ -24,9 +34,9 @@ ab.preproc <- function(dt.ab, dt.mol) {
   
   # transpose absorbance data
   
-  cln <- dt.ab[, paste0(data, "_", wave.length)]
+  cln <- dt.ab[, paste0(data, "_", wavelength)]
   
-  dt.ab <- data.table(t(dt.ab[, !c("data", "wave.length"), with = FALSE]))
+  dt.ab <- data.table(t(dt.ab[, !c("data", "wavelength"), with = FALSE]))
   setnames(dt.ab, cln)
 
   # scalars
@@ -55,7 +65,7 @@ ab.preproc <- function(dt.ab, dt.mol) {
   
   if (is.data.table(dt.mol)) {
     
-    dt.mol[, wave.length := NULL]
+    dt.mol[, wavelength := NULL]
     
   } else {
     
@@ -93,7 +103,7 @@ ab.preproc <- function(dt.ab, dt.mol) {
        , "dt.ab.err" = dt.ab.err, "dt.ab.err.m" = dt.ab.err.m
        , "dt.mol" = dt.mol, "dt.mol.m" = dt.mol.m
        , "partprod.nm" = partprod.nm
-       , "wave.length" = ab.w)
+       , "wavelength" = ab.w)
   
 }
 

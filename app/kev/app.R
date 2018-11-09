@@ -62,7 +62,7 @@ ui <- navbarPage("KEV",
                             
                             , fluidRow(column(12), p(HTML(paste("<br/>"))))
                             
-                            , titlePanel("Calculate Equilibrium concentrations")
+                            , titlePanel("Calculate Equilibrium Concentrations")
                             
                             , fluidRow(column(
                               12
@@ -1470,7 +1470,7 @@ server <- function(input, output, session) {
         dt.ab[(nrow(dt.ab) / 2 + 1):nrow(dt.ab), 1:ncol(dt.ab)] <- .001
         
         dt.ab <- data.table(data = c(rep("observation", nrow(dt.ab) / 2), rep("deviation", nrow(dt.ab) / 2))
-                               , wave.length = c(100 + seq(10, 10 * nrow(dt.ab) / 2, 10), 100 + seq(10, 10 * nrow(dt.ab) / 2, 10))
+                               , wavelength = c(100 + seq(10, 10 * nrow(dt.ab) / 2, 10), 100 + seq(10, 10 * nrow(dt.ab) / 2, 10))
                                , dt.ab)
         
         cln <- colnames(dt.ab)
@@ -1505,7 +1505,7 @@ server <- function(input, output, session) {
       if (is.null(values[["dt.mol"]])) {
         
         dt.mol <- as.data.table(matrix(rep(0, 6), 3))
-        dt.mol <- data.table(wave.length = 100 + seq(10, 10 * nrow(dt.mol), 10), dt.mol)
+        dt.mol <- data.table(wavelength = 100 + seq(10, 10 * nrow(dt.mol), 10), dt.mol)
 
         cln <- colnames(dt.mol)
         cln <- cln[cln %like% "^V[0-9]"]

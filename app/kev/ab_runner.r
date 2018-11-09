@@ -110,7 +110,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   dt.ab.err.m <- dt.ttl[["dt.ab.err.m"]]
   dt.mol.m <- dt.ttl[["dt.mol.m"]]
   partprod.nm <- dt.ttl[["partprod.nm"]]
-  wave.length <- dt.ttl[["wave.length"]]
+  wavelength <- dt.ttl[["wavelength"]]
   
   cnst.tune.nm <- which(dt.coef[, name] %in% cnst.tune)
   
@@ -180,7 +180,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   
   for (i in tbl) {
     
-    dt <- data.table("wave.length" = wave.length, t(get(i)))
+    dt <- data.table("wavelength" = wavelength, t(get(i)))
     
     cln <- colnames(dt)
     cln <- cln[cln %like% "^V[0-9]"]
@@ -201,7 +201,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   
   for (i in tbl) {
     
-    dt <- data.table("wave.length" = wave.length, get(i))
+    dt <- data.table("wavelength" = wavelength, get(i))
     assign(i, dt)
     
   }
