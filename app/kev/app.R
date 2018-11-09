@@ -204,7 +204,7 @@ ui <- navbarPage("KEV",
 
 # absorbance ----------------------------------
 
-                 tabPanel("Absorbance"
+                 tabPanel(title = HTML("Spectrophotometry</a></li><li><a href='https://k-ev.org' target='_blank'>Home")
                           , id = "page.ab"
                           
                           , fluidPage(
@@ -234,7 +234,7 @@ ui <- navbarPage("KEV",
                                                                 ,"0&nbsp;&#60;&nbsp;&#950;&nbsp;&#60;&nbsp;1</p>"))
                                                   , textInput("ab.threshold", "", "1e-7"))
                                          , column(3
-                                                  , HTML("<h4>Search density</h4><p>Do not change untill you fully understand what you do</p>")
+                                                  , HTML("<h4>Search density</h4><p>Do not change unless you fully understand what you are doing</p>")
                                                   , textInput("search.density", "", "1"))
                                 )
                               )))
@@ -412,9 +412,9 @@ ui <- navbarPage("KEV",
                             
                           )
                           
-                 ),
+                 )#,
 # about ---------------------------------------
-                 tabPanel("About")
+                 # tabPanel(title = HTML("Home</a></li><li><a href='https://k-ev.org' target='_blank'>"))
 )
 
 

@@ -16,9 +16,9 @@ ab.preproc <- function(dt.ab, dt.mol) {
   ab.w <- dt.ab[data %like% "^obs", wave.length]
   mol.w <- dt.mol[, wave.length]
 
-  if (!is.logical(all.equal(ab.w, mol.w, check.attributes = FALSE))) {
+  if (length(mol.w) != length(mol.w %in% ab.w)) {
     
-    stop("absorbance data is inconsistent with molar extinction coefficients")
+    stop("Absorbance data is inconsistent with molar extinction coefficients")
     
   }
   
