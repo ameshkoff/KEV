@@ -24,6 +24,7 @@ eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.sp"
 eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.2eq", bs.name = "L", thr.type = c("rel"), threshold = 1e-08, save.res = FALSE)
 
 
+#
 
 source("app/KEV/ab_runner.r", chdir = TRUE)
 
@@ -81,6 +82,11 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl
                      , save.res = FALSE)
 
 
+#
+
+source("app/kev/sp_runner.r", chdir = TRUE)
+
+sp.evaluation.runner(mode = "script", sep = "tab", subdir = "molar.extinction.coefficients/dsl.4", save.res = TRUE)
 
 
 
