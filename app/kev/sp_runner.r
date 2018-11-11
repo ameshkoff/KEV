@@ -28,6 +28,7 @@ library(stringr)
 sp.evaluation.runner <- function(mode = c("api", "script", "app")
                                  , sep = "tab"
                                  , subdir = ""
+                                 , dt.list = NULL
                                  , save.res = TRUE) {
   
   # source code ------------- #
