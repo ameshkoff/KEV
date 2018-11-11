@@ -272,7 +272,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
       
     } else if (mode[1] == "debug") {
       
-      list(err = err, mol.coef = mol.coef, err.v = (predicted - observed), dt.ab.calc = dt.ab.calc)
+      list(err = err, mol.coef = mol.coef, dt.ab.calc = dt.ab.calc, err.v = (predicted - observed))
       
     }
     
@@ -563,7 +563,12 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
     if (mode == "debug") {
       
       rtrn <- constant.error.evaluator(cnst.m, method, mode = "debug")
-      list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = rtrn$mol.coef, err.v = rtrn$err.v, dt.ab.calc = rtrn$dt.ab.calc)
+      
+      dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, "abs", 1e-08)
+      colnames(dt.res.m) <- dt.coef[, name]
+      
+      list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = rtrn$mol.coef, dt.ab.calc = rtrn$dt.ab.calc, dt.res.m = dt.res.m
+           , err.v = rtrn$err.v)
       
     } else {
       
