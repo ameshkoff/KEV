@@ -41,6 +41,7 @@ options(shiny.sanitize.errors = TRUE)
 
 source("eq_runner.r", chdir = TRUE)
 source("ab_runner.r", chdir = TRUE)
+source("sp_runner.r", chdir = TRUE)
 
 
 
@@ -204,7 +205,7 @@ ui <- navbarPage("KEV",
 
 # absorbance ----------------------------------
 
-                 tabPanel(title = HTML("Spectrophotometry</a></li><li><a href='https://k-ev.org' target='_blank'>Home")
+                 tabPanel(title = "Spectrophotometry"
                           , id = "page.ab"
                           
                           , fluidPage(
@@ -412,9 +413,72 @@ ui <- navbarPage("KEV",
                             
                           )
                           
-                 )#,
-# about ---------------------------------------
-                 # tabPanel(title = HTML("Home</a></li><li><a href='https://k-ev.org' target='_blank'>"))
+                 ),
+
+# extinction coefficients ----------------------------------
+
+        tabPanel(title = HTML("Extinction Coefficients</a></li><li><a href='https://k-ev.org' target='_blank'>Home")
+         , id = "page.sp"
+         
+         , fluidPage(
+           
+           includeCSS("styles.css")
+           
+           , titlePanel("KEV: Chemistry Constant Evaluator")
+           
+           , fluidRow(column(12), p(HTML(paste("<br/>"))))
+           
+           , titlePanel("Calculate Molar Extinction Coefficients")
+           
+           , fluidRow(column(
+             12
+             , wellPanel(
+               fluidRow(column(3
+                               , h4("Column delimiter")
+                               , radioButtons("sp.sep", "", inline = TRUE
+                                              , c("," = "comma"
+                                                  , ";" = "semicolon"
+                                                  , "tab" = "tab")
+                                              , selected = "tab"))
+               )
+             )))
+           
+           , fluidRow(column(
+             12
+             , wellPanel(
+               fluidRow(column(12
+                               , h4("Bulk upload")))
+               
+               , fluidRow(column(6
+                                 , h4("Upload all data")
+                                 , fileInput("file.sp.bulk.input", "Choose CSV, TXT files or XLSX file with multiple sheets",
+                                             accept = c(
+                                               "text/csv"
+                                               , "text/comma-separated-values,text/plain"
+                                               , ".csv"
+                                               , ".xlsx")
+                                             , multiple = TRUE
+                                 )))
+             )))
+           
+           , fluidRow(column(
+             12
+             , wellPanel(
+               fluidRow(column(12
+                               , h4("Molar extinction coefficients")
+                               , rHandsontableOutput("sp.dt.mol.full")
+                               , fluidRow(class = "download-row"
+                                          , downloadButton("sp.dt.mol.full.csv", "csv")
+                                          , downloadButton("sp.dt.mol.full.xlsx", "xlsx"))))
+               
+             ))
+           )
+           
+         )
+         
+)
+# ---------------------------------------
+
 )
 
 
@@ -1145,10 +1209,22 @@ server <- function(input, output, session) {
     
     dt.res <- dt.res.data()
     
-    if (!is.null(dt.res))
+    if (!is.null(dt.res)) {
       
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+      
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      
+      if (parseInt(value, 10) < 0) {
+        td.style.background = 'pink';
+      }
+      
+      }" 
+
       rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+        hot_cols(renderer = renderer)
+    }
     
   })
   
@@ -1642,7 +1718,7 @@ server <- function(input, output, session) {
       # run
       
       res <- ab.evaluation.runner(mode = "app"
-                             , sep = sep()
+                             , sep = ab.sep()
                              , eq.thr.type = "rel"
                              , eq.threshold = 1e-08
                              , cnst.tune = cnst.tune.data()
@@ -2216,10 +2292,22 @@ server <- function(input, output, session) {
     
     dt.res <- ab.dt.res.data()
     
-    if (!is.null(dt.res))
+    if (!is.null(dt.res)) {
       
+      renderer <- "
+        function (instance, td, row, col, prop, value, cellProperties) {
+    
+          Handsontable.renderers.TextRenderer.apply(this, arguments);
+          
+          if (parseInt(value, 10) < 0) {
+            td.style.background = 'pink';
+          }
+          
+        }" 
+
       rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+        hot_cols(renderer = renderer)
+    }
     
   })
   
@@ -2290,10 +2378,216 @@ server <- function(input, output, session) {
   })
   
   
+  
+  # extinction coefficients -------------------------------------------------
+  
+  
+  # technical
+  
+  sp.sep <- reactive({
+    
+    switch(input$sp.sep,
+           comma = ",",
+           semicolon = ";",
+           tab = "tab")
+    
+  })
+  
+  # data --------------------- #
+  
+  # input data
+  
+  observeEvent(input$file.sp.bulk.input, {
+    
+    sep <- sp.sep()
+    
+    in.file.bulk <- as.data.table(input$file.sp.bulk.input)
+    
+    in.file.xlsx <- NULL
+    in.file.xlsx <- in.file.bulk[name %like% "\\.xlsx$"]
+    
+    if (nrow(in.file.xlsx) > 0) {
+      
+      in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+      
+    } else {
+      
+      in.file.xlsx <- NULL
+      
+    }
+    
+    if (is.null(in.file.xlsx)) {
+      
+      tbl <- vector("list", nrow(in.file.bulk))
+      names(tbl) <- in.file.bulk[, name]
+      
+      for (fl in in.file.bulk[, datapath]) {
+        
+        i <- in.file.bulk[datapath == fl, name]
+        
+        con <- file(fl, "r")
+        pt.name <- readLines(con, n = 1)
+        close(con)
+        
+        # define where to get particle name and whether to skip first row of the file
+        
+        skp <- 1
+        
+        if (pt.name %like% "wave.*length")
+          skp <- 0
+        
+        if (skp == 0 || pt.name == "")
+          pt.name <- str_extract(i, "\\_[A-Za-z0-9]+(\\.(txt|csv))*$") %>% str_replace_all("\\_|\\.(txt|csv)$", "")
+        
+        # load
+        
+        if (sep == ";") {
+          
+          tbl[[i]] <- as.data.table(read.csv2(fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE, skip = skp)
+                                    , keep.rownames = FALSE)
+          
+        } else if (sep == ",") {
+          
+          tbl[[i]] <- as.data.table(read.csv(fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE, skip = skp)
+                                    , keep.rownames = FALSE)
+          
+        } else if (sep == "tab") {
+          
+          tbl[[i]] <- as.data.table(read.delim(fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE, skip = skp)
+                                    , keep.rownames = FALSE)
+          
+        }
+        
+        # table name
+        names(tbl)[which(names(tbl) == i)] <- pt.name
+
+      }
+      
+    } else {
+      
+      shts <- getSheetNames(in.file.xlsx$datapath[1])
+      
+      tbl <- vector("list", length(shts))
+      names(tbl) <- shts
+      
+      for (sh in shts) {
+        
+        pt.name <- try(read.xlsx(in.file.xlsx$datapath[1], sheet = sh, startRow = 1, rows = 1), silent = TRUE)
+        pt.name <- try(colnames(pt.name)[1], silent = TRUE)
+        
+        if (is.null(pt.name) || is.na(pt.name))
+          pt.name <- ""
+
+        # define where to get particle name and whether to skip first row of the file
+        
+        strt <- 2
+        
+        if (pt.name %like% "wave.*length")
+          strt <- 1
+        
+        if (strt == 1 || pt.name == "")
+          pt.name <- str_extract(i, "\\_[A-Za-z0-9]+(\\.(txt|csv))*$") %>% str_replace_all("\\_|\\.(txt|csv)$", "")
+        
+        # load
+        
+        tbl[[sh]] <- try(read.xlsx(in.file.xlsx$datapath[1], sheet = sh, startRow = strt), silent = TRUE)
+        tbl[[sh]] <- as.data.table(tbl[[sh]])
+        
+        # table name
+        names(tbl)[which(names(tbl) == sh)] <- pt.name
+
+      }
+
+    }
+    
+    values[["dt.mol.raw"]] <- tbl
+    
+  })
+
+  # execute
+  
+  sp.eval.data <- reactive({
+    
+    dt.ttl <- values[["dt.mol.raw"]]
+    
+    withProgress(message = "Computation... It may take some time", value = 0, {
+
+      incProgress(.2)
+
+      # run
+
+      res <- sp.evaluation.runner(mode = "app"
+                                  , sep = sp.sep()
+                                  , dt.list = dt.ttl
+                                  , save.res = FALSE)
+
+      incProgress(.8)
+
+    })
+    
+    res
+    
+  })
+  
+  # output data
+  
+  sp.dt.mol.full.data <- reactive({
+    
+    sp.eval.data()
+    
+  })
+  
+  
+  # rendering ---------------- #
+  
+  output$sp.dt.mol.full <- renderRHandsontable({
+    
+    dt <- sp.dt.mol.full.data()
+    
+    if (!is.null(dt)) {
+    
+      col_highlight <- which(colnames(dt) %like% "squared") - 1
+      renderer <- "
+        function (instance, td, row, col, prop, value, cellProperties) {
+
+          Handsontable.renderers.NumericRenderer.apply(this, arguments);
+          
+          if (instance.params) {
+            hcols = instance.params.col_highlight
+            hcols = hcols instanceof Array ? hcols : [hcols]
+          }
+          
+          if (instance.params && hcols.includes(col) && value < 0.95) {
+            td.style.background = 'pink';
+          }
+          
+        }" 
+        
+      if (nrow(dt) > 25) {
+        
+        rhandsontable(dt, col_highlight = col_highlight, stretchH = "all", height = 550) %>%
+          hot_cols(renderer = renderer, format = "0.00000") %>%
+          hot_col("wavelength", format = "0.0")
+      
+      } else {
+        
+        rhandsontable(dt, stretchH = "all", useTypes = FALSE, height = NULL) %>%
+          hot_cols(renderer = renderer, format = "0.00000") %>%
+          hot_col("wavelength", format = "0.0")
+        
+      }
+      
+    }
+    
+  })
+  
+  
+  
+    
+  
   # end of main server part ----------------------------
   
   
-
   # equilibrium download ---------------- #
   
   output$dt.coef.csv <- downloadHandler(
@@ -3275,6 +3569,47 @@ server <- function(input, output, session) {
       }
       
       write.xlsx(dt.list, file)
+      
+    }
+    
+  )
+  # ----
+  
+  
+  # extinction coefficients downoad ---------------- #
+  
+  output$sp.dt.mol.full.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "molar_extinction_coefficients.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep() == ";") {
+        write.csv2(sp.dt.mol.full.data(), file, row.names = FALSE)
+      } else {
+        write.csv(sp.dt.mol.full.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$sp.dt.mol.full.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "molar_extinction_coefficients.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(sp.dt.mol.full.data(), file)
       
     }
     
