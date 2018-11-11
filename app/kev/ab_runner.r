@@ -136,6 +136,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   dt.res.m <- dt.ttl[["dt.res.m"]]
   ab.err <- tail(dt.ttl[["grid.opt"]][!is.na(err), err], 1)
   grid.opt <- dt.ttl[["grid.opt"]]
+  lrate.fin <- dt.ttl[["lrate.fin"]]
   
   
   # postprocessing ---------------- #
@@ -232,7 +233,8 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
          , "mol.coef.dev" = mol.coef.dev
          , "err.diff" = err.diff
          , "cnst.tune" = cnst.tune
-         , "exec.time" = exec.time)
+         , "exec.time" = exec.time
+         , "lrate.fin" = lrate.fin)
     
   } else {
     
@@ -281,7 +283,8 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
          , "mol.coef" = mol.coef
          , "mol.coef.dev" = mol.coef.dev.full
          , "err.diff" = err.diff
-         , "cnst.tune" = cnst.tune)
+         , "cnst.tune" = cnst.tune
+         , "lrate.fin" = lrate.fin)
     
   }
   
