@@ -82,7 +82,7 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
     if (mode[1] == "postproc") {
       
       mol.coef.dev <- (diag(sum((y.raw - y.calc) ^ 2)/(length(y) - length(cln.unknown)) * ginv((t(dt.m)) %*% diag(wght) %*% dt.m, tol = 0))) ^ .5
-      
+
     }
   }
   
@@ -169,7 +169,6 @@ molar.ext.wrapper <- function(cnst.m
   }
 
   
-  
   dt.ab.calc <- data.table(t(dt.ab.calc))
   
   # evaluate cost function
@@ -181,7 +180,7 @@ molar.ext.wrapper <- function(cnst.m
 
   err <- sum(((observed - predicted) ^ 2) * wght)
   
-  list(dt.ab.calc = dt.ab.calc, mol.coef.dev = mol.coef.dev, err = err)
+  list(dt.ab.calc = dt.ab.calc, mol.coef = mol.coef, mol.coef.dev = mol.coef.dev, err = err)
 
 }
 

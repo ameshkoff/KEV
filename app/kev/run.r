@@ -70,7 +70,7 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl
                      , cnst.tune = c("HL", "H2L")
                      , algorithm = "direct search", ab.mode = "base", method = "basic wls"
                      , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
-                     , save.res = FALSE)
+                     , save.res = FALSE, wl.tune = c(200, 300))
 
 #
 
@@ -83,6 +83,15 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl
 
 
 #
+
+ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl.4.full"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , cnst.tune = c("SB")
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
+                     , save.res = FALSE, wl.tune = c(306, 387))
+
+
 
 source("app/kev/sp_runner.r", chdir = TRUE)
 
