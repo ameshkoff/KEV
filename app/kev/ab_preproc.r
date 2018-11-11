@@ -9,7 +9,7 @@
 
 
 
-ab.preproc <- function(dt.ab, dt.mol) {
+ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
   
   # backward compatibility
   
@@ -21,14 +21,31 @@ ab.preproc <- function(dt.ab, dt.mol) {
   if (length(cln[cln == "wave.length"]) > 0)
     setnames(dt.mol, "wave.length", "wavelength")
   
-  # check consistence
+  # remove standard errors (if output of the previously calculations loaded)
   
+  cln <- colnames(dt.mol)
+  if (length(cln[cln %like% "adj\\.r\\.squared"]) > 0)
+    dt.mol <- dt.mol[, !(cln[cln %like% "adj\\.r\\.squared"]), with = FALSE]
+  
+  # check consistence
+
   ab.w <- dt.ab[data %like% "^obs", wavelength]
   mol.w <- dt.mol[, wavelength]
 
   if (length(mol.w) != length(mol.w %in% ab.w)) {
     
     stop("Absorbance data is inconsistent with molar extinction coefficients")
+    
+  }
+  
+  #
+  
+  if (is.character(dt.ab[, wavelength])){
+    
+    dt.ab[, wavelength := str_replace(wavelength, "\\,", ".")]
+    dt.ab[, wavelength := str_replace(wavelength, " ", "")]
+
+    ab.w <- dt.ab[data %like% "^obs", wavelength]
     
   }
   
@@ -59,24 +76,59 @@ ab.preproc <- function(dt.ab, dt.mol) {
   setnames(dt.ab, cln)
   setnames(dt.ab.err, cln)
   
-  tbl <- c("dt.ab", "dt.ab.err", "dt.mol")
+  # split absorbance into full and work data
   
-  # transpose known molar coefficients
+  dt.ab.full <- copy(dt.ab)
+  dt.ab.err.full <- copy(dt.ab.err)
+  
+  if (!is.null(wl.tune)) {
+    
+    cln <- colnames(dt.ab)
+    cln <- cln[cln %in% paste0("L_", wl.tune)]
+    
+    dt.ab <- dt.ab[, cln, with = FALSE]
+    dt.ab.err <- dt.ab.err[, cln, with = FALSE]
+    
+  }
+
+  # remove row names
   
   if (is.data.table(dt.mol)) {
     
+    dt.mol.full <- copy(dt.mol)
+    
+    if (!is.null(wl.tune)) {
+      
+      if (is.character(dt.mol[, wavelength])){
+        
+        dt.mol[, wavelength := str_replace(wavelength, "\\,", ".")]
+        dt.mol[, wavelength := str_replace(wavelength, " ", "")]
+        
+      }
+      
+      dt.mol <- dt.mol[wavelength %in% wl.tune]
+      
+    }
+
     dt.mol[, wavelength := NULL]
+    dt.mol.full[, wavelength := NULL]
     
   } else {
     
     tbl <- tbl[tbl != "dt.mol"]
+    
     dt.mol <- NULL
     dt.mol.m <- NULL
+    
+    dt.mol.full <- NULL
+    dt.mol.full.m <- NULL
     
   }
   
   # convert to numeric matrices
 
+  tbl <- c("dt.ab", "dt.ab.err", "dt.ab.full", "dt.ab.err.full", "dt.mol", "dt.mol.full")
+  
   for (j in tbl) {
     
     f <- eval(as.name(j))
@@ -101,7 +153,10 @@ ab.preproc <- function(dt.ab, dt.mol) {
   
   list("dt.ab" = dt.ab, "dt.ab.m" = dt.ab.m
        , "dt.ab.err" = dt.ab.err, "dt.ab.err.m" = dt.ab.err.m
+       , "dt.ab.full" = dt.ab.full, "dt.ab.full.m" = dt.ab.full.m
+       , "dt.ab.err.full" = dt.ab.err.full, "dt.ab.err.full.m" = dt.ab.err.full.m
        , "dt.mol" = dt.mol, "dt.mol.m" = dt.mol.m
+       , "dt.mol.full" = dt.mol.full, "dt.mol.full.m" = dt.mol.full.m
        , "partprod.nm" = partprod.nm
        , "wavelength" = ab.w)
   
