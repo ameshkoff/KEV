@@ -1222,7 +1222,7 @@ server <- function(input, output, session) {
       
       }" 
 
-      rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
+      rhandsontable(dt.res, stretchH = FALSE) %>%
         hot_cols(renderer = renderer)
     }
     
@@ -2305,7 +2305,7 @@ server <- function(input, output, session) {
           
         }" 
 
-      rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
+      rhandsontable(dt.res, stretchH = FALSE) %>%
         hot_cols(renderer = renderer)
     }
     
@@ -2315,10 +2315,29 @@ server <- function(input, output, session) {
     
     dt.ab.abs <- dt.ab.abs.data()
     
-    if (!is.null(dt.ab.abs))
+    if (!is.null(dt.ab.abs)) {
       
-      rhandsontable(dt.ab.abs, stretchH = FALSE, useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+      row_highlight <- dt.ab.abs[data == "observation", which = TRUE] - 1
+      
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+      
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      
+      if (instance.params) {
+      hrows = instance.params.row_highlight
+      hrows = hrows instanceof Array ? hrows : [hrows]
+      }
+      
+      if (instance.params && hrows.includes(row) && value < 0) {
+      td.style.background = 'pink';
+      }
+      
+      }" 
+
+      rhandsontable(dt.ab.abs, row_highlight = row_highlight, stretchH = FALSE) %>%
+        hot_cols(renderer = renderer)
+    }
     
   })
   
@@ -2326,10 +2345,29 @@ server <- function(input, output, session) {
     
     dt.ab.rel <- dt.ab.rel.data()
     
-    if (!is.null(dt.ab.rel))
+    if (!is.null(dt.ab.rel)) {
       
-      rhandsontable(dt.ab.rel, stretchH = FALSE, useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+      row_highlight <- dt.ab.rel[data == "observation", which = TRUE] - 1
+      
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+      
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+          hrows = instance.params.row_highlight
+          hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+          
+        if (instance.params && hrows.includes(row) && value < 0) {
+          td.style.background = 'pink';
+        }
+      
+      }" 
+
+      rhandsontable(dt.ab.rel, row_highlight = row_highlight, stretchH = FALSE) %>%
+        hot_cols(renderer = renderer)
+    }
     
   })
   
@@ -2359,10 +2397,29 @@ server <- function(input, output, session) {
     
     mol.coef <- mol.coef.data()
     
-    if (!is.null(mol.coef))
+    if (!is.null(mol.coef)) {
       
-      rhandsontable(mol.coef, stretchH = FALSE, useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+      row_highlight <- mol.coef[data == "observation", which = TRUE] - 1
+      
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+      
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      
+      if (instance.params) {
+      hrows = instance.params.row_highlight
+      hrows = hrows instanceof Array ? hrows : [hrows]
+      }
+      
+      if (instance.params && hrows.includes(row) && value < 0) {
+      td.style.background = 'pink';
+      }
+      
+      }" 
+
+      rhandsontable(mol.coef, row_highlight = row_highlight, stretchH = FALSE) %>%
+        hot_cols(renderer = renderer)
+    }
     
   })
 
@@ -2571,7 +2628,7 @@ server <- function(input, output, session) {
       
       } else {
         
-        rhandsontable(dt, stretchH = "all", useTypes = FALSE, height = NULL) %>%
+        rhandsontable(dt, col_highlight = col_highlight, stretchH = "all", height = NULL) %>%
           hot_cols(renderer = renderer, format = "0.00000") %>%
           hot_col("wavelength", format = "0.0")
         
