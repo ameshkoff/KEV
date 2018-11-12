@@ -1222,7 +1222,7 @@ server <- function(input, output, session) {
       
       }" 
 
-      rhandsontable(dt.res, stretchH = FALSE) %>%
+      rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
         hot_cols(renderer = renderer)
     }
     
@@ -1640,9 +1640,9 @@ server <- function(input, output, session) {
     
     # bulk input
     
-    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^constants_names(\\.csv|\\.txt)*"]) > 0){
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|target)(\\.csv|\\.txt)*"]) > 0){
 
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^constants_names(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|target)(\\.csv|\\.txt)*"][1]
       in.file <- as.data.frame(in.file)
       
     }
@@ -1664,21 +1664,42 @@ server <- function(input, output, session) {
       
     if (!is.null(in.file)) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         cnst.tune <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
-      } else if (sep() == ",") {
+      } else if (ab.sep() == ",") {
         cnst.tune <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
-      } else if (sep() == "tab") {
+      } else if (ab.sep() == "tab") {
         cnst.tune <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
       }
       
+      setDT(cnst.tune)
+      cnst.tune[1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), "")]
+      setnames(cnst.tune, "V1", "X1")
+      
+      
     } else if (!is.null(in.file.xlsx)) {
       
-      cnst.tune <- try(read.xlsx(in.file.xlsx$datapath, sheet = "constant_names", colNames = FALSE), silent = TRUE)
+      sht <- getSheetNames(in.file.xlsx$datapath[1])
+      sht <- sht[sht %like% "^(constants*_names*|target)"]
+      
+      cnst.tune <- try(read.xlsx(in.file.xlsx$datapath, sheet = sht, colNames = FALSE), silent = TRUE)
+      
       
     } else {
       
       cnst.tune <- values[["cnst.tune"]]
+      
+    }
+    
+    # new format
+    
+    setDT(cnst.tune)
+    
+    if (nrow(cnst.tune[X1 == "constant"]) > 0) {
+      
+      cnst.tune <- cnst.tune[X1 == "constant"][, !"X1", with = FALSE]
+      cnst.tune <- unlist(cnst.tune)
+      cnst.tune <- cnst.tune[!is.na(cnst.tune) & cnst.tune != ""]
       
     }
     
@@ -1852,14 +1873,19 @@ server <- function(input, output, session) {
     
     if (!is.null(in.file)) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
-      } else if (sep() == ",") {
+      } else if (ab.sep() == ",") {
         dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
-      } else if (sep() == "tab") {
+      } else if (ab.sep() == "tab") {
         dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
 
+      setDT(dt.coef)
+      
+      cln <- colnames(dt.coef)
+      setnames(dt.coef, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
+      
       validate(
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
@@ -1937,13 +1963,18 @@ server <- function(input, output, session) {
     
     if (!is.null(in.file)) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
-      } else if (sep() == ",") {
+      } else if (ab.sep() == ",") {
         dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
-      } else if (sep() == "tab") {
+      } else if (ab.sep() == "tab") {
         dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
       }
+      
+      setDT(dt.conc)
+      
+      cln <- colnames(dt.conc)
+      setnames(dt.conc, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
       
       validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
       
@@ -2011,22 +2042,25 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         
         part.eq <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
         tmp <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
         
-      } else if (sep() == ",") {
+      } else if (ab.sep() == ",") {
         
         part.eq <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
         tmp <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
         
-      } else if (sep() == "tab") {
+      } else if (ab.sep() == "tab") {
         
         part.eq <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
         tmp <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
         
       }
+
+      setDT(part.eq)
+      part.eq[1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), "")]
       
       validate(
         
@@ -2035,7 +2069,7 @@ server <- function(input, output, session) {
         
       )
       
-      colnames(part.eq) <- tmp
+      colnames(part.eq) <- unlist(tmp)
       
     } else if (!is.null(in.file.xlsx)) {
       
@@ -2093,13 +2127,18 @@ server <- function(input, output, session) {
     
     if (!is.null(in.file)) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         cnst <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
-      } else if (sep() == ",") {
+      } else if (ab.sep() == ",") {
         cnst <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
-      } else if (sep() == "tab") {
+      } else if (ab.sep() == "tab") {
         cnst <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
+      
+      setDT(cnst)
+      
+      cln <- colnames(cnst)
+      setnames(cnst, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
       
       validate(
         need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
@@ -2161,13 +2200,18 @@ server <- function(input, output, session) {
     
     if (!is.null(in.file)) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         dt.ab <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
-      } else if (sep() == ",") {
+      } else if (ab.sep() == ",") {
         dt.ab <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
-      } else if (sep() == "tab") {
+      } else if (ab.sep() == "tab") {
         dt.ab <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
+
+      setDT(dt.ab)
+      
+      cln <- colnames(dt.ab)
+      setnames(dt.ab, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
       
       validate(
         
@@ -2246,13 +2290,18 @@ server <- function(input, output, session) {
     
     if (!is.null(in.file)) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         dt.mol <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
-      } else if (sep() == ",") {
+      } else if (ab.sep() == ",") {
         dt.mol <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
-      } else if (sep() == "tab") {
+      } else if (ab.sep() == "tab") {
         dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
+      
+      setDT(dt.mol)
+      
+      cln <- colnames(dt.mol)
+      setnames(dt.mol, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
       
       # browser()
       
@@ -2305,7 +2354,7 @@ server <- function(input, output, session) {
           
         }" 
 
-      rhandsontable(dt.res, stretchH = FALSE) %>%
+      rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
         hot_cols(renderer = renderer)
     }
     
@@ -3055,7 +3104,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         write.csv2(ab.dt.coef.data(), file, row.names = FALSE)
       } else {
         write.csv(ab.dt.coef.data(), file, row.names = FALSE)
@@ -3093,7 +3142,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         write.csv2(ab.cnst.data(), file, row.names = FALSE)
       } else {
         write.csv(ab.cnst.data(), file, row.names = FALSE)
@@ -3136,7 +3185,7 @@ server <- function(input, output, session) {
       
       setnames(tmp, unlist(ab.part.eq.data()))
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         write.csv2(tmp, file, row.names = FALSE)
       } else {
         write.csv(tmp, file, row.names = FALSE)
@@ -3179,7 +3228,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         write.csv2(dt.ab.data(), file, row.names = FALSE)
       } else {
         write.csv(dt.ab.data(), file, row.names = FALSE)
@@ -3217,7 +3266,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         write.csv2(dt.mol.data(), file, row.names = FALSE)
       } else {
         write.csv(dt.mol.data(), file, row.names = FALSE)
@@ -3255,7 +3304,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         write.csv2(ab.dt.res.data(), file, row.names = FALSE)
       } else {
         write.csv(ab.dt.res.data(), file, row.names = FALSE)
@@ -3293,7 +3342,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         write.csv2(dt.ab.abs.data(), file, row.names = FALSE)
       } else {
         write.csv(dt.ab.abs.data(), file, row.names = FALSE)
@@ -3331,7 +3380,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         write.csv2(dt.ab.rel.data(), file, row.names = FALSE)
       } else {
         write.csv(dt.ab.rel.data(), file, row.names = FALSE)
@@ -3369,7 +3418,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         write.csv2(cnst.dev.data(), file, row.names = FALSE)
       } else {
         write.csv(cnst.dev.data(), file, row.names = FALSE)
@@ -3407,7 +3456,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         write.csv2(cor.m.data(), file, row.names = FALSE)
       } else {
         write.csv(cor.m.data(), file, row.names = FALSE)
@@ -3445,7 +3494,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         write.csv2(err.diff.data(), file, row.names = FALSE)
       } else {
         write.csv(err.diff.data(), file, row.names = FALSE)
@@ -3483,7 +3532,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (ab.sep() == ";") {
         write.csv2(mol.coef.data(), file, row.names = FALSE)
       } else {
         write.csv(mol.coef.data(), file, row.names = FALSE)
@@ -3546,7 +3595,7 @@ server <- function(input, output, session) {
         dt <- NULL
         try(dt <- eval(expr = parse(text = paste0(names(data.files)[i], ".data()"))), silent = TRUE)
         
-        if (sep() == ";") {
+        if (ab.sep() == ";") {
 
           if (!is.null(dt)) {
             
@@ -3645,7 +3694,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (sp.sep() == ";") {
         write.csv2(sp.dt.mol.full.data(), file, row.names = FALSE)
       } else {
         write.csv(sp.dt.mol.full.data(), file, row.names = FALSE)

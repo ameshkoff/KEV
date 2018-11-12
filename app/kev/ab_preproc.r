@@ -133,6 +133,9 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
     
     f <- eval(as.name(j))
     
+    if (j %in% c("dt.ab.full", "dt.ab.err.full"))
+      f <- as.data.table(t(f), keep.rownames = FALSE)
+    
     cln <- colnames(f)
     
     for (i in cln) {
@@ -141,6 +144,9 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
       f[, eval(i) := str_replace(eval(as.name(i)), "\\,", ".")]
       
     }
+    
+    if (j %in% c("dt.ab.full", "dt.ab.err.full"))
+      f <- as.data.table(t(f), keep.rownames = FALSE)
     
     # to numbers
     
