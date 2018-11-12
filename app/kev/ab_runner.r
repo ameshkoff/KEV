@@ -287,7 +287,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
     
     # remove extra data
     
-    vld <- dt.ab.calc[!is.na(S1), which == TRUE]
+    vld <- dt.ab.calc[!is.na(S1), which = TRUE]
     
     # return
     
@@ -297,7 +297,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
          , "ab.res.rel" = ab.res.rel[vld]
          , "ab.err" = ab.err
          , "cnst.dev" = dt.cnst.dev # return data table with additional field for particle names
-         , "cor.m" = dt.cor.m[vld]
+         , "cor.m" = dt.cor.m
          , "mol.coef" = mol.coef[vld]
          , "mol.coef.dev" = mol.coef.dev.full[vld]
          , "err.diff" = err.diff
