@@ -38,16 +38,26 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
     
   }
   
-  #
+  # wavelenghts consistence again
   
   if (is.character(dt.ab[, wavelength])){
     
     dt.ab[, wavelength := str_replace(wavelength, "\\,", ".")]
     dt.ab[, wavelength := str_replace(wavelength, " ", "")]
 
-    ab.w <- dt.ab[data %like% "^obs", wavelength]
+  }
+
+  if (is.character(dt.mol[, wavelength])){
+    
+    dt.mol[, wavelength := str_replace(wavelength, "\\,", ".")]
+    dt.mol[, wavelength := str_replace(wavelength, " ", "")]
     
   }
+  
+  # remove uncalculatable absorbance
+  
+  dt.ab <- dt.ab[wavelength %in% mol.w]
+  ab.w <- dt.ab[data %like% "^obs", wavelength]
   
   # transpose absorbance data
   

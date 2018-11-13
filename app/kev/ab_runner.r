@@ -169,6 +169,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   cov.m <- cov.m$cov.m
   
   cnst.dev <- constant.deviations(cnst.m, cov.m, cnst.tune.nm)
+  
   mol.coef.dev <- molar.coef.deviations(cnst.m
                                         , cnst.tune.nm
                                         , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
