@@ -70,7 +70,7 @@ ui <- navbarPage("KEV",
                               , wellPanel(
                                 fluidRow(column(6
                                                 , h4("Column delimiter of your data files")
-                                                , radioButtons("sep", "", inline = TRUE
+                                                , radioButtons("eq.sep", "", inline = TRUE
                                                                , c("," = "comma"
                                                                    , ";" = "semicolon"
                                                                    , "tab" = "tab"))
@@ -331,6 +331,8 @@ ui <- navbarPage("KEV",
                                     )
                                     , column(5
                                              , h4("Molar extinction coefficients")
+                                             , textInput("wl.tune", "Peaks (up to 10)", "110, 120, 130")
+                                             , p("")
                                              , rHandsontableOutput("dt.mol")
                                              , fileInput("file.dt.mol", "Choose CSV File",
                                                          accept = c(
@@ -489,17 +491,6 @@ server <- function(input, output, session) {
   
   values <- reactiveValues()
   
-  # technical
-  
-  sep <- reactive({
-    
-    switch(input$sep,
-           comma = ",",
-           semicolon = ";",
-           tab = "tab")
-    
-  })
-  
   input.source <- reactiveValues(
     
     eq.dt.coef.bulk = FALSE
@@ -516,6 +507,17 @@ server <- function(input, output, session) {
   
   # equilibrium concentrations -------------------------
   
+  
+  # technical
+  
+  eq.sep <- reactive({
+    
+    switch(input$eq.sep,
+           comma = ",",
+           semicolon = ";",
+           tab = "tab")
+    
+  })
   
   observeEvent(input$file.eq.bulk.input, {
     
@@ -797,11 +799,11 @@ server <- function(input, output, session) {
     
     if (!is.null(in.file)) {
       
-      if (sep() == ";") {
+      if (eq.sep() == ";") {
         bs.name <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
-      } else if (sep() == ",") {
+      } else if (eq.sep() == ",") {
         bs.name <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
-      } else if (sep() == "tab") {
+      } else if (eq.sep() == "tab") {
         bs.name <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
       }
       
@@ -840,7 +842,7 @@ server <- function(input, output, session) {
       incProgress(.3)
       
       res <- eq.evaluation.runner(mode = "app"
-                                 , sep = sep()
+                                 , sep = eq.sep()
                                  , bs.name = bs.name.data()
                                  , thr.type = c("rel")
                                  , threshold = 1e-08
@@ -934,11 +936,11 @@ server <- function(input, output, session) {
     
     if (!is.null(in.file)) {
       
-      if (sep() == ";") {
+      if (eq.sep() == ";") {
         dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
-      } else if (sep() == ",") {
+      } else if (eq.sep() == ",") {
         dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
-      } else if (sep() == "tab") {
+      } else if (eq.sep() == "tab") {
         dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
       
@@ -1015,11 +1017,11 @@ server <- function(input, output, session) {
     
     if (!is.null(in.file)) {
       
-      if (sep() == ";") {
+      if (eq.sep() == ";") {
         dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
-      } else if (sep() == ",") {
+      } else if (eq.sep() == ",") {
         dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
-      } else if (sep() == "tab") {
+      } else if (eq.sep() == "tab") {
         dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
       }
       
@@ -1089,17 +1091,17 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       
-      if (sep() == ";") {
+      if (eq.sep() == ";") {
         
         part.eq <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
         tmp <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
         
-      } else if (sep() == ",") {
+      } else if (eq.sep() == ",") {
         
         part.eq <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
         tmp <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
         
-      } else if (sep() == "tab") {
+      } else if (eq.sep() == "tab") {
         
         part.eq <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
         tmp <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
@@ -1171,11 +1173,11 @@ server <- function(input, output, session) {
     
     if (!is.null(in.file)) {
       
-      if (sep() == ";") {
+      if (eq.sep() == ";") {
         cnst <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
-      } else if (sep() == ",") {
+      } else if (eq.sep() == ",") {
         cnst <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
-      } else if (sep() == "tab") {
+      } else if (eq.sep() == "tab") {
         cnst <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
       
@@ -1604,6 +1606,7 @@ server <- function(input, output, session) {
     
   })
   
+  # data returns data
   cnst.tune.data <- reactive({
     
     if (!is.null(input$cnst.tune)) {
@@ -1632,6 +1635,7 @@ server <- function(input, output, session) {
     
   })
   
+  # load only updates textinput
   cnst.tune.load <- reactive({
     
     in.file.bulk <- input$file.bulk.input
@@ -1709,6 +1713,132 @@ server <- function(input, output, session) {
     updateTextInput(session, "cnst.tune", value = paste(cnst.tune, collapse = ", "))
     
   })
+
+  # data returns data
+  wl.tune.data <- reactive({
+    
+    if (!is.null(input$wl.tune)) {
+      
+      wl.tune <- input$wl.tune
+      
+      if (ab.sep() == ";")
+        wl.tune <- str_split(wl.tune, "\\; *") %>% unlist
+      
+      if (length(wl.tune) == 1 && ab.sep() == ",")
+        wl.tune <- str_split(wl.tune, "\\, *") %>% unlist
+      
+      if (length(wl.tune) == 1 && wl.tune %like% "\\, ")
+        wl.tune <- str_split(wl.tune, "\\, ") %>% unlist
+      
+      if (length(wl.tune) == 1 && wl.tune %like% "\\.")
+        wl.tune <- str_split(wl.tune, "\\, *") %>% unlist
+
+    } else {
+      
+      if (is.null(values[["wl.tune"]])) {
+        
+        wl.tune <- "110, 120, 130"
+        
+      } else {
+        
+        wl.tune <- values[["wl.tune"]]
+        
+      }
+      
+    }
+    
+    values[["wl.tune"]] <- wl.tune
+    
+    wl.tune
+    
+  })
+  
+  # load only updates textinput
+  wl.tune.load <- reactive({
+    
+    in.file.bulk <- input$file.bulk.input
+    in.file.xlsx <- NULL
+    in.file <- NULL
+    
+    # bulk input
+    
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|target)(\\.csv|\\.txt)*"]) > 0){
+      
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|target)(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.frame(in.file)
+      
+    }
+    
+    in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
+    
+    if (nrow(in.file.xlsx) > 0) {
+      
+      in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+      
+    } else {
+      
+      in.file.xlsx <- NULL
+      
+    }
+    
+    if (!is.null(in.file.xlsx))
+      in.file <- NULL
+    
+    if (!is.null(in.file)) {
+      
+      if (ab.sep() == ";") {
+        wl.tune <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+      } else if (ab.sep() == ",") {
+        wl.tune <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+      } else if (ab.sep() == "tab") {
+        wl.tune <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+      }
+      
+      setDT(wl.tune)
+      wl.tune[1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), "")]
+      setnames(wl.tune, "V1", "X1")
+      
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      sht <- getSheetNames(in.file.xlsx$datapath[1])
+      sht <- sht[sht %like% "^(constants*_names*|target)"]
+      
+      wl.tune <- try(read.xlsx(in.file.xlsx$datapath, sheet = sht, colNames = FALSE), silent = TRUE)
+      
+      
+    } else {
+      
+      wl.tune <- values[["wl.tune"]]
+      
+    }
+    
+    # new format
+    
+    setDT(wl.tune)
+    
+    if (nrow(wl.tune[X1 == "wavelength"]) > 0) {
+      
+      wl.tune <- wl.tune[X1 == "wavelength"][, !"X1", with = FALSE]
+      wl.tune <- unlist(wl.tune)
+      wl.tune <- wl.tune[!is.na(wl.tune) & wl.tune != ""]
+      
+      wl.tune <- unlist(wl.tune)
+      
+      values[["wl.tune"]] <- wl.tune
+      updateTextInput(session, "wl.tune", value = paste(wl.tune, collapse = ", "))
+      
+    } else {
+      
+      wl.tune <- head(dt.mol.data()[, wavelength], 10)
+
+      values[["wl.tune"]] <- wl.tune
+      updateTextInput(session, "wl.tune", value = paste(wl.tune, collapse = ", "))
+      
+    }
+    
+  })
+  
   
   
   # execute
@@ -1749,6 +1879,7 @@ server <- function(input, output, session) {
                              , search.density = as.numeric(input$search.density)
                              , lrate.init = .5
                              , ab.threshold = as.numeric(input$ab.threshold)
+                             , wl.tune = head(wl.tune.data(), 10)
                              , dt.list = list(dt.coef = ab.dt.coef.data()
                                               , cnst = ab.cnst.data()
                                               , dt.conc = ab.dt.conc.data()
@@ -1848,6 +1979,8 @@ server <- function(input, output, session) {
     if (input.source$ab.dt.coef.bulk) {
       
       cnst.tune.load()
+      wl.tune.load()
+      
       
       in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*stoich(iometric)*\\_coefficients(\\.csv|\\.txt)*"][1]
       in.file <- as.data.frame(in.file)
@@ -2240,7 +2373,7 @@ server <- function(input, output, session) {
       
       if (nrow(dt.ab) > 25) {
         
-        rhandsontable(dt.ab, stretchH = "all", useTypes = FALSE, height = 550) %>%
+        rhandsontable(dt.ab, stretchH = "all", useTypes = FALSE, height = 600) %>%
           hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
         
       } else {
@@ -2331,10 +2464,22 @@ server <- function(input, output, session) {
     if (!is.data.frame(dt.mol))
       dt.mol <- data.frame(no.data = "no.data")
     
-    if (!is.null(dt.mol))
-      rhandsontable(dt.mol, stretchH = "all", useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
-    
+    if (!is.null(dt.mol)) {
+      
+      if (nrow(dt.mol) > 25) {
+        
+        rhandsontable(dt.mol, stretchH = "all", useTypes = FALSE, height = 500) %>%
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        
+      } else {
+        
+        rhandsontable(dt.mol, stretchH = "all", useTypes = FALSE, height = NULL) %>%
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        
+      }
+      
+    }
+
   })
   
   output$ab.dt.res <- renderRHandsontable({
@@ -2384,10 +2529,20 @@ server <- function(input, output, session) {
       
       }" 
 
-      rhandsontable(dt.ab.abs, row_highlight = row_highlight, stretchH = FALSE) %>%
-        hot_cols(renderer = renderer)
+      if (nrow(dt.ab.abs) > 25) {
+        
+        rhandsontable(dt.ab.abs, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
+          hot_cols(renderer = renderer)
+        
+      } else {
+        
+        rhandsontable(dt.ab.abs, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+          hot_cols(renderer = renderer)
+        
+      }
+      
     }
-    
+
   })
   
   output$dt.ab.rel <- renderRHandsontable({
@@ -2414,8 +2569,18 @@ server <- function(input, output, session) {
       
       }" 
 
-      rhandsontable(dt.ab.rel, row_highlight = row_highlight, stretchH = FALSE) %>%
-        hot_cols(renderer = renderer)
+      if (nrow(dt.ab.rel) > 25) {
+        
+        rhandsontable(dt.ab.rel, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
+          hot_cols(renderer = renderer)
+        
+      } else {
+        
+        rhandsontable(dt.ab.rel, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+          hot_cols(renderer = renderer)
+        
+      }
+      
     }
     
   })
@@ -2466,8 +2631,18 @@ server <- function(input, output, session) {
       
       }" 
 
-      rhandsontable(mol.coef, row_highlight = row_highlight, stretchH = FALSE) %>%
-        hot_cols(renderer = renderer)
+      if (nrow(mol.coef) > 25) {
+        
+        rhandsontable(mol.coef, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
+          hot_cols(renderer = renderer)
+        
+      } else {
+        
+        rhandsontable(mol.coef, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+          hot_cols(renderer = renderer)
+        
+      }
+      
     }
     
   })
@@ -2706,7 +2881,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (eq.sep() == ";") {
         write.csv2(dt.coef.data(), file, row.names = FALSE)
       } else {
         write.csv(dt.coef.data(), file, row.names = FALSE)
@@ -2744,7 +2919,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (eq.sep() == ";") {
         write.csv2(cnst.data(), file, row.names = FALSE)
       } else {
         write.csv(cnst.data(), file, row.names = FALSE)
@@ -2787,7 +2962,7 @@ server <- function(input, output, session) {
       
       setnames(tmp, unlist(part.eq.data()))
       
-      if (sep() == ";") {
+      if (eq.sep() == ";") {
         write.csv2(tmp, file, row.names = FALSE)
       } else {
         write.csv(tmp, file, row.names = FALSE)
@@ -2835,7 +3010,7 @@ server <- function(input, output, session) {
       if (!is.data.frame(tmp))
         tmp <- data.frame(error = "Evaluate before downloading total concentrations")
 
-      if (sep() == ";") {
+      if (eq.sep() == ";") {
         write.csv2(tmp, file, row.names = FALSE)
       } else {
         write.csv(tmp, file, row.names = FALSE)
@@ -2878,7 +3053,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (eq.sep() == ";") {
         write.csv2(dt.res.data(), file, row.names = FALSE)
       } else {
         write.csv(dt.res.data(), file, row.names = FALSE)
@@ -2916,7 +3091,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (eq.sep() == ";") {
         write.csv2(dt.frac.data(), file, row.names = FALSE)
       } else {
         write.csv(dt.frac.data(), file, row.names = FALSE)
@@ -2954,7 +3129,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      if (sep() == ";") {
+      if (eq.sep() == ";") {
         write.csv2(dt.err.data(), file, row.names = FALSE)
       } else {
         write.csv(dt.err.data(), file, row.names = FALSE)
@@ -3011,7 +3186,7 @@ server <- function(input, output, session) {
         dt <- NULL
         try(dt <- eval(expr = parse(text = paste0(names(data.files)[i], ".data()"))), silent = TRUE)
         
-        if (sep() == ";") {
+        if (eq.sep() == ";") {
           
           if (!is.null(dt)) {
             
@@ -3092,7 +3267,7 @@ server <- function(input, output, session) {
   # ----
   
 
-  # absorbance downoad ---------------- #
+  # absorbance download ---------------- #
   
   output$ab.dt.coef.csv <- downloadHandler(
     # ----
