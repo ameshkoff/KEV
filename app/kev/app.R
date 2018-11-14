@@ -340,7 +340,9 @@ ui <- navbarPage("KEV",
                                                            "text/csv",
                                                            "text/comma-separated-values,text/plain",
                                                            ".csv")))
-                                               , column(4, tags$label(HTML("&nbsp;")), actionButton("dt.mol.memory", "From memory"))
+                                               , column(4, fluidRow(column(12, HTML("<label>&nbsp;</label>")))
+                                                         , fluidRow(column(12, actionButton("dt.mol.memory", "From memory")))
+                                                        )
                                              )
                                              , fluidRow(class = "download-row"
                                                         , downloadButton("dt.mol.csv", "csv")
@@ -1853,6 +1855,28 @@ server <- function(input, output, session) {
     }
     
   })
+  
+  # to save results
+  target.data <- reactive({
+    
+    target <- list(constant = cnst.tune.data(), wavelength = as.character(wl.tune.data()))
+    target <- setDT(lapply(target, "length<-", max(lengths(target))))[]
+    
+    target[is.na(constant), constant := ""]
+    target[is.na(wavelength), wavelength := ""]
+    
+    target <- as.data.table(t(target), keep.rownames = TRUE)
+    
+    cln <- target[rn == "constant"] %>% unlist
+    target <- target[2:nrow(target)]
+    
+    setnames(target, cln)
+    
+    target
+    
+    
+  })
+  
   
   
   
@@ -3769,7 +3793,7 @@ server <- function(input, output, session) {
         , cor.m = "correlation_matrix.csv"
         , err.diff = "fmin_last_step.csv"
         , mol.coef = "mol_ext_coefficients_calculated.csv"
-        , cnst.tune = "constants_names.csv"
+        , target = "target.csv"
         
       )
       
@@ -3784,6 +3808,15 @@ server <- function(input, output, session) {
 
           if (!is.null(dt)) {
             
+            if (data.files[i] == "input_concentrations") {
+              
+              dt <- ab.dt.conc.data()
+              dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
+              
+              setnames(dt, unlist(ab.part.eq.data()))
+              
+            }
+            
             write.csv2(dt, data.files[i], row.names = FALSE)
             
           } else {
@@ -3795,6 +3828,15 @@ server <- function(input, output, session) {
         } else {
           
           if (!is.null(dt)) {
+            
+            if (data.files[i] == "input_concentrations") {
+              
+              dt <- ab.dt.conc.data()
+              dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
+              
+              setnames(dt, unlist(ab.part.eq.data()))
+              
+            }
             
             write.csv(dt, data.files[i], row.names = FALSE)
             
@@ -3831,7 +3873,7 @@ server <- function(input, output, session) {
         , ab.dt.conc = "input_concentrations"
         , dt.ab = "input_absorbance"
         , dt.mol = "input_mol_ext_coefficients"
-        , cnst.tune = "constant_names"
+        , target = "target"
         , ab.dt.res = "equilibrium_concentrations"
         , dt.ab.abs = "absorbance_calc_abs_errors"
         , dt.ab.rel = "absorbance_calc_rel_errors"
@@ -3852,6 +3894,15 @@ server <- function(input, output, session) {
         try(dt <- eval(expr = parse(text = paste0(names(data.files)[i], ".data()"))), silent = TRUE)
         
         if (!is.null(dt)) {
+          
+          if (data.files[i] == "input_concentrations") {
+            
+            dt <- ab.dt.conc.data()
+            dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
+            
+            setnames(dt, unlist(ab.part.eq.data()))
+            
+          }
           
           dt.list[[eval(data.files[i])]] <- dt
           
