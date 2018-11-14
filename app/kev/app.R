@@ -334,11 +334,13 @@ ui <- navbarPage("KEV",
                                              , textInput("wl.tune", "Peaks (up to 10)", "110, 120, 130")
                                              , p("")
                                              , rHandsontableOutput("dt.mol")
-                                             , fileInput("file.dt.mol", "Choose CSV File",
+                                             , fluidRow(
+                                               column(8, fileInput("file.dt.mol", "Choose CSV File",
                                                          accept = c(
                                                            "text/csv",
                                                            "text/comma-separated-values,text/plain",
-                                                           ".csv")
+                                                           ".csv")))
+                                               , column(4, tags$label(HTML("&nbsp;")), actionButton("dt.mol.memory", "From memory"))
                                              )
                                              , fluidRow(class = "download-row"
                                                         , downloadButton("dt.mol.csv", "csv")
@@ -501,6 +503,7 @@ server <- function(input, output, session) {
     , ab.cnst.bulk = FALSE
     , dt.ab.bulk = FALSE
     , dt.mol.bulk = FALSE
+    , dt.mol.memory = FALSE
     
   )
 
@@ -1351,14 +1354,19 @@ server <- function(input, output, session) {
     
     if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*mol(ar)*\\_ext(inction)*\\_coefficients(\\.csv|\\.txt)*"]) > 0){
       input.source$dt.mol.bulk <- TRUE
+      input.source$dt.mol.memory <- FALSE
     }
     
     if (nrow(as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]) > 0){
       
       shts <- getSheetNames(input$file.bulk.input$datapath)
       
-      if (length(shts[shts %in% "mol_ext_coefficients"]))
+      if (length(shts[shts %in% "mol_ext_coefficients"])){
+        
         input.source$dt.mol.bulk <- TRUE
+        input.source$dt.mol.memory <- FALSE
+        
+      }
       
     }
     
@@ -1393,6 +1401,13 @@ server <- function(input, output, session) {
   observeEvent(input$file.dt.mol, {
     
     input.source$dt.mol.bulk <- FALSE
+    input.source$dt.mol.memory <- FALSE
+    
+  }, priority = 1000)
+  
+  observeEvent(input$dt.mol.memory, {
+    
+    input.source$dt.mol.memory <- TRUE
     
   }, priority = 1000)
   
@@ -2421,7 +2436,7 @@ server <- function(input, output, session) {
     
     # choose source
     
-    if (!is.null(in.file)) {
+    if (!is.null(in.file) & !input.source$dt.mol.memory) {
       
       if (ab.sep() == ";") {
         dt.mol <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
@@ -2436,24 +2451,19 @@ server <- function(input, output, session) {
       cln <- colnames(dt.mol)
       setnames(dt.mol, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
       
-      # browser()
-      
-      # validate(
-      #   
-      #   need(is.data.frame(dt.mol), "Your file doesn't look like a molar extinction coefficients file")
-      #   
-      # )
-      
-      
-    } else if (!is.null(in.file.xlsx)) {
+    } else if (!is.null(in.file.xlsx) & !input.source$dt.mol.memory) {
       
       dt.mol <- try(read.xlsx(in.file.xlsx$datapath, sheet = "mol_ext_coefficients"), silent = TRUE)
       
-      # validate(
-      #   
-      #   need(is.data.frame(dt.mol), "Your file doesn't look like a molar extinction coefficients file")
-      #   
-      # )
+    } else if (input.source$dt.mol.memory) {
+      
+      dt.mol <- sp.dt.mol.full.data()
+      
+      validate(
+
+        need(is.data.frame(dt.mol), "Extinction coefficients are not yet calculated (check Extinction Coefficients tab)")
+
+      )
       
     } else {
       
@@ -2463,7 +2473,7 @@ server <- function(input, output, session) {
     
     if (!is.data.frame(dt.mol))
       dt.mol <- data.frame(no.data = "no.data")
-    
+
     if (!is.null(dt.mol)) {
       
       if (nrow(dt.mol) > 25) {
