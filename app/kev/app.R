@@ -2255,7 +2255,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(in.file.xlsx$datapath)
       
-      shts <- shts[shts %like% "(input_|output_)*concentrations"]
+      shts <- shts[shts %like% "^(input_|output_)*concentrations"]
       shts <- sort(shts)
 
       part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 1), silent = TRUE)
