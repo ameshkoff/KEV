@@ -1302,7 +1302,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(input$file.bulk.input$datapath)
       
-      if (length(shts[shts %in% "stoich_coefficients"]))
+      if (length(shts[shts %like% "stoich(iometric)*_coefficients"]))
         input.source$ab.dt.coef.bulk <- TRUE
       
     }
@@ -1317,7 +1317,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(input$file.bulk.input$datapath)
       
-      if (length(shts[shts %in% "concentrations"]))
+      if (length(shts[shts %like% "^(input_|output_)*concentrations"]))
         input.source$ab.dt.conc.bulk <- TRUE
       
     }
@@ -1332,7 +1332,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(input$file.bulk.input$datapath)
       
-      if (length(shts[shts %in% "k_constants_log10"]))
+      if (length(shts[shts %like% "k_constants_log10"]))
         input.source$ab.cnst.bulk <- TRUE
       
     }
@@ -1347,7 +1347,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(input$file.bulk.input$datapath)
       
-      if (length(shts[shts %in% "absorbance"]))
+      if (length(shts[shts %like% "absorbance"]))
         input.source$dt.ab.bulk <- TRUE
       
     }
@@ -1363,7 +1363,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(input$file.bulk.input$datapath)
       
-      if (length(shts[shts %in% "mol_ext_coefficients"])){
+      if (length(shts[shts %like% "mol(ar)*_ext(inction)*_coefficients"])){
         
         input.source$dt.mol.bulk <- TRUE
         input.source$dt.mol.memory <- FALSE
@@ -1878,8 +1878,6 @@ server <- function(input, output, session) {
   })
   
   
-  
-  
   # execute
   
   ab.eval.data <- reactive({
@@ -2073,7 +2071,12 @@ server <- function(input, output, session) {
       
     } else if (!is.null(in.file.xlsx)) {
       
-      dt.coef <- try(read.xlsx(in.file.xlsx$datapath, sheet = "stoich_coefficients"), silent = TRUE)
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "(input_|output_)*stoich_coefficients"]
+      shts <- sort(shts)
+
+      dt.coef <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
       
       validate(
         
@@ -2111,7 +2114,7 @@ server <- function(input, output, session) {
     
     if (input.source$ab.dt.conc.bulk) {
       
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*$"][1]
       in.file <- as.data.frame(in.file)
       
       in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
@@ -2156,7 +2159,12 @@ server <- function(input, output, session) {
       
     } else if (!is.null(in.file.xlsx)) {
       
-      dt.conc <- try(read.xlsx(in.file.xlsx$datapath, sheet = "concentrations", startRow = 2), silent = TRUE)
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "^(input_|output_)*concentrations"]
+      shts <- sort(shts)
+      
+      dt.conc <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], startRow = 2), silent = TRUE)
       
       validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
       
@@ -2187,7 +2195,7 @@ server <- function(input, output, session) {
     
     if (input.source$ab.dt.conc.bulk) {
       
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*$"][1]
       in.file <- as.data.frame(in.file)
       
       in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
@@ -2245,8 +2253,13 @@ server <- function(input, output, session) {
       
     } else if (!is.null(in.file.xlsx)) {
       
-      part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = "concentrations", colNames = FALSE, rows = 1), silent = TRUE)
-      tmp <- try(read.xlsx(in.file.xlsx$datapath, sheet = "concentrations", colNames = FALSE, rows = 2), silent = TRUE)
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "(input_|output_)*concentrations"]
+      shts <- sort(shts)
+
+      part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 1), silent = TRUE)
+      tmp <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 2), silent = TRUE)
       
       validate(
         
@@ -2275,7 +2288,7 @@ server <- function(input, output, session) {
     
     if (input.source$ab.cnst.bulk) {
       
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*k\\_constants\\_log10(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*k\\_constants\\_log10(\\.csv|\\.txt)*$"][1]
       in.file <- as.data.frame(in.file)
       
       in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
@@ -2319,7 +2332,12 @@ server <- function(input, output, session) {
       
     } else if (!is.null(in.file.xlsx)) {
       
-      cnst <- try(read.xlsx(in.file.xlsx$datapath, sheet = "k_constants_log10"), silent = TRUE)
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "(input_|output_)*k_constants_log10"]
+      shts <- sort(shts)
+      
+      cnst <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
       
       validate(
         need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
@@ -2348,7 +2366,7 @@ server <- function(input, output, session) {
     
     if (input.source$dt.ab.bulk) {
       
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*absorbance(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*absorbance(\\.csv|\\.txt)*$"][1]
       in.file <- as.data.frame(in.file)
       
       in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
@@ -2394,7 +2412,12 @@ server <- function(input, output, session) {
 
     } else if (!is.null(in.file.xlsx)) {
       
-      dt.ab <- try(read.xlsx(in.file.xlsx$datapath, sheet = "absorbance"), silent = TRUE)
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "(input_|output_)*absorbance"]
+      shts <- sort(shts, decreasing = TRUE)
+      
+      dt.ab <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
       
       validate(
         
@@ -2438,7 +2461,7 @@ server <- function(input, output, session) {
     
     if (input.source$dt.mol.bulk) {
       
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*mol(ar)*\\_ext(inction)*\\_coefficients(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*mol(ar)*\\_ext(inction)*\\_coefficients(\\.csv|\\.txt)*$"][1]
       in.file <- as.data.frame(in.file)
       
       in.file.xlsx <- as.data.table(input$file.bulk.input)[name %like% "\\.xlsx$"]
@@ -2477,7 +2500,12 @@ server <- function(input, output, session) {
       
     } else if (!is.null(in.file.xlsx) & !input.source$dt.mol.memory) {
       
-      dt.mol <- try(read.xlsx(in.file.xlsx$datapath, sheet = "mol_ext_coefficients"), silent = TRUE)
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "^(input_|output_)*mol(ar)*_ext(inction)*_coefficients"]
+      shts <- sort(shts)
+      
+      dt.mol <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
       
     } else if (input.source$dt.mol.memory) {
       
@@ -3247,7 +3275,18 @@ server <- function(input, output, session) {
         
       }
       
+      # create zip
+      
       utils::zip(file, data.files)
+      
+      # remove garbage from the disc
+      
+      for (i in data.files) {
+        
+        if (file.exists(i))
+          file.remove(i)
+        
+      }
       
     }
     
@@ -3808,7 +3847,7 @@ server <- function(input, output, session) {
 
           if (!is.null(dt)) {
             
-            if (data.files[i] == "input_concentrations") {
+            if (data.files[i] == "input_concentrations.csv") {
               
               dt <- ab.dt.conc.data()
               dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
@@ -3829,7 +3868,7 @@ server <- function(input, output, session) {
           
           if (!is.null(dt)) {
             
-            if (data.files[i] == "input_concentrations") {
+            if (data.files[i] == "input_concentrations.csv") {
               
               dt <- ab.dt.conc.data()
               dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
@@ -3849,7 +3888,18 @@ server <- function(input, output, session) {
         
       }
       
+      # create zip
+      
       utils::zip(file, data.files)
+      
+      # remove garbage from the disc
+      
+      for (i in data.files) {
+        
+        if (file.exists(i))
+          file.remove(i)
+        
+      }
 
     }
     

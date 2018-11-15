@@ -74,7 +74,7 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
   
   cln <- colnames(dt.ab)
   cln.val <- cln[cln %like% "^obs"]
-  cln.err <- cln[cln %like% "^dev"]
+  cln.err <- cln[cln %like% "^(dev|err)"]
   
   dt.ab.err <- dt.ab[, cln.err, with = FALSE]
   dt.ab <- dt.ab[, cln.val, with = FALSE]
