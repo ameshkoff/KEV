@@ -201,6 +201,8 @@ ui <- navbarPage("KEV",
                               
                             )
                             
+                            , tags$div(includeHTML("google-analytics.html"))
+                            
                           )),
 
 # absorbance ----------------------------------
@@ -479,7 +481,6 @@ ui <- navbarPage("KEV",
                
              ))
            )
-           
          )
          
 )
@@ -4007,7 +4008,6 @@ server <- function(input, output, session) {
     
   )
   # ----
-  
   
 }
 
