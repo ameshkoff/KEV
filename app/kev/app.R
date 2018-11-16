@@ -537,7 +537,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(input$file.eq.bulk.input$datapath)
       
-      if (length(shts[shts %in% "stoich_coefficients"]))
+      if (length(shts[shts %like% "stoich_coefficients"]))
         input.source$eq.dt.coef.bulk <- TRUE
       
     }
@@ -552,7 +552,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(input$file.eq.bulk.input$datapath)
       
-      if (length(shts[shts %in% "concentrations"]))
+      if (length(shts[shts %like% "concentrations"]))
         input.source$eq.dt.conc.bulk <- TRUE
       
     }
@@ -567,7 +567,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(input$file.eq.bulk.input$datapath)
       
-      if (length(shts[shts %in% "k_constants_log10"]))
+      if (length(shts[shts %like% "k_constants_log10"]))
         input.source$eq.cnst.bulk <- TRUE
       
     }
@@ -963,8 +963,13 @@ server <- function(input, output, session) {
       
     } else if (!is.null(in.file.xlsx)) {
       
-      dt.coef <- try(read.xlsx(in.file.xlsx$datapath, sheet = "stoich_coefficients"), silent = TRUE)
+      shts <- getSheetNames(in.file.xlsx$datapath)
       
+      shts <- shts[shts %like% "^(input_|output_)*stoich_coefficients"]
+      shts <- sort(shts)
+      
+      dt.coef <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
+
       validate(
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
@@ -1039,8 +1044,13 @@ server <- function(input, output, session) {
       
     } else if (!is.null(in.file.xlsx)) {
       
-      dt.conc <- try(read.xlsx(in.file.xlsx$datapath, sheet = "concentrations", startRow = 2), silent = TRUE)
+      shts <- getSheetNames(in.file.xlsx$datapath)
       
+      shts <- shts[shts %like% "^(input_|output_)*concentrations"]
+      shts <- sort(shts)
+      
+      dt.conc <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], startRow = 2), silent = TRUE)
+
       validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
       
       tmp <- colnames(dt.conc)
@@ -1125,9 +1135,14 @@ server <- function(input, output, session) {
       
     } else if (!is.null(in.file.xlsx)) {
       
-      part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = "concentrations", colNames = FALSE, rows = 1), silent = TRUE)
-      tmp <- try(read.xlsx(in.file.xlsx$datapath, sheet = "concentrations", colNames = FALSE, rows = 2), silent = TRUE)
+      shts <- getSheetNames(in.file.xlsx$datapath)
       
+      shts <- shts[shts %like% "^(input_|output_)*concentrations"]
+      shts <- sort(shts)
+      
+      part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 1), silent = TRUE)
+      tmp <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 2), silent = TRUE)
+
       validate(
         
         need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
@@ -1194,8 +1209,13 @@ server <- function(input, output, session) {
       
     } else if (!is.null(in.file.xlsx)) {
       
-      cnst <- try(read.xlsx(in.file.xlsx$datapath, sheet = "k_constants_log10"), silent = TRUE)
+      shts <- getSheetNames(in.file.xlsx$datapath)
       
+      shts <- shts[shts %like% "^(input_|output_)*k_constants_log10"]
+      shts <- sort(shts)
+      
+      cnst <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
+
       validate(
         need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
           need(ncol(cnst) == 1, "Check the column delimiter or content of your file")
@@ -2074,7 +2094,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(in.file.xlsx$datapath)
       
-      shts <- shts[shts %like% "(input_|output_)*stoich_coefficients"]
+      shts <- shts[shts %like% "^(input_|output_)*stoich_coefficients"]
       shts <- sort(shts)
 
       dt.coef <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
@@ -2335,7 +2355,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(in.file.xlsx$datapath)
       
-      shts <- shts[shts %like% "(input_|output_)*k_constants_log10"]
+      shts <- shts[shts %like% "^(input_|output_)*k_constants_log10"]
       shts <- sort(shts)
       
       cnst <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
@@ -3239,6 +3259,8 @@ server <- function(input, output, session) {
         , dt.res = "equilibrium_concentrations.csv"
         , dt.frac = paste0(bs.name.data(), "_fractions.csv")
         , dt.err = "percent_error.csv"
+        , bs.name = "particle_names.csv"
+
 
       )
       
@@ -3253,7 +3275,24 @@ server <- function(input, output, session) {
           
           if (!is.null(dt)) {
             
-            write.csv2(dt, data.files[i], row.names = FALSE)
+            if (data.files[i] == "input_concentrations.csv") {
+              
+              dt <- dt.conc.data()
+              dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
+              
+              setnames(dt, unlist(part.eq.data()))
+              
+            }
+            
+            if ((data.files[i] %like% "particle_names(\\.csv|\\.txt)$")) {
+              
+              write.table(dt, data.files[i], sep = ";", dec = ",", row.names = FALSE, col.names = FALSE)
+              
+            } else {
+             
+              write.csv2(dt, data.files[i], row.names = FALSE)
+               
+            }
             
           } else {
             
@@ -3265,7 +3304,24 @@ server <- function(input, output, session) {
           
           if (!is.null(dt)) {
             
-            write.csv(dt, data.files[i], row.names = FALSE)
+            if (data.files[i] == "input_concentrations.csv") {
+              
+              dt <- dt.conc.data()
+              dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
+              
+              setnames(dt, unlist(part.eq.data()))
+              
+            }
+            
+            if ((data.files[i] %like% "particle_names(\\.csv|\\.txt)$")) {
+              
+              write.table(dt, data.files[i], sep = ",", dec = ".", row.names = FALSE, col.names = FALSE)
+              
+            } else {
+              
+              write.csv(dt, data.files[i], row.names = FALSE)
+              
+            }
             
           } else {
             
@@ -3313,6 +3369,7 @@ server <- function(input, output, session) {
         , dt.res = "equilibrium_concentrations"
         , dt.frac = paste0(bs.name.data(), "_fractions")
         , dt.err = "percent_error"
+        , bs.name = "particle_names"
         
       )
       
@@ -3326,6 +3383,15 @@ server <- function(input, output, session) {
         try(dt <- eval(expr = parse(text = paste0(names(data.files)[i], ".data()"))), silent = TRUE)
         
         if (!is.null(dt)) {
+          
+          if (data.files[i] == "input_concentrations") {
+            
+            dt <- dt.conc.data()
+            dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
+            
+            setnames(dt, unlist(part.eq.data()))
+            
+          }
           
           dt.list[[eval(data.files[i])]] <- dt
           
