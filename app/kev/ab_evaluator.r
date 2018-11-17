@@ -82,7 +82,7 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
     if (mode[1] == "postproc") {
       
       mol.coef.dev <- (diag(sum((y.raw - y.calc) ^ 2)/(length(y) - length(cln.unknown)) * ginv((t(dt.m)) %*% diag(wght) %*% dt.m, tol = 0))) ^ .5
-      
+
     }
   }
   
@@ -169,7 +169,6 @@ molar.ext.wrapper <- function(cnst.m
   }
 
   
-  
   dt.ab.calc <- data.table(t(dt.ab.calc))
   
   # evaluate cost function
@@ -181,7 +180,7 @@ molar.ext.wrapper <- function(cnst.m
 
   err <- sum(((observed - predicted) ^ 2) * wght)
   
-  list(dt.ab.calc = dt.ab.calc, mol.coef.dev = mol.coef.dev, err = err)
+  list(dt.ab.calc = dt.ab.calc, mol.coef = mol.coef, mol.coef.dev = mol.coef.dev, err = err)
 
 }
 
@@ -272,7 +271,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
       
     } else if (mode[1] == "debug") {
       
-      list(err = err, mol.coef = mol.coef, err.v = (predicted - observed), dt.ab.calc = dt.ab.calc)
+      list(err = err, mol.coef = mol.coef, dt.ab.calc = dt.ab.calc, err.v = (predicted - observed))
       
     }
     
@@ -285,8 +284,9 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
                                        , hardstop = 100
                                        , mode = c("base", "grid", "debug")
                                        , method = c("lm", "basic wls")
-                                       , algorithm = c("direct search", "basic search")) {
-    
+                                       , algorithm = c("direct search", "basic search")
+                                       , lrate.init) {
+
     # prepare values
     
     step.iter <- 2
@@ -306,7 +306,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
       
       if (step.iter != step.last) {
         
-        grid.opt <- rbind(grid.opt, list(step.id = step.iter, step.type = "xpl", closed = 0), use.names = TRUE, fill = TRUE)
+        grid.opt <- rbind(grid.opt, list(step.id = step.iter, step.type = "xpl", closed = 0, lrate = lrate.init), use.names = TRUE, fill = TRUE)
         
         # browser()
         if (grid.opt[step.success, step.type] != "ptrn" & step.iter > 2 & algorithm[1] == "direct search"){
@@ -325,8 +325,8 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         
         for (k in cnst.tune.nm) {
           
-          lrate.tmp <- grid.opt[step.success, eval(as.name(paste0(k, "__lrate")))]
-          grid.opt[step.iter, eval(paste0(k, "__lrate")) := lrate.tmp]
+          step.tmp <- grid.opt[step.success, eval(as.name(paste0(k, "__step")))]
+          grid.opt[step.iter, eval(paste0(k, "__step")) := step.tmp]
           grid.opt[step.iter, eval(as.character(k)) := cnst.m[k]]
           
         }
@@ -337,7 +337,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         
         # exploratory move
         
-        lrate <- grid.opt[step.iter, eval(as.name(paste0(cnst.iter, "__lrate")))]
+        step <- grid.opt[step.iter, eval(as.name(paste0(cnst.iter, "__step")))]
         
         dt.step <- data.table(cnst = cnst.back, err = err.base)
         
@@ -346,7 +346,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
           sgn <- i %% 2
           if (sgn == 0) sgn <- -1
           
-          cnst.curr <- cnst.back + lrate * ((i + 1) %/% 2) * sgn #* mdelta
+          cnst.curr <- cnst.back + step * ((i + 1) %/% 2) * sgn  * lrate.init
           cnst.m[cnst.iter] <- cnst.curr
           
           dt.step <- rbind(dt.step
@@ -359,7 +359,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         err.curr <- dt.step[, min(err)]
         
         if (mode[1] == "debug")
-          print(paste(step.iter, cnst.iter, cnst.curr, cnst.back, lrate))
+          print(paste(step.iter, cnst.iter, cnst.curr, cnst.back, step))
         
         if (mode[1] == "grid") {
           # browser()
@@ -382,13 +382,14 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
 
             if (nrow(grid.opt[step.type == "xpl"]) > 3) {
 
-              tmp <- grid.opt[step.type == "xpl", eval(as.name(paste0(cnst.iter, "__lrate")))]
+              tmp <- grid.opt[step.type == "xpl", eval(as.name(paste0(cnst.iter, "__step")))]
               tmp <- tmp[(length(tmp)-3):length(tmp)]
               # browser()
 
               if (max(tmp) == min(tmp)) {
 
-                grid.opt[step.iter, eval(paste0(cnst.iter, "__lrate")) := lrate * 2]
+                # grid.opt[step.iter, eval(paste0(cnst.iter, "__step")) := step * 2]
+                lrate.init <- lrate.init * 2
 
               }
 
@@ -396,17 +397,33 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
             
           } else {
             
-            grid.opt[step.iter, eval(paste0(cnst.iter, "__lrate")) := lrate * .5]
+            if (cnst.iter == max(cnst.tune.wrk)) {
+              
+              # cln <- colnames(grid.opt)
+              # cln <- cln[cln %like% "\\_\\_step"]
+              # 
+              # for (cl in cln)
+              #   grid.opt[step.iter, eval(cl) := eval(as.name(cl)) * .5]
+              
+              lrate.init <- lrate.init * .5
+              
+            }
+              # grid.opt[step.iter, eval(paste0(cnst.iter, "__step")) := step * .5]
+            
             cnst.m[cnst.iter] <- cnst.back
             
           }
           
         }
         
-        tmp <- grid.opt[step.iter, c("step.id", paste0(cnst.tune.nm, "__lrate")), with = FALSE]
-        tmp <- melt(tmp, id.vars = "step.id", measure.vars = paste0(cnst.tune.nm, "__lrate"), variable.factor = FALSE)
+        tmp <- grid.opt[step.iter, c("step.id", paste0(cnst.tune.nm, "__step")), with = FALSE]
+        tmp <- melt(tmp, id.vars = "step.id", measure.vars = paste0(cnst.tune.nm, "__step"), variable.factor = FALSE)
         
-        cnst.tune.wrk <- as.integer(str_extract(unlist(tmp[value > ab.threshold | is.na(value), variable]), "^[0-9]+"))
+        # cnst.tune.wrk <- as.integer(str_extract(unlist(tmp[value > ab.threshold | is.na(value), variable]), "^[0-9]+"))
+        cnst.tune.wrk <- as.integer(str_extract(unlist(tmp[, variable]), "^[0-9]+"))
+        
+        if (lrate.init < ab.threshold)
+          cnst.tune.wrk <- numeric()
         
         if (length(cnst.tune.wrk) > 0) {
           
@@ -474,7 +491,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         
         # after pattern move
         
-        lrate <- grid.opt[step.iter, eval(as.name(paste0(cnst.iter, "__lrate")))]
+        step <- grid.opt[step.iter, eval(as.name(paste0(cnst.iter, "__step")))]
         
         dt.step <- data.table(cnst = cnst.back, err = err.base)
         
@@ -483,7 +500,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
           sgn <- i %% 2
           if (sgn == 0) sgn <- -1
           
-          cnst.curr <- cnst.back + lrate * ((i + 1) %/% 2) * sgn #* mdelta
+          cnst.curr <- cnst.back + step * ((i + 1) %/% 2) * sgn * lrate.init
           cnst.m[cnst.iter] <- cnst.curr
           
           dt.step <- rbind(dt.step
@@ -496,7 +513,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         err.curr <- dt.step[, min(err)]
         
         if (mode[1] == "debug")
-          print(paste(step.iter, cnst.iter, cnst.curr, cnst.back, lrate))
+          print(paste(step.iter, cnst.iter, cnst.curr, cnst.back, step))
         
         if (err.curr < err.base) {
           
@@ -511,10 +528,15 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
           
         }
 
-        tmp <- grid.opt[step.iter, c("step.id", paste0(cnst.tune.nm, "__lrate")), with = FALSE]
-        tmp <- melt(tmp, id.vars = "step.id", measure.vars = paste0(cnst.tune.nm, "__lrate"), variable.factor = FALSE)
+        tmp <- grid.opt[step.iter, c("step.id", paste0(cnst.tune.nm, "__step")), with = FALSE]
+        tmp <- melt(tmp, id.vars = "step.id", measure.vars = paste0(cnst.tune.nm, "__step"), variable.factor = FALSE)
         
-        cnst.tune.wrk <- as.integer(str_extract(unlist(tmp[value > ab.threshold | is.na(value), variable]), "^[0-9]+"))
+        # cnst.tune.wrk <- as.integer(str_extract(unlist(tmp[value > ab.threshold | is.na(value), variable]), "^[0-9]+"))
+        cnst.tune.wrk <- as.integer(str_extract(unlist(tmp[, variable]), "^[0-9]+"))
+        
+        if (lrate.init < ab.threshold)
+          cnst.tune.wrk <- numeric()
+        
         
         if (length(cnst.tune.wrk) > 0) {
           
@@ -563,16 +585,21 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
     if (mode == "debug") {
       
       rtrn <- constant.error.evaluator(cnst.m, method, mode = "debug")
-      list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = rtrn$mol.coef, err.v = rtrn$err.v, dt.ab.calc = rtrn$dt.ab.calc)
+      
+      dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, eq.thr.type, eq.threshold)
+      colnames(dt.res.m) <- dt.coef[, name]
+      
+      list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = rtrn$mol.coef, dt.ab.calc = rtrn$dt.ab.calc, dt.res.m = dt.res.m
+           , err.v = rtrn$err.v, lrate.fin = lrate.init)
       
     } else {
       
       rtrn <- constant.error.evaluator(cnst.m, method, mode = "return")
       
-      dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, "abs", 1e-08)
+      dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, eq.thr.type, eq.threshold)
       colnames(dt.res.m) <- dt.coef[, name]
       
-      list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = rtrn$mol.coef, dt.ab.calc = rtrn$dt.ab.calc, dt.res.m = dt.res.m)
+      list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = rtrn$mol.coef, dt.ab.calc = rtrn$dt.ab.calc, dt.res.m = dt.res.m, lrate.fin = lrate.init)
       
     }
     
@@ -590,7 +617,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
   for (i in cnst.tune.nm) {
     
     grid.opt[, eval(as.character(i)) := numeric()]
-    grid.opt[, paste0(eval(i), "__lrate") := numeric()]
+    grid.opt[, paste0(eval(i), "__step") := numeric()]
     
   }
   
@@ -601,7 +628,8 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
   for (i in cnst.tune.nm) {
     
     grid.opt[step.id == 1, eval(as.character(i)) := cnst.m[i]]
-    grid.opt[, eval(paste0(i, "__lrate")) := lrate.init * eval(as.name(as.character(i)))]
+    grid.opt[, eval(paste0(i, "__step")) := eval(as.name(as.character(i))) # * lrate.init
+             ]
     
   }
   
@@ -613,7 +641,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
   # run optimizer
   
   rtrn <- constant.optimizer.inner(grid.opt, cnst.m, cnst.tune.nm
-                                   , hardstop, mode, method, algorithm)
+                                   , hardstop, mode, method, algorithm, lrate.init)
   
   rtrn
   
