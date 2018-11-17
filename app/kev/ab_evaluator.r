@@ -281,7 +281,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
   # optimizer ------------------------ #
   
   constant.optimizer.inner <- function(grid.opt, cnst.m, cnst.tune.nm
-                                       , hardstop = 100
+                                       , hardstop = 1000
                                        , mode = c("base", "grid", "debug")
                                        , method = c("lm", "basic wls")
                                        , algorithm = c("direct search", "basic search")
@@ -295,7 +295,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
     
     # loop algorithms(s)
     
-    for (j in 1:(hardstop * 10)) {
+    for (j in 1:(hardstop)) {
       
       cnst.back <- cnst.m[cnst.iter]
       step.success <- grid.opt[closed >= length(cnst.tune.wrk), max(step.id)]
@@ -363,14 +363,11 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         
         if (mode[1] == "grid") {
           # browser()
-          grid.opt[step.iter, `:=`(err = dt.step[2, err], closed = closed + 1)]
+          grid.opt[step.iter, `:=`(err = dt.step[2, err], closed = length(cnst.tune.wrk))]
           grid.opt[step.iter, eval(as.character(cnst.iter)) := dt.step[2, cnst]]
           cnst.m[cnst.iter] <- dt.step[2, cnst]
           
         } else {
-          
-          # if (step.iter >= 112)
-          #   browser()
           
           if (err.curr < err.base) {
             
@@ -388,7 +385,6 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
 
               if (max(tmp) == min(tmp)) {
 
-                # grid.opt[step.iter, eval(paste0(cnst.iter, "__step")) := step * 2]
                 lrate.init <- lrate.init * 2
 
               }
@@ -399,17 +395,10 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
             
             if (cnst.iter == max(cnst.tune.wrk)) {
               
-              # cln <- colnames(grid.opt)
-              # cln <- cln[cln %like% "\\_\\_step"]
-              # 
-              # for (cl in cln)
-              #   grid.opt[step.iter, eval(cl) := eval(as.name(cl)) * .5]
-              
               lrate.init <- lrate.init * .5
               
             }
-              # grid.opt[step.iter, eval(paste0(cnst.iter, "__step")) := step * .5]
-            
+
             cnst.m[cnst.iter] <- cnst.back
             
           }
@@ -419,7 +408,6 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         tmp <- grid.opt[step.iter, c("step.id", paste0(cnst.tune.nm, "__step")), with = FALSE]
         tmp <- melt(tmp, id.vars = "step.id", measure.vars = paste0(cnst.tune.nm, "__step"), variable.factor = FALSE)
         
-        # cnst.tune.wrk <- as.integer(str_extract(unlist(tmp[value > ab.threshold | is.na(value), variable]), "^[0-9]+"))
         cnst.tune.wrk <- as.integer(str_extract(unlist(tmp[, variable]), "^[0-9]+"))
         
         if (lrate.init < ab.threshold)
@@ -466,9 +454,6 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
           )
         
         err.curr <- constant.error.evaluator(cnst.m, method)$err
-        
-        # if (step.iter >= 113)
-        #   browser()
         
         if (err.curr < err.base) {
           
@@ -531,7 +516,6 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         tmp <- grid.opt[step.iter, c("step.id", paste0(cnst.tune.nm, "__step")), with = FALSE]
         tmp <- melt(tmp, id.vars = "step.id", measure.vars = paste0(cnst.tune.nm, "__step"), variable.factor = FALSE)
         
-        # cnst.tune.wrk <- as.integer(str_extract(unlist(tmp[value > ab.threshold | is.na(value), variable]), "^[0-9]+"))
         cnst.tune.wrk <- as.integer(str_extract(unlist(tmp[, variable]), "^[0-9]+"))
         
         if (lrate.init < ab.threshold)
@@ -628,7 +612,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
   for (i in cnst.tune.nm) {
     
     grid.opt[step.id == 1, eval(as.character(i)) := cnst.m[i]]
-    grid.opt[, eval(paste0(i, "__step")) := eval(as.name(as.character(i))) # * lrate.init
+    grid.opt[, eval(paste0(i, "__step")) := eval(as.name(as.character(i)))
              ]
     
   }
