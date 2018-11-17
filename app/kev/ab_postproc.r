@@ -98,7 +98,7 @@ molar.coef.deviations <- function(cnst.m
                             , eq.thr.type, eq.threshold
                             , method)
   
-  rtrn$mol.coef.dev
+  list(mol.coef.dev = rtrn$mol.coef.dev, mol.coef = rtrn$mol.coef, dt.ab.calc = rtrn$dt.ab.calc)
   
 }
 

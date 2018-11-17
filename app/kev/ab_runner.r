@@ -31,6 +31,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
                                  , eq.thr.type = c("rel", "abs")
                                  , eq.threshold = 1e-08
                                  , cnst.tune = c("HL", "H2L")
+                                 , wl.tune = NULL
                                  , algorithm = "direct search"
                                  , method = "basic wls"
                                  , ab.mode = c("base", "grid", "debug")
@@ -92,7 +93,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   # preproc data --------------- #
   
   dt.ttl <- c(eq.preproc(dt.coef, cnst, dt.conc, part.eq)
-              , ab.preproc(dt.ab, dt.mol))
+              , ab.preproc(dt.ab, dt.mol, wl.tune))
   
   dt.coef <- dt.ttl[["dt.coef"]]
   dt.conc <- dt.ttl[["dt.conc"]]
@@ -104,13 +105,19 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   part.nm <- dt.ttl[["part.nm"]]
   
   dt.ab <- dt.ttl[["dt.ab"]]
+  dt.ab.full <- dt.ttl[["dt.ab.full"]]
   dt.ab.err <- dt.ttl[["dt.ab.err"]]
+  dt.ab.err.full <- dt.ttl[["dt.ab.err.full"]]
   dt.mol <- dt.ttl[["dt.mol"]]
+  dt.mol.full <- dt.ttl[["dt.mol.full"]]
   dt.ab.m <- dt.ttl[["dt.ab.m"]]
+  dt.ab.full.m <- dt.ttl[["dt.ab.full.m"]]
   dt.ab.err.m <- dt.ttl[["dt.ab.err.m"]]
+  dt.ab.err.full.m <- dt.ttl[["dt.ab.err.full.m"]]
   dt.mol.m <- dt.ttl[["dt.mol.m"]]
+  dt.mol.full.m <- dt.ttl[["dt.mol.full.m"]]
   partprod.nm <- dt.ttl[["partprod.nm"]]
-  wave.length <- dt.ttl[["wave.length"]]
+  wavelength <- dt.ttl[["wavelength"]]
   
   cnst.tune.nm <- which(dt.coef[, name] %in% cnst.tune)
   
@@ -136,6 +143,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   dt.res.m <- dt.ttl[["dt.res.m"]]
   ab.err <- tail(dt.ttl[["grid.opt"]][!is.na(err), err], 1)
   grid.opt <- dt.ttl[["grid.opt"]]
+  lrate.fin <- dt.ttl[["lrate.fin"]]
   
   
   # postprocessing ---------------- #
@@ -161,15 +169,20 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   cov.m <- cov.m$cov.m
   
   cnst.dev <- constant.deviations(cnst.m, cov.m, cnst.tune.nm)
+  
   mol.coef.dev <- molar.coef.deviations(cnst.m
                                         , cnst.tune.nm
                                         , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
-                                        , dt.ab.m, dt.ab.err.m, dt.mol.m
+                                        , dt.ab.full.m, dt.ab.err.full.m, dt.mol.full.m
                                         , eq.thr.type, eq.threshold
                                         , method
                                         , ab.threshold)
   
-  ab.res.abs <- absorbance.residuals(dt.ab.m, dt.ab.calc)
+  mol.coef <- mol.coef.dev$mol.coef
+  dt.ab.calc <- mol.coef.dev$dt.ab.calc
+  mol.coef.dev <- mol.coef.dev$mol.coef.dev
+  
+  ab.res.abs <- absorbance.residuals(dt.ab.full.m, dt.ab.calc)
   ab.res.rel <- ab.res.abs$ab.res.rel
   ab.res.abs <- ab.res.abs$ab.res.abs
   
@@ -180,7 +193,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   
   for (i in tbl) {
     
-    dt <- data.table("wave.length" = wave.length, t(get(i)))
+    dt <- data.table("wavelength" = wavelength, t(get(i)))
     
     cln <- colnames(dt)
     cln <- cln[cln %like% "^V[0-9]"]
@@ -201,7 +214,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   
   for (i in tbl) {
     
-    dt <- data.table("wave.length" = wave.length, get(i))
+    dt <- data.table("wavelength" = wavelength, get(i))
     assign(i, dt)
     
   }
@@ -211,7 +224,11 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   
   if (mode == "script" & save.res) {
     
-    ab.save(subdir, sep, dt.res, dt.ab.calc, ab.res.abs, ab.res.rel, ab.err, cnst.dev, cor.m, mol.coef, mol.coef.dev, err.diff, cnst.tune)
+    target <- list(constant = cnst.tune, wavelength = wl.tune)
+    target <- setDT(lapply(target, "length<-", max(lengths(target))))[]
+    target <- as.data.table(t(target), keep.rownames = TRUE)
+    
+    ab.save(subdir, sep, dt.res, dt.ab.calc, ab.res.abs, ab.res.rel, ab.err, cnst.dev, cor.m, mol.coef, mol.coef.dev, err.diff, target)
     
   }
   
@@ -232,7 +249,8 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
          , "mol.coef.dev" = mol.coef.dev
          , "err.diff" = err.diff
          , "cnst.tune" = cnst.tune
-         , "exec.time" = exec.time)
+         , "exec.time" = exec.time
+         , "lrate.fin" = lrate.fin)
     
   } else {
     
@@ -268,20 +286,24 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
       
     }
     
+    # remove extra data
+    
+    vld <- dt.ab.calc[!is.na(S1), which = TRUE]
     
     # return
     
     list("dt.eq.conc" = dt.res
-         , "dt.ab.calc" = dt.ab.calc
-         , "ab.res.abs" = ab.res.abs
-         , "ab.res.rel" = ab.res.rel
+         , "dt.ab.calc" = dt.ab.calc[vld]
+         , "ab.res.abs" = ab.res.abs[vld]
+         , "ab.res.rel" = ab.res.rel[vld]
          , "ab.err" = ab.err
          , "cnst.dev" = dt.cnst.dev # return data table with additional field for particle names
          , "cor.m" = dt.cor.m
-         , "mol.coef" = mol.coef
-         , "mol.coef.dev" = mol.coef.dev.full
+         , "mol.coef" = mol.coef[vld]
+         , "mol.coef.dev" = mol.coef.dev.full[vld]
          , "err.diff" = err.diff
-         , "cnst.tune" = cnst.tune)
+         , "cnst.tune" = cnst.tune
+         , "lrate.fin" = lrate.fin)
     
   }
   

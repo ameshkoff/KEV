@@ -43,36 +43,48 @@ eq.scripts.load <- function(sep = ";", subdir = "") {
   
   if (sep == ";") {
     
-    tbl[["cnst"]] <- as.data.table(read.csv2(cnst.fl, stringsAsFactors = FALSE, colClasses = "character")
+    tbl[["cnst"]] <- as.data.table(read.csv2(cnst.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE)
                                  , keep.rownames = FALSE)
-    tbl[["dt.coef"]] <- as.data.table(read.csv2(dt.coef.fl, stringsAsFactors = FALSE, colClasses = "character")
+    tbl[["dt.coef"]] <- as.data.table(read.csv2(dt.coef.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE)
                                  , keep.rownames = FALSE)
-    tbl[["dt.conc"]] <- as.data.table(read.csv2(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character"
+    tbl[["dt.conc"]] <- as.data.table(read.csv2(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE
                                                  , skip = 1), keep.rownames = FALSE)
-    tbl[["part.eq"]] <- as.data.table(read.csv2(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character"
+    tbl[["part.eq"]] <- as.data.table(read.csv2(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE
                                                 , header = FALSE , nrows = 1), keep.rownames = FALSE)
+    tbl[["part.eq"]][1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), "")]
     
   } else if (sep == ",") {
     
-    tbl[["cnst"]] <- as.data.table(read.csv(cnst.fl, stringsAsFactors = FALSE, colClasses = "character")
+    tbl[["cnst"]] <- as.data.table(read.csv(cnst.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE)
                                    , keep.rownames = FALSE)
-    tbl[["dt.coef"]] <- as.data.table(read.csv(dt.coef.fl, stringsAsFactors = FALSE, colClasses = "character")
+    tbl[["dt.coef"]] <- as.data.table(read.csv(dt.coef.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE)
                                       , keep.rownames = FALSE)
-    tbl[["dt.conc"]] <- as.data.table(read.csv(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character"
+    tbl[["dt.conc"]] <- as.data.table(read.csv(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE
                                                 , skip = 1), keep.rownames = FALSE)
-    tbl[["part.eq"]] <- as.data.table(read.csv(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character"
+    tbl[["part.eq"]] <- as.data.table(read.csv(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE
                                                 , header = FALSE , nrows = 1), keep.rownames = FALSE)
+    tbl[["part.eq"]][1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), "")]
     
   } else if (sep == "tab") {
     
-    tbl[["cnst"]] <- as.data.table(read.delim(cnst.fl, stringsAsFactors = FALSE, colClasses = "character")
+    tbl[["cnst"]] <- as.data.table(read.delim(cnst.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE)
                                    , keep.rownames = FALSE)
-    tbl[["dt.coef"]] <- as.data.table(read.delim(dt.coef.fl, stringsAsFactors = FALSE, colClasses = "character")
+    tbl[["dt.coef"]] <- as.data.table(read.delim(dt.coef.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE)
                                       , keep.rownames = FALSE)
-    tbl[["dt.conc"]] <- as.data.table(read.delim(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character"
+    tbl[["dt.conc"]] <- as.data.table(read.delim(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE
                                                , skip = 1), keep.rownames = FALSE)
-    tbl[["part.eq"]] <- as.data.table(read.delim(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character"
+    tbl[["part.eq"]] <- as.data.table(read.delim(dt.conc.fl, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE
                                                , header = FALSE , nrows = 1), keep.rownames = FALSE)
+    tbl[["part.eq"]][1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), "")]
+    
+  }
+  
+  # remove BOM mark if needed
+  
+  for (tb in tbl) {
+    
+    cln <- colnames(tb)
+    setnames(tb, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), ""))
     
   }
   
