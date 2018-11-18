@@ -162,6 +162,10 @@ constant.deviations <- function(cnst.m, cov.m, cnst.tune.nm, cnst.valid) {
   
   cnst.dev[cnst.tune.nm, "validity"] <- cnst.valid[order(cnst.nm)][, validity]
   
+  cnst.dev <- as.data.table(cnst.dev)
+  
+  cnst.dev[validity == "OK" & as.numeric(dev) / abs(as.numeric(cnst)) > .1, validity := "Insignificant"]
+  
   cnst.dev
   
 }
