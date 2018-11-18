@@ -154,6 +154,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   cnst.valid <- cnst.validation(dt.coef, cnst.m, cnst.tune
                                 , dt.ab.m, dt.ab.err.m, dt.mol.m
                                 , dt.coef.m, dt.conc.m, part.eq, reac.nm
+                                , lrate.fin
                                 , ab.threshold
                                 , eq.threshold
                                 , eq.thr.type

@@ -73,6 +73,7 @@ ab.cov <- function(ab.err
 cnst.validation <- function(dt.coef, cnst.m, cnst.tune
                            , dt.ab.m, dt.ab.err.m, dt.mol.m
                            , dt.coef.m, dt.conc.m, part.eq, reac.nm
+                           , lrate.fin
                            , ab.threshold = 5e-5
                            , eq.threshold = 1e-08
                            , eq.thr.type = c("rel", "abs")
@@ -82,10 +83,12 @@ cnst.validation <- function(dt.coef, cnst.m, cnst.tune
   
   hardstop <- 2 * length(cnst.tune)
   
+  lrate.fin <- lrate.fin * 2
+  
   # update cnst (1 step minus)
   
   cnst.tune.nm <- which(unlist(dt.coef[, name]) %in% cnst.tune)
-  cnst.m[cnst.tune.nm] <- cnst.m[cnst.tune.nm] - cnst.m[cnst.tune.nm] * ab.threshold
+  cnst.m[cnst.tune.nm] <- cnst.m[cnst.tune.nm] - cnst.m[cnst.tune.nm] * lrate.fin
   
   # calculate
   
@@ -93,9 +96,9 @@ cnst.validation <- function(dt.coef, cnst.m, cnst.tune
                                  , dt.ab.m, dt.ab.err.m, dt.mol.m
                                  , dt.coef.m, dt.conc.m, part.eq, reac.nm
                                  , hardstop
-                                 , lrate.init = ab.threshold
+                                 , lrate.init = lrate.fin
                                  , search.density = 1
-                                 , ab.threshold
+                                 , ab.threshold * .5
                                  , eq.threshold
                                  , eq.thr.type
                                  , mode = "grid"
