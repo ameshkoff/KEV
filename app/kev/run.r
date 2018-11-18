@@ -62,7 +62,7 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , cnst.tune = c("CuL2")
                      , algorithm = "direct search", ab.mode = "base", method = "basic wls"
-                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-2
+                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
                      , save.res = FALSE)
 
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.3"

@@ -2036,8 +2036,8 @@ server <- function(input, output, session) {
     
     if (input.source$ab.dt.coef.bulk) {
       
-      cnst.tune.load()
-      wl.tune.load()
+      try(cnst.tune.load(), silent = TRUE)
+      try(wl.tune.load(), silent = TRUE)
       
       
       in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*stoich(iometric)*\\_coefficients(\\.csv|\\.txt)*"][1]
@@ -2421,11 +2421,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (ab.sep() == ";") {
-        dt.ab <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.ab <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == ",") {
-        dt.ab <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.ab <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == "tab") {
-        dt.ab <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.ab <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       }
 
       setDT(dt.ab)
@@ -2516,11 +2516,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file) & !input.source$dt.mol.memory) {
       
       if (ab.sep() == ";") {
-        dt.mol <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.mol <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == ",") {
-        dt.mol <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.mol <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == "tab") {
-        dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       }
       
       setDT(dt.mol)
@@ -2683,8 +2683,27 @@ server <- function(input, output, session) {
     
     if (!is.null(cnst.dev))
       
-      rhandsontable(cnst.dev, stretchH = FALSE, useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+      row_highlight <- cnst.dev[Validity != "OK", which = TRUE] - 1
+    
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+    
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+          hrows = instance.params.row_highlight
+          hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+        if (instance.params && hrows.includes(row)) {
+          td.style.background = 'pink';
+        }
+        
+      }" 
+
+      
+      rhandsontable(cnst.dev, stretchH = FALSE, row_highlight = row_highlight, useTypes = TRUE) %>%
+        hot_cols(renderer = renderer)
     
   })
 
@@ -2710,16 +2729,16 @@ server <- function(input, output, session) {
       renderer <- "
       function (instance, td, row, col, prop, value, cellProperties) {
       
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (instance.params) {
-      hrows = instance.params.row_highlight
-      hrows = hrows instanceof Array ? hrows : [hrows]
-      }
-      
-      if (instance.params && hrows.includes(row) && value < 0) {
-      td.style.background = 'pink';
-      }
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+          hrows = instance.params.row_highlight
+          hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+        if (instance.params && hrows.includes(row) && value < 0) {
+          td.style.background = 'pink';
+        }
       
       }" 
 
