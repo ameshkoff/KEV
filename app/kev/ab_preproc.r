@@ -161,7 +161,8 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
     # to numbers
     
     f <- as.matrix(f)
-    f <- apply(f, 2, as.numeric)
+    # f <- apply(f, 2, as.numeric)
+    class(f) <- "numeric"
     
     assign(paste0(j, ".m"), f)
     
