@@ -557,7 +557,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         
       }
       
-      if (mode[1] == "grid" & step.iter > 30) {
+      if (mode[1] == "grid" & step.iter > 100) {
         
         break
         
