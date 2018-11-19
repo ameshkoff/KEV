@@ -39,7 +39,8 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
                                  , lrate.init = .5
                                  , ab.threshold = 5e-7
                                  , save.res = TRUE
-                                 , dt.list = NULL) {
+                                 , dt.list = NULL
+                                 , check.sens = TRUE) {
 
   #
   
@@ -134,7 +135,9 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
                                  , ab.threshold
                                  , eq.threshold
                                  , eq.thr.type
-                                 , mode = ab.mode, method, algorithm))[3]
+                                 , mode = ab.mode
+                                 , method
+                                 , algorithm))[3]
   
   cnst.m <- dt.ttl[["cnst.m"]]
   cnst.m.10 <- log(exp(cnst.m), 10)
@@ -147,6 +150,15 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   
   
   # postprocessing ---------------- #
+  
+  cnst.valid <- cnst.validation(dt.coef, cnst.m, cnst.tune
+                                , dt.ab.m, dt.ab.err.m, dt.mol.m
+                                , dt.coef.m, dt.conc.m, part.eq, reac.nm
+                                , lrate.fin
+                                , ab.threshold
+                                , eq.threshold
+                                , eq.thr.type
+                                , method)
   
   dt.res <- data.table(dt.res.m)
   
@@ -168,7 +180,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   cor.m <- cov.m$cor.m
   cov.m <- cov.m$cov.m
   
-  cnst.dev <- constant.deviations(cnst.m, cov.m, cnst.tune.nm)
+  cnst.dev <- constant.deviations(cnst.m, cov.m, cnst.tune.nm, cnst.valid)
   
   mol.coef.dev <- molar.coef.deviations(cnst.m
                                         , cnst.tune.nm

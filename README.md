@@ -2,4 +2,6 @@
 
 2: Equilibrium constants via UV-Vis spectroscopy. This section of KEV software is intended to optimize the unknown equilibrium constants values using UV-Vis spectroscopy data. The reactions occurring in the mixture, their decimal logarithms of equilibrium constants, total concentrations of the reagents, experimental absorbance values at different wavelengths as well as known molar extinction coefficients should be set as input data. The name(s) of reaction(s) which constants are to be optimized should also be specified. KEV software returns equilibrium concentrations of reagents and products and products, calculated absorbances with absolute/relative deviations from experimental values, optimized constants values, calculated molar extinction coefficients, and correlation matrix.
 
-[https://k-ev.org/kev](https://k-ev.org/kev) Contact me to get the free access to the web app. The only goal of the authentication is the possible bot attack prevention.
+Some more complex (or less stable) systems require higher numeric precision not available in the plain R. KEV is tested with Microsoft Open R (MRO) + Intel Math Kernel Library (MKL) and works fine with it. You can also try to build R with MKL but it is not yet tested. It may be OK also to use other math and specfically matrix computation libraries such as OpenBLAS but it is not tested as well.
+
+[https://k-ev.org/kev](https://k-ev.org/kev) KEV web application. Use it if you do not feel comfortable with scripts and terminals.

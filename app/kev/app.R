@@ -205,7 +205,7 @@ ui <- navbarPage("KEV",
                             
                           )),
 
-# absorbance ----------------------------------
+# absorbance (spectrophotometry) ----------------------------------
 
                  tabPanel(title = "Spectrophotometry"
                           , id = "page.ab"
@@ -389,19 +389,19 @@ ui <- navbarPage("KEV",
                                                   )))
                                 
                                 , fluidRow(column(12)
-                                           , column(4
+                                           , column(6
                                                     , h4("Evaluated Constants")
                                                     , rHandsontableOutput("cnst.dev")
                                                     , fluidRow(class = "download-row"
                                                                , downloadButton("cnst.dev.csv", "csv")
                                                                , downloadButton("cnst.dev.xlsx", "xlsx")))
-                                           , column(4
+                                           , column(3
                                                     , h4("Correlation Matrix")
                                                     , rHandsontableOutput("cor.m")
                                                     , fluidRow(class = "download-row"
                                                                , downloadButton("cor.m.csv", "csv")
                                                                , downloadButton("cor.m.xlsx", "xlsx")))
-                                           , column(4
+                                           , column(3
                                                     , h4("Last Fmin Step")
                                                     , rHandsontableOutput("err.diff")
                                                     , fluidRow(class = "download-row"
@@ -727,7 +727,7 @@ server <- function(input, output, session) {
       if (is.null(values[["cnst"]])) {
         
         cnst <- as.data.table(matrix(rep(1, 4), ncol = 1))
-        setnames(cnst, "log10(K)")
+        setnames(cnst, "k_constants_log10")
         
       } else {
         
@@ -1353,7 +1353,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(input$file.bulk.input$datapath)
       
-      if (length(shts[shts %like% "k_constants_log10"]))
+      if (length(shts[shts %like% "^((input_)*k_constants_log10|constants_evaluated)"]))
         input.source$ab.cnst.bulk <- TRUE
       
     }
@@ -1554,7 +1554,7 @@ server <- function(input, output, session) {
       if (is.null(values[["ab.cnst"]])) {
         
         cnst <- as.data.table(matrix(rep(1, 4), ncol = 1))
-        setnames(cnst, "log10(K)")
+        setnames(cnst, "k_constants_log10")
         
       } else {
         
@@ -1992,7 +1992,7 @@ server <- function(input, output, session) {
     cnst.dev <- ab.eval.data()$cnst.dev
     cnst.dev <- as.data.table(cnst.dev)
     
-    setnames(cnst.dev, c("Particle", "Constant", "St.Deviation"))
+    setnames(cnst.dev, c("Particle", "Constant", "St.Deviation", "Validity"))
     
   })
 
@@ -2036,8 +2036,8 @@ server <- function(input, output, session) {
     
     if (input.source$ab.dt.coef.bulk) {
       
-      cnst.tune.load()
-      wl.tune.load()
+      try(cnst.tune.load(), silent = TRUE)
+      try(wl.tune.load(), silent = TRUE)
       
       
       in.file <- as.data.table(input$file.bulk.input)[name %like% "^(input\\_)*stoich(iometric)*\\_coefficients(\\.csv|\\.txt)*"][1]
@@ -2348,21 +2348,23 @@ server <- function(input, output, session) {
       
       validate(
         need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
-          need(ncol(cnst) == 1, "Check the column delimiter or content of your file")
+          need(length(colnames(cnst)[colnames(cnst) %like% "^Constant$|^k_constants_log10$|^cnst$"]) == 1
+               , "Check the column delimiter or content of your file")
       )
       
     } else if (!is.null(in.file.xlsx)) {
       
       shts <- getSheetNames(in.file.xlsx$datapath)
       
-      shts <- shts[shts %like% "^(input_|output_)*k_constants_log10"]
-      shts <- sort(shts)
+      shts <- shts[shts %like% "^((input_)*k_constants_log10|constants_evaluated)"]
+      shts <- sort(shts, decreasing = TRUE)
       
       cnst <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
       
       validate(
         need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
-          need(ncol(cnst) == 1, "Check the column delimiter or content of your file")
+          need(length(colnames(cnst)[colnames(cnst) %like% "^Constant$|^k_constants_log10$|^cnst$"]) == 1
+               , "Check the column delimiter or content of your file")
       )
       
     } else {
@@ -2370,6 +2372,13 @@ server <- function(input, output, session) {
       cnst <- ab.cnst.data()
       
     }
+    
+    setDT(cnst)
+    
+    cln <- colnames(cnst)
+    cln <- cln[cln %like% "^Constant$|^k_constants_log10$|^cnst$"]
+    
+    cnst <- cnst[, cln, with = FALSE]
     
     if (!is.null(cnst))
       rhandsontable(cnst, stretchH = "all", useTypes = FALSE) %>%
@@ -2412,11 +2421,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (ab.sep() == ";") {
-        dt.ab <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.ab <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == ",") {
-        dt.ab <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.ab <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == "tab") {
-        dt.ab <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.ab <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       }
 
       setDT(dt.ab)
@@ -2507,11 +2516,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file) & !input.source$dt.mol.memory) {
       
       if (ab.sep() == ";") {
-        dt.mol <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.mol <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == ",") {
-        dt.mol <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.mol <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == "tab") {
-        dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       }
       
       setDT(dt.mol)
@@ -2674,8 +2683,27 @@ server <- function(input, output, session) {
     
     if (!is.null(cnst.dev))
       
-      rhandsontable(cnst.dev, stretchH = FALSE, useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+      row_highlight <- cnst.dev[Validity != "OK", which = TRUE] - 1
+    
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+    
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+          hrows = instance.params.row_highlight
+          hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+        if (instance.params && hrows.includes(row)) {
+          td.style.background = 'pink';
+        }
+        
+      }" 
+
+      
+      rhandsontable(cnst.dev, stretchH = FALSE, row_highlight = row_highlight, useTypes = TRUE) %>%
+        hot_cols(renderer = renderer)
     
   })
 
@@ -2701,16 +2729,16 @@ server <- function(input, output, session) {
       renderer <- "
       function (instance, td, row, col, prop, value, cellProperties) {
       
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (instance.params) {
-      hrows = instance.params.row_highlight
-      hrows = hrows instanceof Array ? hrows : [hrows]
-      }
-      
-      if (instance.params && hrows.includes(row) && value < 0) {
-      td.style.background = 'pink';
-      }
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+          hrows = instance.params.row_highlight
+          hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+        if (instance.params && hrows.includes(row) && value < 0) {
+          td.style.background = 'pink';
+        }
       
       }" 
 
