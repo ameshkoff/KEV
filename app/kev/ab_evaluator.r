@@ -70,6 +70,9 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
     
     # basic (weighted) least squares
     
+    # if (length(colnames(dt.res.m)[colnames(dt.res.m) %in% cln.unknown]) == 0)
+    #   browser()
+    
     dt.m <- dt.res.m[, cln.unknown, drop = FALSE]
     
     mol.coef.new <- ginv((t(dt.m) %*% diag(wght)) %*% dt.m, tol = 0) %*% ((t(dt.m) %*% diag(wght)) %*% y)
@@ -216,6 +219,9 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
     dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, eq.thr.type[1], eq.threshold)
     colnames(dt.res.m) <- dt.coef[, name]
     
+    if (any(is.na(dt.res.m)))
+      return(list(err = 1e+12))
+    
     cnst.tune.nm <- which(colnames(dt.res.m) %in% cnst.tune)
     
     #  run molar extinction evaluator
@@ -228,7 +234,6 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
       y.raw <- dt.ab.m[, i, drop = FALSE]
       
       # weights for linear model
-      # browser()
       wght <- sum((dt.ab.err.m[, i] ^ 2)) / ((dt.ab.err.m[, i] ^ 2) * length(dt.ab.err.m[, i]))
 
       # if some molar coefficients are already known
