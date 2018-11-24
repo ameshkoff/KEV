@@ -101,6 +101,10 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
     
   }
 
+  # convert to numeric matrices
+  
+  tbl <- c("dt.ab", "dt.ab.err", "dt.ab.full", "dt.ab.err.full", "dt.mol", "dt.mol.full")
+  
   # remove row names
   
   if (is.data.table(dt.mol)) {
@@ -125,7 +129,7 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
     
   } else {
     
-    tbl <- tbl[tbl != "dt.mol"]
+    tbl <- tbl[!(tbl %like% "^dt.mol")]
     
     dt.mol <- NULL
     dt.mol.m <- NULL
@@ -135,9 +139,8 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
     
   }
   
-  # convert to numeric matrices
-
-  tbl <- c("dt.ab", "dt.ab.err", "dt.ab.full", "dt.ab.err.full", "dt.mol", "dt.mol.full")
+  
+  #
   
   for (j in tbl) {
     
