@@ -39,8 +39,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
                                  , lrate.init = .5
                                  , ab.threshold = 5e-7
                                  , save.res = TRUE
-                                 , dt.list = NULL
-                                 , check.sens = TRUE) {
+                                 , dt.list = NULL) {
 
   #
   

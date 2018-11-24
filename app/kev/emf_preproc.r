@@ -11,6 +11,8 @@
 
 emf.preproc <- function(dt.emf, dt.params) {
   
+  tbl <- c("dt.emf", "dt.emf.err", "dt.params")
+  
   # transpose emf data
   
   cln <- dt.emf[, paste0(data, "_", particle)]
@@ -28,8 +30,8 @@ emf.preproc <- function(dt.emf, dt.params) {
   dt.emf <- dt.emf[, cln.val, with = FALSE]
   
   cln <- colnames(dt.emf)
-  cln <- str_replace(cln, "obs(ervation)*", "")
-  cln <- paste0("EMF", cln)
+  cln <- str_replace(cln, "obs(ervation)*\\_", "")
+  # cln <- paste0("EMF", cln)
   
   setnames(dt.emf, cln)
   setnames(dt.emf.err, cln)
@@ -39,6 +41,7 @@ emf.preproc <- function(dt.emf, dt.params) {
   if (is.data.table(dt.params)) {
     
     # unify params names from scripts and GUI
+    dt.params <- dt.params[, 1:2, with = FALSE]
     setnames(dt.params, c("param", "value"))
 
     cln <- dt.params[, param]
@@ -61,8 +64,6 @@ emf.preproc <- function(dt.emf, dt.params) {
   }
   
   # convert to numeric matrices
-  
-  tbl <- c("dt.emf", "dt.emf.err", "dt.params")
   
   for (j in tbl) {
     
