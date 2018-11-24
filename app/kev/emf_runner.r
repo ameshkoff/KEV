@@ -180,13 +180,13 @@ emf.evaluation.runner <- function(mode = c("api", "script", "app")
     dt.params.dev <- emf.params.deviations(cnst.m
                                            , cnst.tune.nm
                                            , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
-                                           , dt.emf.m, dt.emf.full.m, dt.params.m
+                                           , dt.emf.m, dt.emf.err.m, dt.params.m
                                            , eq.thr.type, eq.threshold
                                            , method
                                            , emf.threshold)
     
-    dt.params <- mol.coef.dev$dt.params
-    dt.params.dev <- mol.coef.dev$dt.params.dev
+    dt.params <- dt.params.dev$dt.params
+    dt.params.dev <- dt.params.dev$dt.params.dev
     
   } else {
     
