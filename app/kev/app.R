@@ -29,10 +29,19 @@ library(rhandsontable)
 
 # ------------------------- settings ------------------------
 
+# if google analytics to be shown
+
+google.an <- "google-analytics.html"
+
 # prepare environment
 
-if (Sys.info()["sysname"] %like% "indows")
+if (Sys.info()["sysname"] %like% "indows") {
+  
   Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
+  google.an <- ""
+  
+}
+  
 
 options(shiny.sanitize.errors = TRUE)
 `%then%` <- shiny:::`%OR%`
@@ -202,7 +211,7 @@ ui <- navbarPage("KEV",
                               
                             )
                             
-                            , tags$div(includeHTML("google-analytics.html"))
+                            , tags$div(includeHTML(google.an))
                             
                           )),
 
