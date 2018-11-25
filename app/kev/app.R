@@ -2291,7 +2291,8 @@ server <- function(input, output, session) {
       validate(
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
-          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
+          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file") %then%
+          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate particle names")
         
       )
       
@@ -2313,7 +2314,8 @@ server <- function(input, output, session) {
       validate(
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
-          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
+          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file") %then%
+          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate particle names")
         
       )
       
@@ -3465,7 +3467,7 @@ server <- function(input, output, session) {
         dt.emf[(nrow(dt.emf) / 2 + 1):nrow(dt.emf), 1:ncol(dt.emf)] <- .01
         
         dt.emf <- data.table(data = c(rep("observation", nrow(dt.emf) / 2), rep("deviation", nrow(dt.emf) / 2))
-                            , wavelength = rep("molecule1", 2)
+                            , particle = rep("molecule1", 2)
                             , dt.emf)
         
         cln <- colnames(dt.emf)
@@ -3809,7 +3811,8 @@ server <- function(input, output, session) {
       validate(
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
-          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
+          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file") %then%
+          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate particle names")
         
       )
       
@@ -3829,7 +3832,8 @@ server <- function(input, output, session) {
       validate(
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
-          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
+          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file") %then%
+          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate particle names")
         
       )
       
