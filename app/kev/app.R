@@ -42,6 +42,7 @@ options(shiny.sanitize.errors = TRUE)
 source("eq_runner.r", chdir = TRUE)
 source("ab_runner.r", chdir = TRUE)
 source("sp_runner.r", chdir = TRUE)
+source("emf_runner.r", chdir = TRUE)
 
 
 
@@ -317,7 +318,7 @@ ui <- navbarPage("KEV",
                                     )
                                   )
                                   , fluidRow(
-                                    column(5
+                                    column(6
                                              , h4("Absorbance and deviations")
                                              , rHandsontableOutput("dt.ab")
                                              , fileInput("file.dt.ab", "Choose CSV File",
@@ -331,7 +332,7 @@ ui <- navbarPage("KEV",
                                                         , downloadButton("dt.ab.xlsx", "xlsx"))
 
                                     )
-                                    , column(5
+                                    , column(6
                                              , h4("Molar extinction coefficients")
                                              , textInput("wl.tune", "Peaks (up to 10)", "110, 120, 130")
                                              , p("")
@@ -425,7 +426,7 @@ ui <- navbarPage("KEV",
 
 # extinction coefficients ----------------------------------
 
-        tabPanel(title = HTML("Extinction Coefficients</a></li><li><a href='https://k-ev.org' target='_blank'>Home")
+      tabPanel(title = "Extinction Coefficients"
          , id = "page.sp"
          
          , fluidPage(
@@ -483,7 +484,212 @@ ui <- navbarPage("KEV",
            )
          )
          
-)
+    ),
+# emf (potentiometry) ----------------------------------
+
+    tabPanel(title = HTML("EMF</a></li><li><a href='https://k-ev.org' target='_blank'>Home")
+         , id = "page.emf"
+         
+         , fluidPage(
+           
+           includeCSS("styles.css")
+           
+           , titlePanel("KEV: Chemistry Constant Evaluator")
+           
+           , fluidRow(column(12), p(HTML(paste("<br/>"))))
+           
+           , titlePanel("Calculate Equilibrium Constants")
+           
+           , fluidRow(column(
+             12
+             , wellPanel(
+               fluidRow(column(3
+                               , h4("Column delimiter")
+                               , radioButtons("emf.sep", "", inline = TRUE
+                                              , c("," = "comma"
+                                                  , ";" = "semicolon"
+                                                  , "tab" = "tab")))
+                        , column(3
+                                 , HTML("<h4>Constants to evaluate</h4><p>Particle names, comma separated</p>")
+                                 , textInput("emf.cnst.tune", "", "molecule1"))
+                        , column(3
+                                 , HTML(paste("<h4>Threshold</h4><p>Search algorithm precision"
+                                              ,"0&nbsp;&#60;&nbsp;&#950;&nbsp;&#60;&nbsp;1</p>"))
+                                 , textInput("emf.threshold", "", "1e-7"))
+                        , column(3
+                                 , HTML("<h4>Search density</h4><p>Do not change unless you fully understand what you are doing</p>")
+                                 , textInput("emf.search.density", "", "1"))
+               )
+             )))
+           
+           , fluidRow(column(
+             12
+             , wellPanel(
+               fluidRow(column(12
+                               , h4("Bulk upload / download (optional)")))
+               
+               , fluidRow(column(6
+                                 , h4("Upload all data")
+                                 , fileInput("file.emf.bulk.input", "Choose CSV files or XLSX file with multiple sheets",
+                                             accept = c(
+                                               "text/csv"
+                                               , "text/comma-separated-values,text/plain"
+                                               , ".csv"
+                                               , ".xlsx")
+                                             , multiple = TRUE
+                                 ))
+                          , column(6
+                                   , h4("Download all data")
+                                   , fluidRow(class = "download-row"
+                                              , downloadButton("kev.emf.data.zip", "zip")
+                                              , downloadButton("kev.emf.data.xlsx", "xlsx"))))
+             )))
+           
+           , fluidRow(
+             
+             column(
+               12
+               , wellPanel(
+                 h4("Upload or type input data")
+                 ,  fluidRow(
+                   column(5
+                          , h4("Stoichiometric coefficients")
+                          , rHandsontableOutput("emf.dt.coef")
+                          , fileInput("file.emf.dt.coef", "Choose CSV File",
+                                      accept = c(
+                                        "text/csv",
+                                        "text/comma-separated-values,text/plain",
+                                        ".csv")
+                          )
+                          , fluidRow(class = "download-row"
+                                     , downloadButton("emf.dt.coef.csv", "csv")
+                                     , downloadButton("emf.dt.coef.xlsx", "xlsx"))
+                          , p("")
+                          , textInput("emf.part.names", "Particle names, comma separated"
+                                      , paste(paste0("molecule", 1:4), collapse = ", "))
+                   )
+                   , column(2
+                            , h4("K: lg constants")
+                            , rHandsontableOutput("emf.cnst")
+                            , fileInput("file.emf.cnst", "Choose CSV File",
+                                        accept = c(
+                                          "text/csv",
+                                          "text/comma-separated-values,text/plain",
+                                          ".csv")
+                            )
+                            , fluidRow(class = "download-row"
+                                       , downloadButton("emf.cnst.csv", "csv")
+                                       , downloadButton("emf.cnst.xlsx", "xlsx"))
+                   )
+                   , column(5
+                            , h4("Concentrations")
+                            , rHandsontableOutput("emf.dt.conc")
+                            , rHandsontableOutput("emf.part.eq")
+                            , fileInput("file.emf.dt.conc", "Choose CSV File",
+                                        accept = c(
+                                          "text/csv",
+                                          "text/comma-separated-values,text/plain",
+                                          ".csv")
+                            )
+                            , fluidRow(class = "download-row"
+                                       , downloadButton("emf.dt.conc.csv", "csv")
+                                       , downloadButton("emf.dt.conc.xlsx", "xlsx"))
+                   )
+                 )
+                 , fluidRow(
+                   column(6
+                          , h4("EMF and deviations")
+                          , rHandsontableOutput("dt.emf")
+                          , fileInput("file.dt.emf", "Choose CSV File",
+                                      accept = c(
+                                        "text/csv",
+                                        "text/comma-separated-values,text/plain",
+                                        ".csv")
+                          )
+                          , fluidRow(class = "download-row"
+                                     , downloadButton("dt.emf.csv", "csv")
+                                     , downloadButton("dt.emf.xlsx", "xlsx"))
+                          
+                   )
+                   , column(6
+                            , HTML("<h4>E<sub>0</sub> and Slope</h4>")
+                            , rHandsontableOutput("emf.dt.params")
+                            , fileInput("file.emf.dt.params", "Choose CSV File",
+                                        accept = c(
+                                          "text/csv",
+                                          "text/comma-separated-values,text/plain",
+                                          ".csv")
+                            )
+                            , fluidRow(class = "download-row"
+                                       , downloadButton("emf.target.csv", "csv")
+                                       , downloadButton("emf.target.xlsx", "xlsx"))
+                   )
+                 )
+               )
+             )
+           )
+           
+           , fluidRow(column(
+             12
+             , wellPanel(
+               fluidRow(column(12
+                               , actionButton("emf.conc.exec.btn", "Evaluate")
+               ))
+             )))
+           
+           , fluidRow(column(
+             12
+             , wellPanel(
+               fluidRow(column(12
+                               , h4("Equilibrium concentrations")
+                               , rHandsontableOutput("emf.dt.res")
+                               , fluidRow(class = "download-row"
+                                          , downloadButton("emf.dt.res.csv", "csv")
+                                          , downloadButton("emf.dt.res.xlsx", "xlsx"))))
+               
+               , fluidRow(column(12
+                                 , h4("Calculated EMF")
+                                 , tabsetPanel(type = "tabs"
+                                               , tabPanel("Absolute Errors"
+                                                          , rHandsontableOutput("dt.emf.abs")
+                                                          , fluidRow(class = "download-row"
+                                                                     , downloadButton("dt.emf.abs.csv", "csv")
+                                                                     , downloadButton("dt.emf.abs.xlsx", "xlsx")))
+                                               , tabPanel("Relative Errors"
+                                                          , rHandsontableOutput("dt.emf.rel")
+                                                          , fluidRow(class = "download-row"
+                                                                     , downloadButton("dt.emf.rel.csv", "csv")
+                                                                     , downloadButton("dt.emf.rel.xlsx", "xlsx")))
+                                 )))
+               
+               , fluidRow(column(12)
+                          , column(6
+                                   , h4("Evaluated Constants")
+                                   , rHandsontableOutput("emf.cnst.dev")
+                                   , fluidRow(class = "download-row"
+                                              , downloadButton("emf.cnst.dev.csv", "csv")
+                                              , downloadButton("emf.cnst.dev.xlsx", "xlsx")))
+                          , column(3
+                                   , h4("Correlation Matrix")
+                                   , rHandsontableOutput("emf.cor.m")
+                                   , fluidRow(class = "download-row"
+                                              , downloadButton("emf.cor.m.csv", "csv")
+                                              , downloadButton("emf.cor.m.xlsx", "xlsx")))
+                          , column(3
+                                   , h4("Last Fmin Step")
+                                   , rHandsontableOutput("emf.err.diff")
+                                   , fluidRow(class = "download-row"
+                                              , downloadButton("emf.err.diff.csv", "csv")
+                                              , downloadButton("emf.err.diff.xlsx", "xlsx"))))
+               
+
+             ))
+           )
+           
+         )
+         
+  )
+
 # ---------------------------------------
 
 )
@@ -507,6 +713,11 @@ server <- function(input, output, session) {
     , dt.ab.bulk = FALSE
     , dt.mol.bulk = FALSE
     , dt.mol.memory = FALSE
+    , emf.dt.coef.bulk = FALSE
+    , emf.dt.conc.bulk = FALSE
+    , emf.cnst.bulk = FALSE
+    , dt.emf.bulk = FALSE
+    , emf.dt.params.bulk = FALSE
     
   )
 
@@ -2972,11 +3183,1295 @@ server <- function(input, output, session) {
     }
     
   })
+
   
   
   
+  # emf -------------------------------------------------------
+  
+  
+  # technical
+  
+  emf.sep <- reactive({
     
+    switch(input$emf.sep,
+           comma = ",",
+           semicolon = ";",
+           tab = "tab")
+    
+  })
   
+  observeEvent(input$file.emf.bulk.input, {
+    
+    # stoichiometric coefficients
+    
+    if (nrow(as.data.table(input$file.emf.bulk.input)[name %like% "^(input\\_)*stoich(iometric)*\\_coefficients(\\.csv|\\.txt)*"]) > 0){
+      input.source$emf.dt.coef.bulk <- TRUE
+    }
+    
+    if (nrow(as.data.table(input$file.emf.bulk.input)[name %like% "\\.xlsx$"]) > 0){
+      
+      shts <- getSheetNames(input$file.emf.bulk.input$datapath)
+      
+      if (length(shts[shts %like% "stoich(iometric)*_coefficients"]))
+        input.source$emf.dt.coef.bulk <- TRUE
+      
+    }
+    
+    # concentrations
+    
+    if (nrow(as.data.table(input$file.emf.bulk.input)[name %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*"]) > 0){
+      input.source$emf.dt.conc.bulk <- TRUE
+    }
+    
+    if (nrow(as.data.table(input$file.emf.bulk.input)[name %like% "\\.xlsx$"]) > 0){
+      
+      shts <- getSheetNames(input$file.emf.bulk.input$datapath)
+      
+      if (length(shts[shts %like% "^(input_|output_)*concentrations"]))
+        input.source$emf.dt.conc.bulk <- TRUE
+      
+    }
+    
+    # constants
+    
+    if (nrow(as.data.table(input$file.emf.bulk.input)[name %like% "^(input\\_)*k\\_constants\\_log10(\\.csv|\\.txt)*"]) > 0){
+      input.source$emf.cnst.bulk <- TRUE
+    }
+    
+    if (nrow(as.data.table(input$file.emf.bulk.input)[name %like% "\\.xlsx$"]) > 0){
+      
+      shts <- getSheetNames(input$file.emf.bulk.input$datapath)
+      
+      if (length(shts[shts %like% "^((input_)*k_constants_log10|constants_evaluated)"]))
+        input.source$emf.cnst.bulk <- TRUE
+      
+    }
+    
+    # emf
+    
+    if (nrow(as.data.table(input$file.emf.bulk.input)[name %like% "^(input\\_)*emf(\\.csv|\\.txt)*"]) > 0){
+      input.source$dt.emf.bulk <- TRUE
+    }
+    
+    if (nrow(as.data.table(input$file.emf.bulk.input)[name %like% "\\.xlsx$"]) > 0){
+      
+      shts <- getSheetNames(input$file.emf.bulk.input$datapath)
+      
+      if (length(shts[shts %like% "emf"]))
+        input.source$dt.emf.bulk <- TRUE
+      
+    }
+    
+    # emf params coefficients
+    
+    if (nrow(as.data.table(input$file.emf.bulk.input)[name %like% "^(input\\_)*targets*(\\.csv|\\.txt)*$"]) > 0)
+      input.source$emf.dt.params.bulk <- TRUE
+    
+    if (nrow(as.data.table(input$file.emf.bulk.input)[name %like% "\\.xlsx$"]) > 0){
+      
+      shts <- getSheetNames(input$file.emf.bulk.input$datapath)
+      
+      if (length(shts[shts %like% "^targets*"]))
+        input.source$emf.dt.params.bulk <- TRUE
+
+      
+    }
+    
+    
+    
+  }, priority = 1000)
+  
+  observeEvent(input$file.emf.dt.coef, {
+    
+    input.source$emf.dt.coef.bulk <- FALSE
+    
+  }, priority = 1000)
+  
+  observeEvent(input$file.emf.dt.conc, {
+    
+    input.source$emf.dt.conc.bulk <- FALSE
+    
+  }, priority = 1000)
+  
+  observeEvent(input$file.emf.cnst, {
+    
+    input.source$emf.cnst.bulk <- FALSE
+    
+  }, priority = 1000)
+  
+  observeEvent(input$file.dt.emf, {
+    
+    input.source$dt.emf.bulk <- FALSE
+    
+  }, priority = 1000)
+  
+  observeEvent(input$file.emf.dt.params, {
+    
+    input.source$emf.dt.params.bulk <- FALSE
+
+  }, priority = 1000)
+  
+
+  
+  # data --------------------- #
+  
+  # input data
+  
+  emf.part.names.data <- reactive({
+    
+    tmp <- input$emf.part.names
+    
+    tmp <- str_split(tmp, pattern = ",")[[1]]
+    tmp <- str_trim(tmp)
+    
+    tmp
+    
+  })
+  
+  emf.dt.coef.data <- reactive({
+    
+    if (!is.null(input$emf.dt.coef)) {
+      
+      dt.coef <- hot_to_r(input$emf.dt.coef)
+      
+    } else {
+      
+      if (is.null(values[["emf.dt.coef"]])) {
+        
+        dt.coef <- as.data.table(matrix(rep(1, 16), 4))
+        setnames(dt.coef, paste0("molecule", 1:4))
+        
+        dt.coef <- as.data.table(dt.coef)
+        dt.coef <- cbind(dt.coef, name = paste0("product", 1:4))
+        
+      } else {
+        
+        dt.coef <- values[["emf.dt.coef"]]
+        
+      }
+      
+    }
+    
+    dt.coef <- as.data.table(dt.coef)
+    
+    setnames(dt.coef, c(emf.part.names.data()[1:(ncol(dt.coef) - 1)], "name"))
+    
+    values[["emf.dt.coef"]] <- dt.coef
+    
+    dt.coef
+    
+  })
+  
+  emf.dt.conc.data <- reactive({
+    
+    if (!is.null(input$emf.dt.conc)) {
+      
+      dt.conc <- hot_to_r(input$emf.dt.conc)
+      
+    } else {
+      
+      if (is.null(values[["emf.dt.conc"]])) {
+        
+        dt.conc <- as.data.table(matrix(rep(1e-03, 20), ncol = 4))
+        setnames(dt.conc, paste0("molecule", 1:4))
+        
+      } else {
+        
+        dt.conc <- values[["emf.dt.conc"]]
+        
+      }
+      
+    }
+    
+    dt.conc <- as.data.table(dt.conc)
+    setnames(dt.conc, emf.part.names.data()[1:ncol(dt.conc)])
+    
+    values[["emf.dt.conc"]] <- dt.conc
+    
+    dt.conc
+    
+  })
+  
+  emf.part.eq.data <- reactive({
+    
+    if (!is.null(input$emf.part.eq)) {
+      
+      part.eq <- hot_to_r(input$emf.part.eq)
+      
+    } else {
+      
+      if (is.null(values[["emf.part.eq"]])) {
+        
+        part.eq <- as.data.table(matrix(rep("tot", 4), ncol = 4))
+        setnames(part.eq, paste0("molecule", 1:4))
+        
+      } else {
+        
+        part.eq <- values[["emf.part.eq"]]
+        
+      }
+      
+    }
+    
+    part.eq <- as.data.table(part.eq)
+    
+    values[["emf.part.eq"]] <- part.eq
+    
+    part.eq
+    
+  })
+  
+  emf.cnst.data <- reactive({
+    
+    if (!is.null(input$emf.cnst)) {
+      
+      cnst <- hot_to_r(input$emf.cnst)
+      
+    } else {
+      
+      if (is.null(values[["emf.cnst"]])) {
+        
+        cnst <- as.data.table(matrix(rep(1, 4), ncol = 1))
+        setnames(cnst, "k_constants_log10")
+        
+      } else {
+        
+        cnst <- values[["emf.cnst"]]
+        
+      }
+      
+    }
+    
+    cnst <- as.data.table(cnst)
+    
+    values[["emf.cnst"]] <- cnst
+    # browser()
+    cnst
+    
+  })
+  
+  dt.emf.data <- reactive({
+    
+    if (!is.null(input$dt.emf)) {
+      
+      dt.emf <- hot_to_r(input$dt.emf)
+      
+    } else {
+      
+      if (is.null(values[["dt.emf"]])) {
+        
+        dt.emf <- matrix(rep(100, 10), 2)
+        dt.emf[(nrow(dt.emf) / 2 + 1):nrow(dt.emf), 1:ncol(dt.emf)] <- .01
+        
+        dt.emf <- data.table(data = c(rep("observation", nrow(dt.emf) / 2), rep("deviation", nrow(dt.emf) / 2))
+                            , wavelength = rep("molecule1", 2)
+                            , dt.emf)
+        
+        cln <- colnames(dt.emf)
+        cln <- cln[cln %like% "^V[0-9]"]
+        
+        setnames(dt.emf, cln, paste0("S", 1:length(cln)))
+        
+      } else {
+        
+        dt.emf <- values[["dt.emf"]]
+        
+      }
+      
+    }
+    
+    dt.emf <- as.data.table(dt.emf)
+    
+    values[["dt.emf"]] <- dt.emf
+    
+    dt.emf
+    
+  })
+  
+  emf.dt.params.data <- reactive({
+    
+    if (!is.null(input$emf.dt.params)) {
+      
+      emf.dt.params <- hot_to_r(input$emf.dt.params)
+      
+    } else {
+      
+      if (is.null(values[["emf.dt.params"]])) {
+        
+        emf.dt.params <- data.table(Parameter = c("standard.potential", "slope"), Value = c(388, 59))
+
+      } else {
+        
+        emf.dt.params <- values[["emf.dt.params"]]
+        
+      }
+      
+    }
+    
+    emf.dt.params <- as.data.table(emf.dt.params)
+    
+    values[["emf.dt.params"]] <- emf.dt.params
+    
+    emf.dt.params
+    
+  })
+  
+  # data returns data
+  emf.cnst.tune.data <- reactive({
+    
+    if (!is.null(input$emf.cnst.tune)) {
+      
+      cnst.tune <- input$emf.cnst.tune
+      cnst.tune <- str_split(cnst.tune, "\\, *")
+      cnst.tune <- unlist(cnst.tune)
+      
+    } else {
+      
+      if (is.null(values[["emf.cnst.tune"]])) {
+        
+        cnst.tune <- "molecule1"
+        
+      } else {
+        
+        cnst.tune <- values[["emf.cnst.tune"]]
+        
+      }
+      
+    }
+    
+    values[["emf.cnst.tune"]] <- cnst.tune
+    
+    cnst.tune
+    
+  })
+  
+  # load only updates textinput
+  emf.cnst.tune.load <- reactive({
+    
+    in.file <- input$file.emf.dt.params
+    in.file.bulk <- input$file.emf.bulk.input
+    in.file.xlsx <- NULL
+    
+    # bulk input
+ 
+    if (input.source$emf.dt.params.bulk) {
+      
+      in.file <- as.data.table(input$file.emf.bulk.input)[name %like% "^(input\\_)*targets*(\\.csv|\\.txt)*$"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.emf.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
+    
+    if (!is.null(in.file)) {
+      
+      if (emf.sep() == ";") {
+        cnst.tune <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+      } else if (emf.sep() == ",") {
+        cnst.tune <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+      } else if (emf.sep() == "tab") {
+        cnst.tune <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", header = FALSE), silent = TRUE)
+      }
+      
+      setDT(cnst.tune)
+      cnst.tune[1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), "")]
+      setnames(cnst.tune, "V1", "X1")
+      
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      sht <- getSheetNames(in.file.xlsx$datapath[1])
+      sht <- sht[sht %like% "^(constants*_names*|target)"]
+      
+      cnst.tune <- try(read.xlsx(in.file.xlsx$datapath, sheet = sht, colNames = FALSE), silent = TRUE)
+      
+      
+    } else {
+      
+      cnst.tune <- values[["emf.cnst.tune"]]
+      
+    }
+    
+    # new format
+    
+    setDT(cnst.tune)
+    
+    if (nrow(cnst.tune[X1 == "constant"]) > 0) {
+      
+      cnst.tune <- cnst.tune[X1 == "constant"][, !"X1", with = FALSE]
+      cnst.tune <- unlist(cnst.tune)
+      cnst.tune <- cnst.tune[!is.na(cnst.tune) & cnst.tune != ""]
+      
+    }
+    
+    cnst.tune <- unlist(cnst.tune)
+    
+    values[["emf.cnst.tune"]] <- cnst.tune
+    updateTextInput(session, "emf.cnst.tune", value = paste(cnst.tune, collapse = ", "))
+    
+  })
+  
+  # to save results
+  emf.target.data <- reactive({
+    
+    target <- list(constant = emf.cnst.tune.data()
+                   , standard.potential = as.character(emf.dt.params.data()[Parameter == "standard.potential", Value])
+                   , slope = as.character(emf.dt.params.data()[Parameter == "slope", Value]))
+    target <- setDT(lapply(target, "length<-", max(lengths(target))))[]
+    
+    target[is.na(constant), constant := ""]
+    target[is.na(standard.potential), standard.potential := ""]
+    target[is.na(slope), slope := ""]
+    
+    target <- as.data.table(t(target), keep.rownames = TRUE)
+    
+    cln <- target[rn == "constant"] %>% unlist
+    target <- target[2:nrow(target)]
+    
+    setnames(target, cln)
+    
+    target
+    
+    
+  })
+  
+  
+  # execute
+  
+  emf.eval.data <- reactive({
+    
+    withProgress(message = "Computation... It may take some time", value = 0, {
+      
+      incProgress(.1)
+      
+      particles <- c(colnames(emf.dt.coef.data()), emf.dt.coef.data()[, name])
+      
+      validate(
+        
+        need(length(particles %in% cnst.tune.data()) > 0, "Input correct particle names for constants evaluation")
+        
+      )
+      
+      incProgress(.3)
+      
+      # run
+      
+      res <- emf.evaluation.runner(mode = "app"
+                                  , sep = emf.sep()
+                                  , eq.thr.type = "rel"
+                                  , eq.threshold = 1e-08
+                                  , cnst.tune = emf.cnst.tune.data()
+                                  , algorithm = "direct search"
+                                  , emf.mode = "base"
+                                  , method = "basic wls"
+                                  , search.density = as.numeric(input$emf.search.density)
+                                  , lrate.init = .5
+                                  , emf.threshold = as.numeric(input$emf.threshold)
+                                  , dt.list = list(dt.coef = emf.dt.coef.data()
+                                                   , cnst = emf.cnst.data()
+                                                   , dt.conc = emf.dt.conc.data()
+                                                   , part.eq = emf.part.eq.data()
+                                                   , dt.emf = dt.emf.data()
+                                                   , dt.params = emf.dt.params.data())
+                                  , save.res = FALSE)
+      
+      incProgress(.6)
+      
+    })
+    
+    res
+    
+  })
+  
+  
+  # output data
+  
+  emf.dt.res.data <- eventReactive(input$emf.conc.exec.btn, {
+    
+    emf.eval.data()$dt.eq.conc
+    
+  })
+  
+  dt.emf.abs.data <- eventReactive(input$emf.conc.exec.btn, {
+    
+    dt <- emf.eval.data()$dt.emf.calc
+    dt.err <- emf.eval.data()$emf.res.abs
+    
+    dt.comb <- data.table(data = c(rep("observation", nrow(dt)), rep("error", nrow(dt.err)))
+                          , rbind(dt, dt.err, use.names = TRUE))
+    
+    dt.comb
+    
+  })
+  
+  dt.emf.rel.data <- eventReactive(input$emf.conc.exec.btn, {
+    
+    dt <- emf.eval.data()$dt.emf.calc
+    dt.err <- emf.eval.data()$emf.res.rel
+    
+    dt.comb <- data.table(data = c(rep("observation", nrow(dt)), rep("error", nrow(dt.err)))
+                          , rbind(dt, dt.err, use.names = TRUE))
+    
+    dt.comb
+    
+  })
+  
+  emf.cnst.dev.data <- eventReactive(input$emf.conc.exec.btn, {
+    
+    cnst.dev <- emf.eval.data()$cnst.dev
+    cnst.dev <- as.data.table(cnst.dev)
+    
+    setnames(cnst.dev, c("Particle", "Constant", "St.Deviation", "Validity"))
+    
+  })
+  
+  emf.cor.m.data <- eventReactive(input$emf.conc.exec.btn, {
+    
+    cor.m <- emf.eval.data()$cor.m
+    
+  })
+  
+  emf.err.diff.data <- eventReactive(input$emf.conc.exec.btn, {
+    
+    err.diff <- emf.eval.data()$err.diff
+    err.diff <- data.table(Particle = emf.cnst.tune.data(), Fmin.Last = err.diff)
+    
+    err.diff
+    
+  })
+  
+  
+  # rendering ---------------- #
+  
+  output$emf.dt.coef <- renderRHandsontable({
+    
+    in.file <- input$file.emf.dt.coef
+    in.file.bulk <- input$file.emf.bulk.input
+    in.file.xlsx <- NULL
+    
+    # bulk input
+    
+    if (input.source$emf.dt.coef.bulk) {
+      
+      in.file <- as.data.table(input$file.emf.bulk.input)[name %like% "^(input\\_)*stoich(iometric)*\\_coefficients(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.emf.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
+    
+    if (!is.null(in.file)) {
+      
+      if (emf.sep() == ";") {
+        dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (emf.sep() == ",") {
+        dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (emf.sep() == "tab") {
+        dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      }
+      
+      setDT(dt.coef)
+      
+      cln <- colnames(dt.coef)
+      setnames(dt.coef, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
+      
+      validate(
+        
+        need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
+          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
+        
+      )
+      
+      tmp <- colnames(dt.coef)
+      updateTextInput(session, "emf.part.names", value = paste(tmp[1:(length(tmp) - 1)], collapse = ", "))
+      
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "^(input_|output_)*stoich_coefficients"]
+      shts <- sort(shts)
+      
+      dt.coef <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
+      
+      validate(
+        
+        need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
+          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
+        
+      )
+      
+      tmp <- colnames(dt.coef)
+      updateTextInput(session, "emf.part.names", value = paste(tmp[1:(length(tmp) - 1)], collapse = ", "))
+      
+    } else {
+      
+      dt.coef <- emf.dt.coef.data()
+      
+    }
+    
+    setnames(dt.coef, c(emf.part.names.data()[1:(ncol(dt.coef) - 1)], "name"))
+    
+    if (!is.null(dt.coef))
+      rhandsontable(dt.coef, stretchH = "all", useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+  output$emf.dt.conc <- renderRHandsontable({
+    
+    in.file <- input$file.emf.dt.conc
+    in.file.bulk <- input$file.emf.bulk.input
+    in.file.xlsx <- NULL
+    
+    # bulk input
+    
+    if (input.source$emf.dt.conc.bulk) {
+      
+      in.file <- as.data.table(input$file.emf.bulk.input)[name %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*$"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.emf.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
+    
+    if (!is.null(in.file)) {
+      
+      if (emf.sep() == ";") {
+        dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+      } else if (emf.sep() == ",") {
+        dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+      } else if (emf.sep() == "tab") {
+        dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+      }
+      
+      setDT(dt.conc)
+      
+      cln <- colnames(dt.conc)
+      setnames(dt.conc, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
+      
+      validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
+      
+      tmp <- colnames(dt.conc)
+      updateTextInput(session, "emf.part.names", value = paste(tmp, collapse = ", "))
+      
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "^(input_|output_)*concentrations"]
+      shts <- sort(shts)
+      
+      dt.conc <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], startRow = 2), silent = TRUE)
+      
+      validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
+      
+      tmp <- colnames(dt.conc)
+      updateTextInput(session, "emf.part.names", value = paste(tmp, collapse = ", "))
+      
+    } else {
+      
+      dt.conc <- emf.dt.conc.data()
+      
+    }
+    
+    setnames(dt.conc, emf.part.names.data()[1:ncol(dt.conc)])
+    
+    if (!is.null(dt.conc))
+      rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+  output$emf.part.eq <- renderRHandsontable({
+    
+    in.file <- input$file.emf.dt.conc
+    in.file.bulk <- input$file.emf.bulk.input
+    in.file.xlsx <- NULL
+    
+    # bulk input
+    
+    if (input.source$emf.dt.conc.bulk) {
+      
+      in.file <- as.data.table(input$file.emf.bulk.input)[name %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*$"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.emf.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
+    
+    part.eq <- emf.part.eq.data()
+    
+    if (!is.null(in.file)) {
+      
+      
+      if (emf.sep() == ";") {
+        
+        part.eq <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
+        tmp <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
+        
+      } else if (emf.sep() == ",") {
+        
+        part.eq <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
+        tmp <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
+        
+      } else if (emf.sep() == "tab") {
+        
+        part.eq <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
+        tmp <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
+        
+      }
+      
+      setDT(part.eq)
+      part.eq[1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), "")]
+      
+      validate(
+        
+        need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
+          need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
+        
+      )
+      
+      colnames(part.eq) <- unlist(tmp)
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "^(input_|output_)*concentrations"]
+      shts <- sort(shts)
+      
+      part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 1), silent = TRUE)
+      tmp <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 2), silent = TRUE)
+      
+      validate(
+        
+        need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
+          need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
+        
+      )
+      
+      colnames(part.eq) <- tmp
+      
+    }
+    
+    if (!is.null(part.eq))
+      rhandsontable(part.eq, stretchH = "all", useTypes = FALSE, colHeaders = NULL) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+  output$emf.cnst <- renderRHandsontable({
+    
+    in.file <- input$file.emf.cnst
+    in.file.bulk <- input$file.emf.bulk.input
+    in.file.xlsx <- NULL
+    
+    # bulk input
+    
+    if (input.source$emf.cnst.bulk) {
+      
+      in.file <- as.data.table(input$file.emf.bulk.input)[name %like% "^(input\\_)*k\\_constants\\_log10(\\.csv|\\.txt)*$"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.emf.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
+    
+    if (!is.null(in.file)) {
+      
+      if (emf.sep() == ";") {
+        cnst <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (emf.sep() == ",") {
+        cnst <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      } else if (emf.sep() == "tab") {
+        cnst <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+      }
+      
+      setDT(cnst)
+      
+      cln <- colnames(cnst)
+      setnames(cnst, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
+      
+      validate(
+        need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
+          need(length(colnames(cnst)[colnames(cnst) %like% "^Constant$|^k_constants_log10$|^cnst$"]) == 1
+               , "Check the column delimiter or content of your file")
+      )
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "^((input_)*k_constants_log10|constants_evaluated)"]
+      shts <- sort(shts, decreasing = TRUE)
+      
+      cnst <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
+      
+      validate(
+        need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
+          need(length(colnames(cnst)[colnames(cnst) %like% "^Constant$|^k_constants_log10$|^cnst$"]) == 1
+               , "Check the column delimiter or content of your file")
+      )
+      
+    } else {
+      
+      cnst <- emf.cnst.data()
+      
+    }
+    
+    setDT(cnst)
+    
+    cln <- colnames(cnst)
+    cln <- cln[cln %like% "^Constant$|^k_constants_log10$|^cnst$"]
+    
+    cnst <- cnst[, cln, with = FALSE]
+    
+    if (!is.null(cnst))
+      rhandsontable(cnst, stretchH = "all", useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+  output$dt.emf <- renderRHandsontable({
+    
+    in.file <- input$file.dt.emf
+    in.file.bulk <- input$file.emf.bulk.input
+    in.file.xlsx <- NULL
+    
+    # bulk input
+    
+    if (input.source$dt.emf.bulk) {
+      
+      in.file <- as.data.table(input$file.emf.bulk.input)[name %like% "^(input\\_)*emf(\\.csv|\\.txt)*$"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.emf.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
+    
+    if (!is.null(in.file)) {
+      
+      if (emf.sep() == ";") {
+        dt.emf <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
+      } else if (emf.sep() == ",") {
+        dt.emf <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
+      } else if (emf.sep() == "tab") {
+        dt.emf <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
+      }
+      
+      setDT(dt.emf)
+      
+      cln <- colnames(dt.emf)
+      setnames(dt.emf, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
+      
+      validate(
+        
+        need(is.data.frame(dt.emf), "Your file doesn't look like an EMF file")
+        
+      )
+      
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "(input_|output_)*emf"]
+      shts <- sort(shts, decreasing = TRUE)
+      
+      dt.emf <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
+      
+      validate(
+        
+        need(is.data.frame(dt.emf), "Your file doesn't look like an EMF file")
+        
+      )
+      
+    } else {
+      
+      dt.emf <- dt.emf.data()
+      
+    }
+    
+    if (!is.null(dt.emf)) {
+      
+      if (nrow(dt.emf) > 25) {
+        
+        rhandsontable(dt.emf, stretchH = "all", useTypes = FALSE, height = 600) %>%
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        
+      } else {
+        
+        rhandsontable(dt.emf, stretchH = "all", useTypes = FALSE, height = NULL) %>%
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        
+      }
+      
+    }
+    
+    
+    
+  })
+  
+  output$emf.dt.params <- renderRHandsontable({
+    
+    in.file <- input$file.emf.dt.params
+    in.file.bulk <- input$file.emf.bulk.input
+    in.file.xlsx <- NULL
+    
+    try(emf.cnst.tune.load(), silent = TRUE)
+    
+    # bulk input
+    
+    if (input.source$emf.dt.params.bulk) {
+      
+      in.file <- as.data.table(input$file.emf.bulk.input)[name %like% "^(input\\_)*targets*(\\.csv|\\.txt)*$"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input$file.emf.bulk.input)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    # choose source
+    
+    if (!is.null(in.file)) {
+      
+      if (emf.sep() == ";") {
+        
+        emf.dt.params <- try(as.data.table(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"
+                                        , check.names = FALSE, sep = emf.sep(), dec = ",", header = FALSE)
+                             , keep.rownames = FALSE), silent = TRUE)
+
+      } else if (emf.sep() == ",") {
+        
+        emf.dt.params <- try(as.data.table(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"
+                                            , check.names = FALSE, sep = emf.sep(), dec = ".", header = FALSE)
+                                 , keep.rownames = FALSE), silent = TRUE)
+        
+      } else if (emf.sep() == "tab") {
+        
+        
+        emf.dt.params <- try(as.data.table(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"
+                                            , check.names = FALSE, sep = "\t", dec = ".", header = FALSE)
+                                 , keep.rownames = FALSE), silent = TRUE)
+        
+      }
+      
+      setDT(emf.dt.params)
+      
+      cln <- colnames(emf.dt.params)
+      setnames(emf.dt.params, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
+      
+      emf.dt.params <- emf.dt.params[V1 %in% c("standard.potential", "slope")]
+      emf.dt.params <- emf.dt.params[, 1:2, with = FALSE]
+      
+      setnames(emf.dt.params, c("Parameter", "Value"))
+
+    } else if (!is.null(in.file.xlsx)) {
+      
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "^(input_|output_)*targets*$"]
+      shts <- sort(shts)
+      
+      emf.dt.params <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE), silent = TRUE)
+      
+      setDT(emf.dt.params)
+      
+      emf.dt.params <- emf.dt.params[X1 %in% c("standard.potential", "slope")]
+      emf.dt.params <- emf.dt.params[, 1:2, with = FALSE]
+      
+      setnames(emf.dt.params, c("Parameter", "Value"))
+      
+    } else {
+      
+      emf.dt.params <- emf.dt.params.data()
+      
+    }
+    
+    if (!is.null(emf.dt.params)) {
+      
+      if (nrow(emf.dt.params) > 25) {
+        
+        rhandsontable(emf.dt.params, stretchH = "all", useTypes = FALSE, height = 500) %>%
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        
+      } else {
+        
+        rhandsontable(emf.dt.params, stretchH = "all", useTypes = FALSE, height = NULL) %>%
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        
+      }
+      
+    }
+    
+  })
+  
+  output$emf.dt.res <- renderRHandsontable({
+    
+    dt.res <- emf.dt.res.data()
+    
+    if (!is.null(dt.res)) {
+      
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+      
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      
+      if (parseInt(value, 10) < 0) {
+      td.style.background = 'pink';
+      }
+      
+      }" 
+
+      rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
+        hot_cols(renderer = renderer)
+    }
+    
+})
+  
+  output$dt.emf.abs <- renderRHandsontable({
+    
+    dt.emf.abs <- dt.emf.abs.data()
+    
+    if (!is.null(dt.emf.abs)) {
+      
+      row_highlight <- dt.emf.abs[data == "observation", which = TRUE] - 1
+      
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+      
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      
+      if (instance.params) {
+      hrows = instance.params.row_highlight
+      hrows = hrows instanceof Array ? hrows : [hrows]
+      }
+      
+      if (instance.params && hrows.includes(row) && value < 0) {
+      td.style.background = 'pink';
+      }
+      
+      }" 
+
+      if (nrow(dt.emf.abs) > 25) {
+        
+        rhandsontable(dt.emf.abs, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
+          hot_cols(renderer = renderer)
+        
+      } else {
+        
+        rhandsontable(dt.emf.abs, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+          hot_cols(renderer = renderer)
+        
+      }
+      
+    }
+    
+    })
+  
+  output$dt.emf.rel <- renderRHandsontable({
+    
+    dt.emf.rel <- dt.emf.rel.data()
+    
+    if (!is.null(dt.emf.rel)) {
+      
+      row_highlight <- dt.emf.rel[data == "observation", which = TRUE] - 1
+      
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+      
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      
+      if (instance.params) {
+      hrows = instance.params.row_highlight
+      hrows = hrows instanceof Array ? hrows : [hrows]
+      }
+      
+      if (instance.params && hrows.includes(row) && value < 0) {
+      td.style.background = 'pink';
+      }
+      
+      }" 
+
+      if (nrow(dt.emf.rel) > 25) {
+        
+        rhandsontable(dt.emf.rel, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
+          hot_cols(renderer = renderer)
+        
+      } else {
+        
+        rhandsontable(dt.emf.rel, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+          hot_cols(renderer = renderer)
+        
+      }
+      
+    }
+    
+    })
+  
+  output$emf.cnst.dev <- renderRHandsontable({
+    
+    cnst.dev <- emf.cnst.dev.data()
+    
+    if (!is.null(cnst.dev))
+      
+      row_highlight <- cnst.dev[Validity != "OK", which = TRUE] - 1
+    
+    renderer <- "
+    function (instance, td, row, col, prop, value, cellProperties) {
+    
+    Handsontable.renderers.TextRenderer.apply(this, arguments);
+    
+    if (instance.params) {
+    hrows = instance.params.row_highlight
+    hrows = hrows instanceof Array ? hrows : [hrows]
+    }
+    
+    if (instance.params && hrows.includes(row)) {
+    td.style.background = 'pink';
+    }
+    
+    }" 
+
+    
+    rhandsontable(cnst.dev, stretchH = FALSE, row_highlight = row_highlight, useTypes = TRUE) %>%
+      hot_cols(renderer = renderer)
+    
+  })
+  
+  output$emf.cor.m <- renderRHandsontable({
+    
+    cor.m <- emf.cor.m.data()
+    
+    if (!is.null(cor.m))
+      
+      rhandsontable(cor.m, stretchH = FALSE, useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    
+  })
+  
+  output$emf.err.diff <- renderRHandsontable({
+    
+    err.diff <- emf.err.diff.data()
+    
+    if (!is.null(err.diff))
+      
+      rhandsontable(err.diff, stretchH = FALSE, useTypes = FALSE) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    
+  })
+  
+  
+  
+
+    
   # end of main server part ----------------------------
   
   
@@ -4102,8 +5597,598 @@ server <- function(input, output, session) {
     
   )
   # ----
+
+  
+  # emf download ---------------- #
+  
+  output$emf.dt.coef.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_stoichiometric_coefficients.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (emf.sep() == ";") {
+        write.csv2(emf.dt.coef.data(), file, row.names = FALSE)
+      } else {
+        write.csv(emf.dt.coef.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.dt.coef.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_stoichiometric_coefficients.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(emf.dt.coef.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.cnst.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_k_constants_log10.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (emf.sep() == ";") {
+        write.csv2(emf.cnst.data(), file, row.names = FALSE)
+      } else {
+        write.csv(emf.cnst.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.cnst.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_k_constants_log10.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(emf.cnst.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.dt.conc.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_concentrations.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      tmp <- emf.dt.conc.data()
+      tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
+      
+      setnames(tmp, unlist(emf.part.eq.data()))
+      
+      if (emf.sep() == ";") {
+        write.csv2(tmp, file, row.names = FALSE)
+      } else {
+        write.csv(tmp, file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.dt.conc.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_concentrations.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      tmp <- emf.dt.conc.data()
+      tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
+      
+      setnames(tmp, unlist(emf.part.eq.data()))
+      
+      write.xlsx(tmp, file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.emf.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_emf.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (emf.sep() == ";") {
+        write.csv2(dt.emf.data(), file, row.names = FALSE)
+      } else {
+        write.csv(dt.emf.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.emf.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "input_emf.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.emf.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.target.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "targets.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (emf.sep() == ";") {
+        write.csv2(emf.target.data(), file, row.names = FALSE)
+      } else {
+        write.csv(emf.target.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.target.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "targets.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(emf.target.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.dt.res.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "equilibrium_concentrations.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (emf.sep() == ";") {
+        write.csv2(emf.dt.res.data(), file, row.names = FALSE)
+      } else {
+        write.csv(emf.dt.res.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.dt.res.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "equilibrium_concentrations.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(emf.dt.res.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.emf.abs.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "emf_calculated_abs_errors.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (emf.sep() == ";") {
+        write.csv2(dt.emf.abs.data(), file, row.names = FALSE)
+      } else {
+        write.csv(dt.emf.abs.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.emf.abs.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "emf_calculated_abs_errors.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.emf.abs.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.emf.rel.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "emf_calculated_rel_errors.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (emf.sep() == ";") {
+        write.csv2(dt.emf.rel.data(), file, row.names = FALSE)
+      } else {
+        write.csv(dt.emf.rel.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$dt.emf.rel.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "emf_calculated_rel_errors.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.emf.rel.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.cnst.dev.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "constants_evaluated.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (emf.sep() == ";") {
+        write.csv2(emf.cnst.dev.data(), file, row.names = FALSE)
+      } else {
+        write.csv(emf.cnst.dev.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.cnst.dev.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "constants_evaluated.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(emf.cnst.dev.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.cor.m.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "correlation_matrix.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (emf.sep() == ";") {
+        write.csv2(emf.cor.m.data(), file, row.names = FALSE)
+      } else {
+        write.csv(emf.cor.m.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.cor.m.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "correlation_matrix.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(emf.cor.m.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.err.diff.csv <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "fmin_last_step.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (emf.sep() == ";") {
+        write.csv2(emf.err.diff.data(), file, row.names = FALSE)
+      } else {
+        write.csv(emf.err.diff.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$emf.err.diff.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "fmin_last_step.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(emf.err.diff.data(), file)
+      
+    }
+    
+  )
+  # ----
+  
+  output$kev.emf.data.zip <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "kev.emf.constants.data.zip"
+      
+    },
+    
+    content = function(file) {
+      
+      data.files <- c(
+        
+        emf.dt.coef = "input_stoichiometric_coefficients.csv"
+        , emf.cnst = "input_k_constants_log10.csv"
+        , emf.dt.conc = "input_concentrations.csv"
+        , dt.emf = "input_emf.csv"
+        , emf.dt.res = "equilibrium_concentrations.csv"
+        , dt.emf.abs = "emf_calculated_abs_errors.csv"
+        , dt.emf.rel = "emf_calculated_rel_errors.csv"
+        , emf.cnst.dev = "constants_evaluated.csv"
+        , emf.cor.m = "correlation_matrix.csv"
+        , emf.err.diff = "fmin_last_step.csv"
+        , emf.target = "target.csv"
+        
+      )
+      
+      for (i in length(data.files):1) {
+        
+        # check if all files are present (in case run before evaluation)
+        
+        dt <- NULL
+        try(dt <- eval(expr = parse(text = paste0(names(data.files)[i], ".data()"))), silent = TRUE)
+        
+        if (emf.sep() == ";") {
+          
+          if (!is.null(dt)) {
+            
+            if (data.files[i] == "input_concentrations.csv") {
+              
+              dt <- emf.dt.conc.data()
+              dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
+              
+              setnames(dt, unlist(emf.part.eq.data()))
+              
+            }
+            
+            write.csv2(dt, data.files[i], row.names = FALSE)
+            
+          } else {
+            
+            data.files <- data.files[-i]
+            
+          }
+          
+        } else {
+          
+          if (!is.null(dt)) {
+            
+            if (data.files[i] == "input_concentrations.csv") {
+              
+              dt <- emf.dt.conc.data()
+              dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
+              
+              setnames(dt, unlist(emf.part.eq.data()))
+              
+            }
+            
+            write.csv(dt, data.files[i], row.names = FALSE)
+            
+          } else {
+            
+            data.files <- data.files[-i]
+            
+          }
+        }
+        
+      }
+      
+      # create zip
+      
+      utils::zip(file, data.files)
+      
+      # remove garbage from the disc
+      
+      for (i in data.files) {
+        
+        if (file.exists(i))
+          file.remove(i)
+        
+      }
+      
+    }
+    
+  )
+  # ----
+  
+  output$kev.emf.data.xlsx <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "kevemf..constants.data.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      data.files <- c(
+        
+        emf.dt.coef = "input_stoich_coefficients"
+        , emf.cnst = "input_k_constants_log10"
+        , emf.dt.conc = "input_concentrations"
+        , dt.emf = "input_emf"
+        , emf.target = "targets"
+        , emf.dt.res = "equilibrium_concentrations"
+        , dt.emf.abs = "emf_calc_abs_errors"
+        , dt.emf.rel = "emf_calc_rel_errors"
+        , emf.cnst.dev = "constants_evaluated"
+        , emf.cor.m = "correlation_matrix"
+        , emf.err.diff = "fmin_last_step"
+
+      )
+      
+      dt.list <- list()
+      
+      for (i in 1:length(data.files)) {
+        
+        # check if all files are present (in case run before evaluation)
+        
+        dt <- NULL
+        try(dt <- eval(expr = parse(text = paste0(names(data.files)[i], ".data()"))), silent = TRUE)
+        
+        if (!is.null(dt)) {
+          
+          if (data.files[i] == "input_concentrations") {
+            
+            dt <- emf.dt.conc.data()
+            dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
+            
+            setnames(dt, unlist(emf.part.eq.data()))
+            
+          }
+          
+          dt.list[[eval(data.files[i])]] <- dt
+          
+        }
+        
+      }
+      
+      write.xlsx(dt.list, file)
+      
+    }
+    
+  )
+  # ----
+  
+  
   
 }
+
+
 
 # run
 
