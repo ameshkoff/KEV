@@ -4800,6 +4800,13 @@ server <- function(input, output, session) {
 
       )
       
+      # temporary directory to avoid permission issues
+      
+      curdir <- getwd()
+      tmpdir <- tempdir()
+      setwd(tmpdir)
+      print(tempdir())
+      
       for (i in length(data.files):1) {
         
         # check if all files are present (in case run before evaluation)
@@ -4880,6 +4887,8 @@ server <- function(input, output, session) {
           file.remove(i)
         
       }
+        
+      setwd(curdir)
       
     }
     
@@ -5439,6 +5448,14 @@ server <- function(input, output, session) {
         
       )
       
+      # temporary directory to avoid permission issues
+      
+      curdir <- getwd()
+      tmpdir <- tempdir()
+      setwd(tmpdir)
+      print(tempdir())
+      
+      
       for (i in length(data.files):1) {
         
         # check if all files are present (in case run before evaluation)
@@ -5498,11 +5515,13 @@ server <- function(input, output, session) {
       # remove garbage from the disc
       
       for (i in data.files) {
-        
+      
         if (file.exists(i))
           file.remove(i)
-        
+
       }
+      
+      setwd(curdir)
 
     }
     
@@ -6068,6 +6087,13 @@ server <- function(input, output, session) {
         
       )
       
+      # temporary directory to avoid permission issues
+      
+      curdir <- getwd()
+      tmpdir <- tempdir()
+      setwd(tmpdir)
+      print(tempdir())
+      
       for (i in length(data.files):1) {
         
         # check if all files are present (in case run before evaluation)
@@ -6125,14 +6151,16 @@ server <- function(input, output, session) {
       utils::zip(file, data.files)
       
       # remove garbage from the disc
-      
+
       for (i in data.files) {
-        
+      
         if (file.exists(i))
           file.remove(i)
         
       }
       
+      setwd(curdir)
+
     }
     
   )
