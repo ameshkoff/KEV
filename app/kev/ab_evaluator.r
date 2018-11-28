@@ -346,6 +346,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         
         dt.step <- data.table(cnst = cnst.back, err = err.base)
         
+
         for (i in 1:(search.density * 2)) {
           
           sgn <- i %% 2
@@ -362,12 +363,13 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         
         cnst.curr <- dt.step[err == min(err), cnst][1]
         err.curr <- dt.step[, min(err)]
-        
+          
+
         if (mode[1] == "debug")
           print(paste(step.iter, cnst.iter, cnst.curr, cnst.back, step))
         
         if (mode[1] == "grid") {
-          # browser()
+          
           grid.opt[step.iter, `:=`(err = dt.step[2, err], closed = length(cnst.tune.wrk))]
           grid.opt[step.iter, eval(as.character(cnst.iter)) := dt.step[2, cnst]]
           cnst.m[cnst.iter] <- dt.step[2, cnst]
