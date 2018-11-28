@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y \
     libxt-dev \
     wget \
 	gfortran \
+	zip \
+	unzip \
 	xtail \
 	&& rm -rf /var/lib/apt/lists/*
 
