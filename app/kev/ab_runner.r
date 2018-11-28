@@ -147,7 +147,6 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   grid.opt <- dt.ttl[["grid.opt"]]
   lrate.fin <- dt.ttl[["lrate.fin"]]
   
-  
   # postprocessing ---------------- #
   
   cnst.valid <- cnst.validation(dt.coef, cnst.m, cnst.tune
@@ -234,6 +233,9 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   # save
   
   if (mode == "script" & save.res) {
+    
+    if (is.null(wl.tune))
+      wl.tune <- wavelength
     
     target <- list(constant = cnst.tune, wavelength = wl.tune)
     target <- setDT(lapply(target, "length<-", max(lengths(target))))[]
@@ -322,6 +324,157 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
 
 
 
+# grid research -------------------------------------------- #
 
+ab.evaluation.grid <- function(mode = c("api", "script", "app")
+                               , sep = ";"
+                               , subdir = ""
+                               , eq.thr.type = c("rel", "abs")
+                               , eq.threshold = 1e-08
+                               , cnst.tune = c("HL", "H2L")
+                               , wl.tune = NULL
+                               , method = "basic wls"
+                               , search.density = 1
+                               , lrate.init = .5
+                               , ab.threshold = 5e-7
+                               , dt.list = NULL) {
+  
+  #
+  
+  ab.threshold <- log(10 ^ ab.threshold)
+  
+  
+  # source code ------------- #
+  
+  dir.start <- ""
+  
+  if (mode %in% c("script", "api"))
+    dir.start <- "app/KEV/"
+  
+  source(paste0(dir.start, "eq_data.r"), chdir = TRUE)
+  source(paste0(dir.start, "ab_data.r"), chdir = TRUE)
+  
+  source(paste0(dir.start, "eq_preproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "ab_preproc.r"), chdir = TRUE)
+  
+  source(paste0(dir.start, "eq_evaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "ab_evaluator.r"), chdir = TRUE)
+  
+  source(paste0(dir.start, "eq_postproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "ab_postproc.r"), chdir = TRUE)
+  
+  source(paste0(dir.start, "ab_save.r"), chdir = TRUE)
+  
+  
+  # load data ---------------- #
+  
+  if (mode == "script") {
+    
+    dt.ttl <- c(eq.scripts.load(sep, subdir)
+                , ab.scripts.load(sep, subdir))
+    
+  } else if (mode %in% c("app", "api")) {
+    
+    dt.ttl <- dt.list
+    
+  }
+  
+  dt.coef <- dt.ttl[["dt.coef"]]
+  dt.conc <- dt.ttl[["dt.conc"]]
+  cnst <- dt.ttl[["cnst"]]
+  part.eq <- dt.ttl[["part.eq"]]
+  
+  dt.ab <- dt.ttl[["dt.ab"]]
+  dt.mol <- dt.ttl[["dt.mol"]]
+  
+  
+  # preproc data --------------- #
+  
+  dt.ttl <- c(eq.preproc(dt.coef, cnst, dt.conc, part.eq)
+              , ab.preproc(dt.ab, dt.mol, wl.tune))
+  
+  dt.coef <- dt.ttl[["dt.coef"]]
+  dt.conc <- dt.ttl[["dt.conc"]]
+  cnst.m <- dt.ttl[["cnst.m"]]
+  part.eq <- dt.ttl[["part.eq"]]
+  dt.coef.m <- dt.ttl[["dt.coef.m"]]
+  dt.conc.m <- dt.ttl[["dt.conc.m"]]
+  reac.nm <- dt.ttl[["reac.nm"]]
+  part.nm <- dt.ttl[["part.nm"]]
+  
+  dt.ab <- dt.ttl[["dt.ab"]]
+  dt.ab.full <- dt.ttl[["dt.ab.full"]]
+  dt.ab.err <- dt.ttl[["dt.ab.err"]]
+  dt.ab.err.full <- dt.ttl[["dt.ab.err.full"]]
+  dt.mol <- dt.ttl[["dt.mol"]]
+  dt.mol.full <- dt.ttl[["dt.mol.full"]]
+  dt.ab.m <- dt.ttl[["dt.ab.m"]]
+  dt.ab.full.m <- dt.ttl[["dt.ab.full.m"]]
+  dt.ab.err.m <- dt.ttl[["dt.ab.err.m"]]
+  dt.ab.err.full.m <- dt.ttl[["dt.ab.err.full.m"]]
+  dt.mol.m <- dt.ttl[["dt.mol.m"]]
+  dt.mol.full.m <- dt.ttl[["dt.mol.full.m"]]
+  partprod.nm <- dt.ttl[["partprod.nm"]]
+  wavelength <- dt.ttl[["wavelength"]]
+  
+  cnst.tune.nm <- which(dt.coef[, name] %in% cnst.tune)
+  
+  
+  # run evaluator --------------- #
+  
+  # create grid
+  
+  grid.iter <- lapply(cnst.m[cnst.tune.nm], function(x) { seq(x * .2, x * 2, lrate.init * x) })
+  names(grid.iter) <- cnst.tune.nm
+  
+  grid.iter <- data.table(expand.grid(grid.iter))
+  
+  remove(grid.opt)
+  
+  # run loop
+  
+  for (i in 1:nrow(grid.iter)) {
+    
+    cnst.m[cnst.tune.nm] <- unlist(grid.iter[i])
+    
+    tmp <- constant.optimizer(dt.coef, cnst.m, cnst.tune
+                                   , dt.ab.m, dt.ab.err.m, dt.mol.m
+                                   , dt.coef.m, dt.conc.m, part.eq, reac.nm
+                                   , hardstop = 1
+                                   , lrate.init
+                                   , search.density
+                                   , ab.threshold
+                                   , eq.threshold
+                                   , eq.thr.type
+                                   , mode = "grid"
+                                   , method
+                                   , algorithm = "basic search")$grid.opt
+    
+    if (exists("grid.opt")) {
+      
+      grid.opt <- rbind(grid.opt, tmp)
+      
+    } else {
+      
+      grid.opt <- copy(tmp)
+      
+    }
+    
+  }
+  
+  # postproc
+  
+  cln <- colnames(grid.opt)
+  cln <- cln[cln %like% "^[0-9]+$"]
+  
+  for (cl in cln) {
+    
+    grid.opt[, eval(cl) := log(exp(eval(as.name(cl))), 10)]
+    
+  }
+  
+  grid.opt
+
+}
 
 
