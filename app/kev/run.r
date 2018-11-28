@@ -98,6 +98,44 @@ source("app/kev/sp_runner.r", chdir = TRUE)
 sp.evaluation.runner(mode = "script", sep = "tab", subdir = "molar.extinction.coefficients/dsl.4", save.res = TRUE)
 
 
+#
+
+source("app/KEV/emf_runner.r", chdir = TRUE)
+
+emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.1"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     # , cnst.tune = c("HL")
+                     , algorithm = "direct search", emf.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, emf.threshold = 5e-7
+                     , save.res = TRUE)
+
+emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.2"
+                      , eq.thr.type = "rel", eq.threshold = 1e-08
+                      # , cnst.tune = c("NiL", "NiL2")
+                      , algorithm = "direct search", emf.mode = "base", method = "basic wls"
+                      , search.density = 1, lrate.init = .5, emf.threshold = 5e-7
+                      , save.res = TRUE)
+
+
+
+
+
+emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.1"
+                      , eq.thr.type = "rel", eq.threshold = 1e-08
+                      , cnst.tune = c("HL")
+                      , algorithm = "direct search", emf.mode = "base", method = "basic wls"
+                      , search.density = 1, lrate.init = .5, emf.threshold = 5e-7
+                      , save.res = FALSE)
+
+emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.2"
+                      , eq.thr.type = "rel", eq.threshold = 1e-08
+                      , cnst.tune = c("NiL", "NiL2")
+                      , algorithm = "direct search", emf.mode = "base", method = "basic wls"
+                      , search.density = 1, lrate.init = .5, emf.threshold = 5e-4
+                      , save.res = FALSE)
+
+
+
 
 
 

@@ -53,7 +53,7 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
     # to numbers
     
     f <- as.matrix(f[, cln, with = FALSE])
-    f <- apply(f, 2, as.numeric)
+    class(f) <- "numeric"
     
     assign(paste0(j, ".m"), f)
     

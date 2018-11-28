@@ -57,7 +57,7 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out, part.eq
     }
     
     # step
-    tmp <- exp(log(dt.conc.out) - 1 * ginv(jc, tol = 0) %*% err.v)
+    tmp <- exp(log(dt.conc.out) - 1 * ginv(jc, tol = 1e-100) %*% err.v)
     
     # check accuracy
     if (thr.type[1] == "rel") {
@@ -75,6 +75,9 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out, part.eq
       accr <- c(accr, mean(abs(log(dt.conc.out) - log(accr.tmp))))
       
     }
+    
+    # if (is.na(accr[iter]))
+    #   browser()
     
     # prepare result
     dt.conc.out <- tmp

@@ -16,7 +16,7 @@ eq.cond.fractions <- function(dt.res, bs.name, dt.coef, dt.coef.m, dt.conc.m) {
   
   dt.frac <- t(round(100 * t(as.matrix(dt.res[, cln, with = FALSE]) %*%
                                diag(dt.coef.m[dt.coef[, eval(as.name(bs.name))] != 0, bs.name])) %*%
-                       diag(1 / dt.conc.m[, bs.name]), 2))
+                       as.matrix(diag(1 / dt.conc.m[, bs.name], nrow = length(dt.conc.m[, bs.name]))), 2))
   
   dt.frac <- data.table(t(dt.frac))
   dt.frac <- data.table(rn = colnames(dt.res[, cln, with = FALSE]), dt.frac)
