@@ -4360,16 +4360,7 @@ server <- function(input, output, session) {
       renderer <- "
       function (instance, td, row, col, prop, value, cellProperties) {
       
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (instance.params) {
-      hrows = instance.params.row_highlight
-      hrows = hrows instanceof Array ? hrows : [hrows]
-      }
-      
-      if (instance.params && hrows.includes(row) && value < 0) {
-      td.style.background = 'pink';
-      }
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
       
       }" 
 
@@ -4400,16 +4391,7 @@ server <- function(input, output, session) {
       renderer <- "
       function (instance, td, row, col, prop, value, cellProperties) {
       
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (instance.params) {
-      hrows = instance.params.row_highlight
-      hrows = hrows instanceof Array ? hrows : [hrows]
-      }
-      
-      if (instance.params && hrows.includes(row) && value < 0) {
-      td.style.background = 'pink';
-      }
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
       
       }" 
 
