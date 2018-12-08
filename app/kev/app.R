@@ -2807,7 +2807,7 @@ server <- function(input, output, session) {
                                                               const visualIndex = options.start.col;
                                                               const logicalIndex = this.runHooks('modifyCol', visualIndex);
 
-                                                              var res = prompt(JSON.stringify(this.getColHeader()));
+                                                              var res = prompt('Type new column name');
                                                               //res = JSON.stringify(res);
                                                               
                                                                if (res === null) {
