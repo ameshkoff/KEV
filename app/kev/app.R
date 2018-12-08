@@ -1654,6 +1654,13 @@ server <- function(input, output, session) {
     
   }, priority = 1000)
   
+  # observeEvent(input$dt.mol, {
+  #   
+  #   print("update")
+  #   
+  # }, priority = 1000)
+  
+  
   
   # data --------------------- #
   
@@ -1836,6 +1843,9 @@ server <- function(input, output, session) {
       
       dt.mol <- hot_to_r(input$dt.mol)
       
+      if (!is.null(input$dt.mol.colnames) && length(input$dt.mol.colnames) == ncol(dt.mol))
+        colnames(dt.mol) <- input$dt.mol.colnames
+
     } else {
       
       if (is.null(values[["dt.mol"]])) {
@@ -2788,7 +2798,35 @@ server <- function(input, output, session) {
       } else {
         
         rhandsontable(dt.mol, stretchH = "all", useTypes = FALSE, height = NULL) %>%
-          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE
+                           , customOpts = list(dt_mol_rename_column =
+                                                 list(name = "Change column name"
+                                                          , callback = htmlwidgets::JS(
+                                                            "function (key, options) {
+
+                                                              const visualIndex = options.start.col;
+                                                              const logicalIndex = this.runHooks('modifyCol', visualIndex);
+
+                                                              var res = prompt(JSON.stringify(this.getColHeader()));
+                                                              //res = JSON.stringify(res);
+                                                              
+                                                               if (res === null) {
+                                                                return;
+                                                              }
+                                                              var instance = this;
+
+                                                              var headers = instance.getColHeader();
+                                                              headers[logicalIndex] = res;
+
+                                                              instance.updateSettings({
+                                                                colHeaders: headers
+                                                              });
+
+                                                              this.render();
+                                                              Shiny.onInputChange('dt.mol.colnames', headers);
+                                                              //this.view.wt.wtOverlays.adjustElementsSize(true);
+                                                          }")
+                                                          )))
         
       }
       
