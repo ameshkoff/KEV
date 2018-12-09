@@ -84,7 +84,7 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out, part.eq
 
     if (iter > 1) {
       
-      if (accr[iter] >= accr[iter - 1] | is.infinite(accr[iter]) | is.infinite(accr[iter - 1])) {
+      if (accr[iter] - accr[iter - 1] > -1e-100 | is.infinite(accr[iter]) | is.infinite(accr[iter - 1])) {
         
         conv <- conv + 1
         
@@ -97,6 +97,14 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out, part.eq
     
     if (accr[iter] < threshold | (conv >= 5 & iter > 100))
       break
+
+    # check if algo does not converge and moves volatily
+    if (iter > 100 && accr[iter] > mean(accr[iter - 50:100], na.rm = TRUE)) {
+
+      conv <- 10
+      break
+            
+    }
 
     # print steps for longer evaluation
     if (iter %% 1000 == 0) print(iter)
