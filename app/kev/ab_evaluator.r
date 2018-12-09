@@ -235,7 +235,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
       
       # weights for linear model
       wght <- sum((dt.ab.err.m[, i] ^ 2)) / ((dt.ab.err.m[, i] ^ 2) * length(dt.ab.err.m[, i]))
-
+      
       # if some molar coefficients are already known
       
       if (is.matrix(dt.mol.m)) {

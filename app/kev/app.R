@@ -1654,6 +1654,13 @@ server <- function(input, output, session) {
     
   }, priority = 1000)
   
+  # observeEvent(input$dt.mol, {
+  #   
+  #   print("update")
+  #   
+  # }, priority = 1000)
+  
+  
   
   # data --------------------- #
   
@@ -1836,6 +1843,9 @@ server <- function(input, output, session) {
       
       dt.mol <- hot_to_r(input$dt.mol)
       
+      if (!is.null(input$dt.mol.colnames) && length(input$dt.mol.colnames) == ncol(dt.mol))
+        colnames(dt.mol) <- input$dt.mol.colnames
+
     } else {
       
       if (is.null(values[["dt.mol"]])) {
@@ -1902,9 +1912,9 @@ server <- function(input, output, session) {
     
     # bulk input
     
-    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|target)(\\.csv|\\.txt)*"]) > 0){
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"]) > 0){
 
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|target)(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"][1]
       in.file <- as.data.frame(in.file)
       
     }
@@ -1942,7 +1952,7 @@ server <- function(input, output, session) {
     } else if (!is.null(in.file.xlsx)) {
       
       sht <- getSheetNames(in.file.xlsx$datapath[1])
-      sht <- sht[sht %like% "^(constants*_names*|target)"]
+      sht <- sht[sht %like% "^(constants*_names*|targets*)"]
       
       cnst.tune <- try(read.xlsx(in.file.xlsx$datapath, sheet = sht, colNames = FALSE), silent = TRUE)
       
@@ -2020,9 +2030,9 @@ server <- function(input, output, session) {
     
     # bulk input
     
-    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|target)(\\.csv|\\.txt)*"]) > 0){
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"]) > 0){
       
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|target)(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"][1]
       in.file <- as.data.frame(in.file)
       
     }
@@ -2060,7 +2070,7 @@ server <- function(input, output, session) {
     } else if (!is.null(in.file.xlsx)) {
       
       sht <- getSheetNames(in.file.xlsx$datapath[1])
-      sht <- sht[sht %like% "^(constants*_names*|target)"]
+      sht <- sht[sht %like% "^(constants*_names*|targets*)"]
       
       wl.tune <- try(read.xlsx(in.file.xlsx$datapath, sheet = sht, colNames = FALSE), silent = TRUE)
       
@@ -2788,7 +2798,35 @@ server <- function(input, output, session) {
       } else {
         
         rhandsontable(dt.mol, stretchH = "all", useTypes = FALSE, height = NULL) %>%
-          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE
+                           , customOpts = list(dt_mol_rename_column =
+                                                 list(name = "Change column name"
+                                                          , callback = htmlwidgets::JS(
+                                                            "function (key, options) {
+
+                                                              const visualIndex = options.start.col;
+                                                              const logicalIndex = this.runHooks('modifyCol', visualIndex);
+
+                                                              var res = prompt('Type new column name');
+                                                              //res = JSON.stringify(res);
+                                                              
+                                                               if (res === null) {
+                                                                return;
+                                                              }
+                                                              var instance = this;
+
+                                                              var headers = instance.getColHeader();
+                                                              headers[logicalIndex] = res;
+
+                                                              instance.updateSettings({
+                                                                colHeaders: headers
+                                                              });
+
+                                                              this.render();
+                                                              Shiny.onInputChange('dt.mol.colnames', headers);
+                                                              //this.view.wt.wtOverlays.adjustElementsSize(true);
+                                                          }")
+                                                          )))
         
       }
       
@@ -3608,7 +3646,7 @@ server <- function(input, output, session) {
     } else if (!is.null(in.file.xlsx)) {
       
       sht <- getSheetNames(in.file.xlsx$datapath[1])
-      sht <- sht[sht %like% "^(constants*_names*|target)"]
+      sht <- sht[sht %like% "^(constants*_names*|targets*)"]
       
       cnst.tune <- try(read.xlsx(in.file.xlsx$datapath, sheet = sht, colNames = FALSE), silent = TRUE)
       
@@ -4360,16 +4398,7 @@ server <- function(input, output, session) {
       renderer <- "
       function (instance, td, row, col, prop, value, cellProperties) {
       
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (instance.params) {
-      hrows = instance.params.row_highlight
-      hrows = hrows instanceof Array ? hrows : [hrows]
-      }
-      
-      if (instance.params && hrows.includes(row) && value < 0) {
-      td.style.background = 'pink';
-      }
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
       
       }" 
 
@@ -4400,16 +4429,7 @@ server <- function(input, output, session) {
       renderer <- "
       function (instance, td, row, col, prop, value, cellProperties) {
       
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (instance.params) {
-      hrows = instance.params.row_highlight
-      hrows = hrows instanceof Array ? hrows : [hrows]
-      }
-      
-      if (instance.params && hrows.includes(row) && value < 0) {
-      td.style.background = 'pink';
-      }
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
       
       }" 
 
@@ -6170,7 +6190,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "kevemf..constants.data.xlsx"
+      "kev.emf.constants.data.xlsx"
       
     },
     
