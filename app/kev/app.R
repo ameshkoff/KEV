@@ -1912,9 +1912,9 @@ server <- function(input, output, session) {
     
     # bulk input
     
-    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|target)(\\.csv|\\.txt)*"]) > 0){
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"]) > 0){
 
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|target)(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"][1]
       in.file <- as.data.frame(in.file)
       
     }
@@ -1952,7 +1952,7 @@ server <- function(input, output, session) {
     } else if (!is.null(in.file.xlsx)) {
       
       sht <- getSheetNames(in.file.xlsx$datapath[1])
-      sht <- sht[sht %like% "^(constants*_names*|target)"]
+      sht <- sht[sht %like% "^(constants*_names*|targets*)"]
       
       cnst.tune <- try(read.xlsx(in.file.xlsx$datapath, sheet = sht, colNames = FALSE), silent = TRUE)
       
@@ -2030,9 +2030,9 @@ server <- function(input, output, session) {
     
     # bulk input
     
-    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|target)(\\.csv|\\.txt)*"]) > 0){
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"]) > 0){
       
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|target)(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"][1]
       in.file <- as.data.frame(in.file)
       
     }
@@ -2070,7 +2070,7 @@ server <- function(input, output, session) {
     } else if (!is.null(in.file.xlsx)) {
       
       sht <- getSheetNames(in.file.xlsx$datapath[1])
-      sht <- sht[sht %like% "^(constants*_names*|target)"]
+      sht <- sht[sht %like% "^(constants*_names*|targets*)"]
       
       wl.tune <- try(read.xlsx(in.file.xlsx$datapath, sheet = sht, colNames = FALSE), silent = TRUE)
       
@@ -3646,7 +3646,7 @@ server <- function(input, output, session) {
     } else if (!is.null(in.file.xlsx)) {
       
       sht <- getSheetNames(in.file.xlsx$datapath[1])
-      sht <- sht[sht %like% "^(constants*_names*|target)"]
+      sht <- sht[sht %like% "^(constants*_names*|targets*)"]
       
       cnst.tune <- try(read.xlsx(in.file.xlsx$datapath, sheet = sht, colNames = FALSE), silent = TRUE)
       
@@ -6190,7 +6190,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "kevemf..constants.data.xlsx"
+      "kev.emf.constants.data.xlsx"
       
     },
     
