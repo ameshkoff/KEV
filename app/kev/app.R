@@ -86,7 +86,7 @@ ui <- navbarPage("KEV",
                                                                    , "tab" = "tab"))
                                          )
                                          , column(6
-                                                  , h4("Particle to get fractions of")
+                                                  , h4("Component to get fractions of")
                                                   , textInput("bs.name", "", "molecule1")
                                          ))
                               )))
@@ -134,7 +134,7 @@ ui <- navbarPage("KEV",
                                                       , downloadButton("dt.coef.csv", "csv")
                                                       , downloadButton("dt.coef.xlsx", "xlsx"))
                                            , p("")
-                                           , textInput("part.names", "Particle names, comma separated", paste(paste0("molecule", 1:4), collapse = ", "))
+                                           , textInput("part.names", "Component names, comma separated", paste(paste0("molecule", 1:4), collapse = ", "))
                                            )
                                     , column(2
                                              , h4("K: lg constants")
@@ -240,7 +240,7 @@ ui <- navbarPage("KEV",
                                                                    , ";" = "semicolon"
                                                                    , "tab" = "tab")))
                                          , column(3
-                                                  , HTML("<h4>Constants to evaluate</h4><p>Particle names, comma separated</p>")
+                                                  , HTML("<h4>Constants to evaluate</h4><p>Component names, comma separated</p>")
                                                   , textInput("cnst.tune", "", "molecule1"))
                                          , column(3
                                                   , HTML(paste("<h4>Threshold</h4><p>Search algorithm precision"
@@ -295,7 +295,7 @@ ui <- navbarPage("KEV",
                                                       , downloadButton("ab.dt.coef.csv", "csv")
                                                       , downloadButton("ab.dt.coef.xlsx", "xlsx"))
                                            , p("")
-                                           , textInput("ab.part.names", "Particle names, comma separated"
+                                           , textInput("ab.part.names", "Component names, comma separated"
                                                        , paste(paste0("molecule", 1:4), collapse = ", "))
                                     )
                                     , column(2
@@ -519,7 +519,7 @@ ui <- navbarPage("KEV",
                                                   , ";" = "semicolon"
                                                   , "tab" = "tab")))
                         , column(3
-                                 , HTML("<h4>Constants to evaluate</h4><p>Particle names, comma separated</p>")
+                                 , HTML("<h4>Constants to evaluate</h4><p>Component names, comma separated</p>")
                                  , textInput("emf.cnst.tune", "", "molecule1"))
                         , column(3
                                  , HTML(paste("<h4>Threshold</h4><p>Search algorithm precision"
@@ -574,7 +574,7 @@ ui <- navbarPage("KEV",
                                      , downloadButton("emf.dt.coef.csv", "csv")
                                      , downloadButton("emf.dt.coef.xlsx", "xlsx"))
                           , p("")
-                          , textInput("emf.part.names", "Particle names, comma separated"
+                          , textInput("emf.part.names", "Component names, comma separated"
                                       , paste(paste0("molecule", 1:4), collapse = ", "))
                    )
                    , column(2
@@ -1035,7 +1035,12 @@ server <- function(input, output, session) {
       
     } else if (!is.null(in.file.xlsx)) {
       
-      bs.name <- try(read.xlsx(in.file.xlsx$datapath, sheet = "particle_names", colNames = FALSE), silent = TRUE)
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "^(particle|component)_name"]
+      shts <- sort(shts)
+      
+      bs.name <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE), silent = TRUE)
       
     } else {
       
@@ -1061,7 +1066,7 @@ server <- function(input, output, session) {
         
       validate(
         
-        need(length(colnames(dt.coef.data())[colnames(dt.coef.data()) == bs.name.data()]) > 0, "Input correct particle name to get fractions of")
+        need(length(colnames(dt.coef.data())[colnames(dt.coef.data()) == bs.name.data()]) > 0, "Input correct component name to get fractions of")
         
       )
       
@@ -2141,7 +2146,7 @@ server <- function(input, output, session) {
       
       validate(
         
-        need(length(particles %in% cnst.tune.data()) > 0, "Input correct particle names for constants evaluation")
+        need(length(particles %in% cnst.tune.data()) > 0, "Input correct component names for constants evaluation")
         
       )
       
@@ -2222,7 +2227,7 @@ server <- function(input, output, session) {
     cnst.dev <- ab.eval.data()$cnst.dev
     cnst.dev <- as.data.table(cnst.dev)
     
-    setnames(cnst.dev, c("Particle", "Constant", "St.Deviation", "Validity"))
+    setnames(cnst.dev, c("Component", "Constant", "St.Deviation", "Validity"))
     
   })
 
@@ -2247,7 +2252,7 @@ server <- function(input, output, session) {
   err.diff.data <- eventReactive(input$ab.conc.exec.btn, {
     
     err.diff <- ab.eval.data()$err.diff
-    err.diff <- data.table(Particle = cnst.tune.data(), Fmin.Last = err.diff)
+    err.diff <- data.table(Component = cnst.tune.data(), Fmin.Last = err.diff)
     
     err.diff
     
@@ -2311,7 +2316,7 @@ server <- function(input, output, session) {
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
           need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file") %then%
-          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate particle names")
+          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate component names")
         
       )
       
@@ -2334,7 +2339,7 @@ server <- function(input, output, session) {
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
           need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file") %then%
-          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate particle names")
+          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate component names")
         
       )
       
@@ -3081,7 +3086,7 @@ server <- function(input, output, session) {
         pt.name <- readLines(con, n = 1)
         close(con)
         
-        # define where to get particle name and whether to skip first row of the file
+        # define where to get component name and whether to skip first row of the file
         
         skp <- 1
         
@@ -3130,7 +3135,7 @@ server <- function(input, output, session) {
         if (is.null(pt.name) || is.na(pt.name))
           pt.name <- ""
 
-        # define where to get particle name and whether to skip first row of the file
+        # define where to get component name and whether to skip first row of the file
         
         strt <- 2
         
@@ -3713,7 +3718,7 @@ server <- function(input, output, session) {
       
       validate(
         
-        need(length(particles %in% cnst.tune.data()) > 0, "Input correct particle names for constants evaluation")
+        need(length(particles %in% cnst.tune.data()) > 0, "Input correct component names for constants evaluation")
         
       )
       
@@ -3786,7 +3791,7 @@ server <- function(input, output, session) {
     cnst.dev <- emf.eval.data()$cnst.dev
     cnst.dev <- as.data.table(cnst.dev)
     
-    setnames(cnst.dev, c("Particle", "Constant", "St.Deviation", "Validity"))
+    setnames(cnst.dev, c("Component", "Constant", "St.Deviation", "Validity"))
     
   })
   
@@ -3799,7 +3804,7 @@ server <- function(input, output, session) {
   emf.err.diff.data <- eventReactive(input$emf.conc.exec.btn, {
     
     err.diff <- emf.eval.data()$err.diff
-    err.diff <- data.table(Particle = emf.cnst.tune.data(), Fmin.Last = err.diff)
+    err.diff <- data.table(Component = emf.cnst.tune.data(), Fmin.Last = err.diff)
     
     err.diff
     
@@ -3859,7 +3864,7 @@ server <- function(input, output, session) {
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
           need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file") %then%
-          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate particle names")
+          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate component names")
         
       )
       
@@ -3880,7 +3885,7 @@ server <- function(input, output, session) {
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
           need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file") %then%
-          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate particle names")
+          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate component names")
         
       )
       
@@ -4815,7 +4820,7 @@ server <- function(input, output, session) {
         , dt.res = "equilibrium_concentrations.csv"
         , dt.frac = paste0(bs.name.data(), "_fractions.csv")
         , dt.err = "percent_error.csv"
-        , bs.name = "particle_names.csv"
+        , bs.name = "component_names.csv"
 
 
       )
@@ -4847,7 +4852,7 @@ server <- function(input, output, session) {
               
             }
             
-            if ((data.files[i] %like% "particle_names(\\.csv|\\.txt)$")) {
+            if ((data.files[i] %like% "(particle|component)_names(\\.csv|\\.txt)$")) {
               
               write.table(dt, data.files[i], sep = ";", dec = ",", row.names = FALSE, col.names = FALSE)
               
@@ -4876,7 +4881,7 @@ server <- function(input, output, session) {
               
             }
             
-            if ((data.files[i] %like% "particle_names(\\.csv|\\.txt)$")) {
+            if ((data.files[i] %like% "(particle|component)_names(\\.csv|\\.txt)$")) {
               
               write.table(dt, data.files[i], sep = ",", dec = ".", row.names = FALSE, col.names = FALSE)
               
@@ -4934,7 +4939,7 @@ server <- function(input, output, session) {
         , dt.res = "equilibrium_concentrations"
         , dt.frac = paste0(bs.name.data(), "_fractions")
         , dt.err = "percent_error"
-        , bs.name = "particle_names"
+        , bs.name = "component_names"
         
       )
       
