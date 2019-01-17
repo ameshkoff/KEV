@@ -24,6 +24,7 @@ library(stringr)
 # reporting
 library(shiny)
 library(rhandsontable)
+library(plotly)
 
 
 
@@ -396,6 +397,8 @@ ui <- navbarPage("KEV",
                                                                            , fluidRow(class = "download-row"
                                                                                       , downloadButton("dt.ab.rel.csv", "csv")
                                                                                       , downloadButton("dt.ab.rel.xlsx", "xlsx")))
+                                                                , tabPanel("Plots"
+                                                                           , plotlyOutput("plot.dt.ab"))
                                                   )))
                                 
                                 , fluidRow(column(12)
@@ -2222,6 +2225,52 @@ server <- function(input, output, session) {
     
   })
 
+  plot.dt.ab.data <- eventReactive(input$ab.conc.exec.btn, {
+    
+    # get data
+    
+    dt.calc <- copy(ab.eval.data()$dt.ab.calc)
+    
+    dt.obs <- dt.ab.data()[data %like% "^observ"]
+    dt.obs[, data := "Observed"]
+    
+    # unify column names
+    
+    cln <- colnames(dt.calc)
+    cln <- cln[!(cln %in% c("wavelength", "data"))]
+
+    setnames(dt.obs, c("data", "wavelength", cln))
+
+    dt.calc[, data := "Calculated"]
+    
+    # melt
+    
+    dt.calc <- melt(dt.calc, id.vars = c("wavelength", "data"), variable.name = "solution", value.name = "absorbance")
+    dt.obs <- melt(dt.obs, id.vars = c("wavelength", "data"), variable.name = "solution", value.name = "absorbance")
+
+    # convert observed absorbance to numerics if not
+    
+    dt.obs[, absorbance := as.character(absorbance)]
+    dt.obs[, absorbance := str_replace_all(absorbance, " ", "")]
+    dt.obs[, absorbance := str_replace_all(absorbance, "\\,", "\\.")]
+    dt.obs[, absorbance := as.numeric(absorbance)]
+    
+    # bind
+    
+    intr <- intersect(dt.obs[, wavelength], dt.calc[, wavelength])
+    
+    dt <- rbind(dt.obs[wavelength %in% intr], dt.calc[wavelength %in% intr], use.names = TRUE, fill = TRUE)
+
+    # # select wavelengths used in calculation
+    # 
+    # dt <- dt[wavelength %in% as.numeric(wl.tune.data())]
+    
+    # return
+
+    dt
+    
+  })
+  
   cnst.dev.data <- eventReactive(input$ab.conc.exec.btn, {
     
     cnst.dev <- ab.eval.data()$cnst.dev
@@ -3033,6 +3082,28 @@ server <- function(input, output, session) {
       hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     
   })
+  
+  output$plot.dt.ab <- renderPlotly(
+    {
+      
+      dt <- plot.dt.ab.data()
+      
+      lbl <- sort(unique(dt[, wavelength]))
+
+      g <- ggplot(data = dt) +
+        geom_point(aes(x = wavelength, y = absorbance, group = data, color = data), size = 1) +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        facet_grid(. ~ solution) +
+        labs(x = "Wavelength, nm", y = "Absorbance")
+      
+      g <- ggplotly(g) %>% plotly::layout(margin = list(b = 100, t = 50))
+      
+      g$x$data[[1]]$hoverinfo <- "none"
+      
+      g
+      
+    }
+  )
   
   
   
