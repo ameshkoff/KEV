@@ -397,7 +397,9 @@ ui <- navbarPage("KEV",
                                                                            , fluidRow(class = "download-row"
                                                                                       , downloadButton("dt.ab.rel.csv", "csv")
                                                                                       , downloadButton("dt.ab.rel.xlsx", "xlsx")))
-                                                                , tabPanel("Plots"
+                                                                , tabPanel("Plot (Peaks)"
+                                                                           , plotlyOutput("plot.dt.ab.cut"))
+                                                                , tabPanel("Plot (Full)"
                                                                            , plotlyOutput("plot.dt.ab"))
                                                   )))
                                 
@@ -2261,13 +2263,19 @@ server <- function(input, output, session) {
     
     dt <- rbind(dt.obs[wavelength %in% intr], dt.calc[wavelength %in% intr], use.names = TRUE, fill = TRUE)
 
-    # # select wavelengths used in calculation
-    # 
-    # dt <- dt[wavelength %in% as.numeric(wl.tune.data())]
+    # convert wavelength to numeric if not
+
+    dt[, wavelength := as.character(wavelength)]
+    dt[, wavelength := str_replace_all(wavelength, " ", "")]
+    dt[, wavelength := str_replace_all(wavelength, "\\,", "\\.")]
+    dt[, wavelength := as.numeric(wavelength)]
+    
+    # select wavelengths used in calculation
+    dt.cut <- dt[wavelength %in% as.numeric(wl.tune.data())]
     
     # return
 
-    dt
+    list(dt.full = dt, dt.cut = dt.cut)
     
   })
   
@@ -3083,29 +3091,51 @@ server <- function(input, output, session) {
     
   })
   
-  output$plot.dt.ab <- renderPlotly(
-    {
+  output$plot.dt.ab <- renderPlotly({
       
-      dt <- plot.dt.ab.data()
+      dt <- plot.dt.ab.data()$dt.full
       
       lbl <- sort(unique(dt[, wavelength]))
-
+      
       g <- ggplot(data = dt) +
-        geom_point(aes(x = wavelength, y = absorbance, group = data, color = data), size = 1) +
+        geom_point(aes(x = wavelength, y = absorbance, group = data, color = data), size = .5) +
         theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
         facet_grid(. ~ solution) +
         labs(x = "Wavelength, nm", y = "Absorbance")
       
-      g <- ggplotly(g) %>% plotly::layout(margin = list(b = 100, t = 50))
+      g <- ggplotly(g)
+      g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
+      g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
       
       g$x$data[[1]]$hoverinfo <- "none"
       
       g
       
-    }
-  )
+    })
   
-  
+  output$plot.dt.ab.cut <- renderPlotly({
+    
+    dt <- plot.dt.ab.data()$dt.cut
+    
+    lbl <- sort(unique(dt[, wavelength]))
+    
+    g <- ggplot(data = dt) +
+      geom_point(aes(x = wavelength, y = absorbance, group = data, color = data), size = .5) +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      facet_grid(. ~ solution) +
+      labs(x = "Wavelength, nm", y = "Absorbance")
+    
+    g <- ggplotly(g)
+    g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
+    g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
+    
+    g$x$data[[1]]$hoverinfo <- "none"
+    
+    g
+    
+  })
+
+    
   
   # extinction coefficients -------------------------------------------------
   
