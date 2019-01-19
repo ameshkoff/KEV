@@ -674,6 +674,8 @@ ui <- navbarPage("KEV",
                                                           , fluidRow(class = "download-row"
                                                                      , downloadButton("dt.emf.rel.csv", "csv")
                                                                      , downloadButton("dt.emf.rel.xlsx", "xlsx")))
+                                               , tabPanel("Plot"
+                                                          , plotlyOutput("plot.dt.emf"))
                                  )))
                
                , fluidRow(column(12)
@@ -3107,7 +3109,7 @@ server <- function(input, output, session) {
       g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
       g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
       
-      g$x$data[[1]]$hoverinfo <- "none"
+      # g$x$data[[1]]$hoverinfo <- "none"
       
       g
       
@@ -3129,7 +3131,7 @@ server <- function(input, output, session) {
     g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
     g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
     
-    g$x$data[[1]]$hoverinfo <- "none"
+    # g$x$data[[1]]$hoverinfo <- "none"
     
     g
     
@@ -3643,6 +3645,49 @@ server <- function(input, output, session) {
     dt.emf
     
   })
+  
+  plot.dt.emf.data <- eventReactive(input$emf.conc.exec.btn, {
+    
+    # get data
+    
+    dt.calc <- copy(emf.eval.data()$dt.emf.calc)
+    
+    dt.obs <- dt.emf.data()[data %like% "^observ"]
+    dt.obs[, data := "Observed"]
+    
+    dt.obs[, particle := NULL]
+    dt.calc[, particle := NULL]
+    
+    # unify column names
+    
+    cln <- colnames(dt.calc)
+    setnames(dt.obs, c("data", cln))
+    
+    dt.calc[, data := "Calculated"]
+    
+    # melt
+    
+    dt.calc <- melt(dt.calc, id.vars = c("data"), variable.name = "solution", value.name = "EMF")
+    dt.obs <- melt(dt.obs, id.vars = c("data"), variable.name = "solution", value.name = "EMF")
+    
+    # convert observed EMF to numerics if not
+    
+    dt.obs[, EMF := as.character(EMF)]
+    dt.obs[, EMF := str_replace_all(EMF, " ", "")]
+    dt.obs[, EMF := str_replace_all(EMF, "\\,", "\\.")]
+    dt.obs[, EMF := as.numeric(EMF)]
+    
+    # bind
+    
+    dt <- rbind(dt.obs, dt.calc, use.names = TRUE, fill = TRUE)
+    
+    # return
+    
+    dt
+    
+  })
+  
+  
   
   emf.dt.params.data <- reactive({
     
@@ -4606,6 +4651,26 @@ server <- function(input, output, session) {
       hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     
   })
+  
+  output$plot.dt.emf <- renderPlotly({
+    
+    dt <- plot.dt.emf.data()
+
+    g <- ggplot(data = dt) +
+      geom_point(aes(x = solution, y = EMF, group = data, color = data), size = 1) +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      labs(x = "Solution", y = "EMF")
+    
+    g <- ggplotly(g)
+    g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
+    g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
+    
+    # g$x$data[[1]]$hoverinfo <- "none"
+    
+    g
+    
+  })
+  
   
   
   
