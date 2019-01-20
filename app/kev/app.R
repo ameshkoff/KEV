@@ -164,7 +164,15 @@ ui <- navbarPage("KEV",
                                                                       , fluidRow(class = "download-row"
                                                                                  , downloadButton("dt.conc.tot.csv", "csv")
                                                                                  , downloadButton("dt.conc.tot.xlsx", "xlsx")))
-                                                           )
+                                                           , tabPanel("pC range (optional)"
+                                                                      , h5("Variable component and its pC range")
+                                                                      , textInput("eq.pc.name", "", "molecule1")
+                                                                      , sliderInput("eq.pc.range", "", min = 0, max = 15, value = c(0, 3))
+                                                                      , h5("Total concentations of other components")
+                                                                      , rHandsontableOutput("eq.dt.conc.pc")
+                                                                      , fluidRow(class = "download-row"
+                                                                                 , actionButton("eq.pc.update.btn", "Update Input Concentrations")))
+                                             )
                                              , fileInput("file.dt.conc", "Choose CSV File",
                                                          accept = c(
                                                            "text/csv",
@@ -723,12 +731,15 @@ server <- function(input, output, session) {
     eq.dt.coef.bulk = FALSE
     , eq.dt.conc.bulk = FALSE
     , eq.cnst.bulk = FALSE
+    , eq.dt.conc.pc.fl = FALSE
+    
     , ab.dt.coef.bulk = FALSE
     , ab.dt.conc.bulk = FALSE
     , ab.cnst.bulk = FALSE
     , dt.ab.bulk = FALSE
     , dt.mol.bulk = FALSE
     , dt.mol.memory = FALSE
+    
     , emf.dt.coef.bulk = FALSE
     , emf.dt.conc.bulk = FALSE
     , emf.cnst.bulk = FALSE
@@ -772,15 +783,22 @@ server <- function(input, output, session) {
     # concentrations
     
     if (nrow(as.data.table(input$file.eq.bulk.input)[name %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*"]) > 0){
+      
       input.source$eq.dt.conc.bulk <- TRUE
+      input.source$eq.dt.conc.pc.fl <- FALSE
+      
     }
     
     if (nrow(as.data.table(input$file.eq.bulk.input)[name %like% "\\.xlsx$"]) > 0){
       
       shts <- getSheetNames(input$file.eq.bulk.input$datapath)
       
-      if (length(shts[shts %like% "concentrations"]))
+      if (length(shts[shts %like% "concentrations"])) {
+        
         input.source$eq.dt.conc.bulk <- TRUE
+        input.source$eq.dt.conc.pc.fl <- FALSE
+        
+      }
       
     }
     
@@ -810,6 +828,7 @@ server <- function(input, output, session) {
   observeEvent(input$file.eq.dt.conc, {
     
     input.source$eq.dt.conc.bulk <- FALSE
+    input.source$eq.dt.conc.pc.fl <- FALSE
     
   }, priority = 1000)
   
@@ -819,7 +838,13 @@ server <- function(input, output, session) {
     
   }, priority = 1000)
   
-
+  observeEvent(input$eq.pc.update.btn, {
+    
+    input.source$eq.dt.conc.pc.fl <- TRUE
+    
+  }, priority = 1000)
+  
+  
   
   # data --------------------- #
   
@@ -943,6 +968,40 @@ server <- function(input, output, session) {
     
   })
   
+  eq.dt.conc.pc.data <- reactive({
+    
+    if (!is.null(input$eq.dt.conc.pc)) {
+      
+      eq.dt.conc.pc <- hot_to_r(input$eq.dt.conc.pc)
+      
+    } else {
+      
+      if (is.null(values[["eq.dt.conc.pc"]])) {
+        
+        eq.dt.conc.pc <- as.data.table(matrix(rep(1e-03, 3), 1))
+        setnames(eq.dt.conc.pc, paste0("molecule", 2:4))
+        
+      } else {
+        
+        eq.dt.conc.pc <- values[["eq.dt.conc.pc"]]
+        
+      }
+      
+    }
+    
+    eq.dt.conc.pc <- as.data.table(eq.dt.conc.pc)
+    
+    cln <- part.names.data()[1:(ncol(eq.dt.conc.pc) + 1)]
+    cln <- cln[!(cln %in% eq.pc.name.data())]
+    # browser()
+    setnames(eq.dt.conc.pc, cln)
+    
+    values[["eq.dt.conc.pc"]] <- eq.dt.conc.pc
+    
+    eq.dt.conc.pc
+    
+  })
+  
   cnst.data <- reactive({
     
     if (!is.null(input$cnst)) {
@@ -1061,9 +1120,78 @@ server <- function(input, output, session) {
     updateTextInput(session, "bs.name", value = paste(bs.name, collapse = ", "))
     
   })
+
+  eq.pc.name.data <- reactive({
+    
+    if (!is.null(input$eq.pc.name)) {
+      
+      eq.pc.name <- input$eq.pc.name
+      eq.pc.name <- str_trim(eq.pc.name)
+
+    } else {
+      
+      if (is.null(values[["eq.pc.name"]])) {
+        
+        eq.pc.name <- "molecule1"
+        
+      } else {
+        
+        eq.pc.name <- values[["eq.pc.name"]]
+        
+      }
+      
+    }
+    
+    values[["eq.pc.name"]] <- eq.pc.name
+    
+    eq.pc.name
+    
+  })
   
-  
+
   # execute
+  
+  eq.pc.update <- eventReactive(input$eq.pc.update.btn, {
+    
+    # get data
+    
+    eq.dt.conc.pc <- eq.dt.conc.pc.data()
+    pc.name <- eq.pc.name.data()
+    pc.range <- input$eq.pc.range
+    
+    # pc.range
+    
+    pc.range <- seq(pc.range[1], pc.range[2], (pc.range[2] - pc.range[1]) / 100)
+    pc.range <- 10 ^ -pc.range
+    
+    pc.range <- data.table(pc.range)
+    setnames(pc.range, pc.name)
+    
+    # concentrations data table
+    
+    # ==== CHANGE COLUMN ORDER ==== HERE ====
+    
+    dt.conc <- data.table(eq.dt.conc.pc, pc.range)
+    
+    # type of concentration
+    
+    part.eq <- data.table(t(c(rep("tot", ncol(eq.dt.conc.pc)), "eq")))
+    
+    cln <- c(colnames(eq.dt.conc.pc), pc.name)
+    setnames(part.eq, cln)
+    
+    # update values
+    
+    values[["dt.conc"]] <- dt.conc
+    values[["part.eq"]] <- part.eq
+    
+    # input.source$eq.dt.conc.pc <- TRUE
+    
+    # return
+
+    list(dt.conc = dt.conc, part.eq = part.eq)
+    
+  })
   
   eval.data <- reactive({
     
@@ -1097,6 +1225,7 @@ server <- function(input, output, session) {
     res
     
   })
+  
   
   # output data
   
@@ -1256,6 +1385,13 @@ server <- function(input, output, session) {
       
     }
     
+    if (input.source$eq.dt.conc.pc.fl) {
+        
+      in.file <- NULL
+      in.file.xlsx <- NULL
+      
+    }
+    
     # choose source
     
     if (!is.null(in.file)) {
@@ -1288,6 +1424,10 @@ server <- function(input, output, session) {
       tmp <- colnames(dt.conc)
       updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
       
+    } else if (input.source$eq.dt.conc.pc.fl) {
+      
+      dt.conc <- eq.pc.update()$dt.conc
+      
     } else {
       
       dt.conc <- dt.conc.data()
@@ -1296,9 +1436,23 @@ server <- function(input, output, session) {
     
     setnames(dt.conc, part.names.data()[1:ncol(dt.conc)])
     
-    if (!is.null(dt.conc))
-      rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    if (!is.null(dt.conc)) {
+      
+      if (nrow(dt.conc) > 15) {
+        
+        rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE, height = 300) %>%
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        
+      } else {
+        
+        rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE, height = NULL) %>%
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        
+      }
+      
+    }
+    
+    
     
   })
 
@@ -1329,6 +1483,13 @@ server <- function(input, output, session) {
       
       if (!is.null(in.file.xlsx))
         in.file <- NULL
+      
+    }
+    
+    if (input.source$eq.dt.conc.pc.fl) {
+      
+      in.file <- NULL
+      in.file.xlsx <- NULL
       
     }
     
@@ -1384,10 +1545,24 @@ server <- function(input, output, session) {
       
       colnames(part.eq) <- tmp
       
+    } else if (input.source$eq.dt.conc.pc.fl) {
+      
+      part.eq <- eq.pc.update()$part.eq
+      
     }
     
     if (!is.null(part.eq))
       rhandsontable(part.eq, stretchH = "all", useTypes = FALSE, colHeaders = NULL) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+  output$eq.dt.conc.pc <- renderRHandsontable({
+    
+    eq.dt.conc.pc <- eq.dt.conc.pc.data()
+
+    if (!is.null(eq.dt.conc.pc))
+      rhandsontable(eq.dt.conc.pc, stretchH = "all", useTypes = FALSE) %>%
       hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
     
   })
@@ -1474,18 +1649,29 @@ server <- function(input, output, session) {
       renderer <- "
       function (instance, td, row, col, prop, value, cellProperties) {
       
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (parseInt(value, 10) < 0) {
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (parseInt(value, 10) < 0) {
         td.style.background = 'pink';
+        }
+        
+      }" 
+      
+      if (nrow(dt.res) > 15) {
+        
+        rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE, height = 300) %>%
+          hot_cols(renderer = renderer)
+        
+      } else {
+        
+        rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE, height = NULL) %>%
+          hot_cols(renderer = renderer)
+        
       }
       
-      }" 
-
-      rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
-        hot_cols(renderer = renderer)
     }
     
+
   })
   
   output$dt.frac <- renderRHandsontable({
@@ -1498,9 +1684,22 @@ server <- function(input, output, session) {
       setnames(dt.frac, unlist(dt.frac[1]))
       
       dt.frac <- dt.frac[!1]
-
-      rhandsontable(dt.frac, stretchH = FALSE, useTypes = FALSE) %>%
-        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+      
+      if (!is.null(dt.frac)) {
+        
+        if (nrow(dt.frac) > 15) {
+          
+          rhandsontable(dt.frac, stretchH = FALSE, useTypes = FALSE, height = 300) %>%
+            hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+          
+        } else {
+          
+          rhandsontable(dt.frac, stretchH = FALSE, useTypes = FALSE, height = NULL) %>%
+            hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+          
+        }
+        
+      }
       
     }
     
@@ -1510,9 +1709,21 @@ server <- function(input, output, session) {
     
     dt.err <- dt.err.data()
     
-    if (!is.null(dt.err))
-      rhandsontable(dt.err, stretchH = FALSE, useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    if (!is.null(dt.err)) {
+      
+      if (nrow(dt.err) > 15) {
+
+        rhandsontable(dt.err, stretchH = FALSE, useTypes = FALSE, height = 300) %>%
+          hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+        
+      } else {
+
+        rhandsontable(dt.err, stretchH = FALSE, useTypes = FALSE, height = NULL) %>%
+          hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+        
+      }
+      
+    }
     
   })
 
