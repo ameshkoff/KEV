@@ -152,19 +152,19 @@ ui <- navbarPage("KEV",
                                              )
                                     , column(5
                                              , h4("Concentrations")
-                                             , tabsetPanel(type = "tabs"
-                                                           , tabPanel("Input"
+                                             , tabsetPanel(type = "tabs", id = "eq.conc.tab"
+                                                           , tabPanel("Input", value = "input"
                                                                       , rHandsontableOutput("dt.conc")
                                                                       , rHandsontableOutput("part.eq")
                                                                       , fluidRow(class = "download-row"
                                                                                  , downloadButton("dt.conc.csv", "csv")
                                                                                  , downloadButton("dt.conc.xlsx", "xlsx")))
-                                                           , tabPanel("Total"
+                                                           , tabPanel("Total", value = "total"
                                                                       , rHandsontableOutput("dt.conc.tot")
                                                                       , fluidRow(class = "download-row"
                                                                                  , downloadButton("dt.conc.tot.csv", "csv")
                                                                                  , downloadButton("dt.conc.tot.xlsx", "xlsx")))
-                                                           , tabPanel("pC range (optional)"
+                                                           , tabPanel("pC range (optional)", value = "pc"
                                                                       , h5("Variable component and its pC range")
                                                                       , textInput("eq.pc.name", "", "molecule1")
                                                                       , sliderInput("eq.pc.range", "", min = 0, max = 15, value = c(0, 3))
@@ -841,6 +841,7 @@ server <- function(input, output, session) {
   observeEvent(input$eq.pc.update.btn, {
     
     input.source$eq.dt.conc.pc.fl <- TRUE
+    updateTabsetPanel(session, "eq.conc.tab", selected = "input")
     
   }, priority = 1000)
   
@@ -993,7 +994,13 @@ server <- function(input, output, session) {
     
     cln <- part.names.data()[1:(ncol(eq.dt.conc.pc) + 1)]
     cln <- cln[!(cln %in% eq.pc.name.data())]
-    # browser()
+    
+    validate(
+      
+      need(ncol(eq.dt.conc.pc) == length(cln), "Check if the variable component name is consistent with component names")
+      
+    )
+    
     setnames(eq.dt.conc.pc, cln)
     
     values[["eq.dt.conc.pc"]] <- eq.dt.conc.pc
@@ -1168,9 +1175,7 @@ server <- function(input, output, session) {
     setnames(pc.range, pc.name)
     
     # concentrations data table
-    
-    # ==== CHANGE COLUMN ORDER ==== HERE ====
-    
+
     dt.conc <- data.table(eq.dt.conc.pc, pc.range)
     
     # type of concentration
@@ -1179,6 +1184,13 @@ server <- function(input, output, session) {
     
     cln <- c(colnames(eq.dt.conc.pc), pc.name)
     setnames(part.eq, cln)
+
+    # restore column order
+    
+    cln <- colnames(dt.coef.data())
+    
+    setcolorder(dt.conc, cln)
+    setcolorder(part.eq, cln)
     
     # update values
     
@@ -1207,6 +1219,11 @@ server <- function(input, output, session) {
       
       incProgress(.3)
       
+      pc.name <- bs.name.data()
+      
+      if (input.source$eq.dt.conc.pc.fl)
+        pc.name <- eq.pc.name.data()
+      
       res <- eq.evaluation.runner(mode = "app"
                                  , sep = eq.sep()
                                  , bs.name = bs.name.data()
@@ -1216,7 +1233,8 @@ server <- function(input, output, session) {
                                                   , cnst = cnst.data()
                                                   , dt.conc = dt.conc.data()
                                                   , part.eq = part.eq.data())
-                                 , save.res = FALSE)
+                                 , save.res = FALSE
+                                 , pc.name = pc.name)
     
       incProgress(.6)
       
@@ -1257,11 +1275,9 @@ server <- function(input, output, session) {
   
   # text --------------------- #
   
-  output$txt.frac <- renderText(
-    {
+  output$txt.frac <- renderText({
       paste("Fractions per ", bs.name.data())
-    }
-  )
+    })
   
   
   
