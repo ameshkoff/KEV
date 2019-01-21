@@ -205,10 +205,15 @@ ui <- navbarPage("KEV",
 
                                 , fluidRow(column(12
                                                   , h4(textOutput("txt.frac"))
-                                                  , rHandsontableOutput("dt.frac")
-                                                  , fluidRow(class = "download-row"
-                                                             , downloadButton("dt.frac.csv", "csv")
-                                                             , downloadButton("dt.frac.xlsx", "xlsx"))))
+                                                  , tabsetPanel(type = "tabs"
+                                                                , tabPanel("Table"
+                                                                           , rHandsontableOutput("dt.frac")
+                                                                           , fluidRow(class = "download-row"
+                                                                                      , downloadButton("dt.frac.csv", "csv")
+                                                                                      , downloadButton("dt.frac.xlsx", "xlsx")))
+                                                                , tabPanel("Plot"
+                                                                           , plotlyOutput("plot.eq.dt.frac"))
+                                                  )))
                                 
                                 , fluidRow(column(12
                                                   , h4("Residuals matrix")
@@ -1255,7 +1260,14 @@ server <- function(input, output, session) {
   
   dt.frac.data <- eventReactive(input$eq.conc.exec.btn, {
     
-    eval.data()$dt.frac
+    dt.frac <- eval.data()$dt.frac
+    
+    dt.frac <- as.data.table(t(dt.frac), keep.rownames = TRUE)
+    setnames(dt.frac, unlist(dt.frac[1]))
+    
+    dt.frac <- dt.frac[!1]
+    
+    dt.frac
     
   })
 
@@ -1271,7 +1283,53 @@ server <- function(input, output, session) {
     
   })
   
-
+  output$plot.eq.dt.frac <- renderPlotly({
+    
+    # get data
+    
+    dt <- dt.frac.data()
+    
+    # remove garbage
+    
+    dt[, rn := NULL]
+    
+    # convert to numerics
+    
+    cln <- colnames(dt)
+    
+    for (cl in cln)
+      dt[, eval(cl) := as.numeric(eval(as.name(cl)))]
+    
+    # get pC component name and set names
+    
+    cln <- colnames(dt)
+    cln <- cln[cln %like% "^p\\(.*\\)$"][1]
+    
+    setnames(dt, cln, "pC")
+    
+    # melt
+    
+    dt <- melt(dt, id.vars = "pC", variable.name = "Component")
+    
+    # plot
+    
+    g <- ggplot(data = dt) +
+      geom_point(aes(x = pC, y = value, group = Component, color = Component), size = .5) +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      labs(x = str_replace_all(cln, "\\(\\)", ""), y = "%")
+    
+    g <- ggplotly(g)
+    g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
+    g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
+    
+    # g$x$data[[1]]$hoverinfo <- "none"
+    
+    g
+    
+  })
+  
+  
+  
   
   # text --------------------- #
   
@@ -1696,11 +1754,6 @@ server <- function(input, output, session) {
     
     if (!is.null(dt.frac)) {
       
-      dt.frac <- as.data.table(t(dt.frac), keep.rownames = TRUE)
-      setnames(dt.frac, unlist(dt.frac[1]))
-      
-      dt.frac <- dt.frac[!1]
-      
       if (!is.null(dt.frac)) {
         
         if (nrow(dt.frac) > 15) {
@@ -1892,12 +1945,6 @@ server <- function(input, output, session) {
     input.source$dt.mol.memory <- TRUE
     
   }, priority = 1000)
-  
-  # observeEvent(input$dt.mol, {
-  #   
-  #   print("update")
-  #   
-  # }, priority = 1000)
   
   
   
