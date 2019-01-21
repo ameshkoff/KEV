@@ -32,7 +32,8 @@ eq.evaluation.runner <- function(mode = c("api", "script", "app")
                                  , thr.type = c("rel", "abs")
                                  , threshold = 1e-08
                                  , save.res = TRUE
-                                 , dt.list = NULL) {
+                                 , dt.list = NULL
+                                 , pc.name = NULL) {
   
   dir.start <- ""
   
@@ -84,7 +85,7 @@ eq.evaluation.runner <- function(mode = c("api", "script", "app")
   
   # postprocessing
   
-  dt.frac <- eq.cond.fractions(dt.res, bs.name, dt.coef, dt.coef.m, dt.conc.m)
+  dt.frac <- eq.cond.fractions(dt.res, bs.name, dt.coef, dt.coef.m, dt.conc.m, pc.name)
   dt.conc.calc <- eq.tot.conc.calc(dt.res, cnst.m, dt.coef.m, part.nm)
   dt.err <- eq.residuals(dt.conc.m, dt.conc.calc, part.eq)
   
