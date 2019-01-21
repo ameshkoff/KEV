@@ -26,14 +26,14 @@ eq.cond.fractions <- function(dt.res, bs.name, dt.coef, dt.coef.m, dt.conc.m, pc
     cln <- colnames(dt.res)
     cln <- cln[cln %in% c(pc.name, paste0(pc.name, "_1"))]
     
-    tmp <- data.table(rn = paste0("pC(", pc.name, ")"), t(data.table(round(-log10(dt.res[, cln, with = FALSE]), 2))))
+    tmp <- data.table(rn = paste0("p(", pc.name, ")"), t(data.table(round(-log10(dt.res[, cln, with = FALSE]), 2))))
     
   } else {
     
     cln <- colnames(dt.res)
     cln <- cln[cln %in% c(bs.name, paste0(bs.name, "_1"))]
     
-    tmp <- data.table(rn = paste0("pC(", bs.name, ")"), t(data.table(round(-log10(dt.res[, cln, with = FALSE]), 2))))
+    tmp <- data.table(rn = paste0("p(", bs.name, ")"), t(data.table(round(-log10(dt.res[, cln, with = FALSE]), 2))))
     
   }
   
