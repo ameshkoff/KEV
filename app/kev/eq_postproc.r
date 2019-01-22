@@ -9,7 +9,7 @@
 
 # conditional fractions ------------------------------ #
 
-eq.cond.fractions <- function(dt.res, bs.name, dt.coef, dt.coef.m, dt.conc.m) {
+eq.cond.fractions <- function(dt.res, bs.name, dt.coef, dt.coef.m, dt.conc.m, pc.name) {
   
   cln <- colnames(dt.res)
   cln <- cln[cln %like% bs.name]
@@ -21,10 +21,21 @@ eq.cond.fractions <- function(dt.res, bs.name, dt.coef, dt.coef.m, dt.conc.m) {
   dt.frac <- data.table(t(dt.frac))
   dt.frac <- data.table(rn = colnames(dt.res[, cln, with = FALSE]), dt.frac)
   
-  cln <- colnames(dt.res)
-  cln <- cln[cln %in% c(bs.name, paste0(bs.name, "_1"))]
-  
-  tmp <- data.table(rn = paste0("-lg(C(", bs.name, "))"), t(data.table(round(-log10(dt.res[, cln, with = FALSE]), 2))))
+  if (!is.null(pc.name) && bs.name != pc.name) {
+    
+    cln <- colnames(dt.res)
+    cln <- cln[cln %in% c(pc.name, paste0(pc.name, "_1"))]
+    
+    tmp <- data.table(rn = paste0("p(", pc.name, ")"), t(data.table(round(-log10(dt.res[, cln, with = FALSE]), 2))))
+    
+  } else {
+    
+    cln <- colnames(dt.res)
+    cln <- cln[cln %in% c(bs.name, paste0(bs.name, "_1"))]
+    
+    tmp <- data.table(rn = paste0("p(", bs.name, ")"), t(data.table(round(-log10(dt.res[, cln, with = FALSE]), 2))))
+    
+  }
   
   dt.frac <- rbind(tmp, dt.frac)
   
