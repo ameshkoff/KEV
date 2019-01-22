@@ -24,6 +24,7 @@ library(stringr)
 # reporting
 library(shiny)
 library(rhandsontable)
+library(plotly)
 
 
 
@@ -86,7 +87,7 @@ ui <- navbarPage("KEV",
                                                                    , "tab" = "tab"))
                                          )
                                          , column(6
-                                                  , h4("Particle to get fractions of")
+                                                  , h4("Component to get fractions of")
                                                   , textInput("bs.name", "", "molecule1")
                                          ))
                               )))
@@ -134,7 +135,7 @@ ui <- navbarPage("KEV",
                                                       , downloadButton("dt.coef.csv", "csv")
                                                       , downloadButton("dt.coef.xlsx", "xlsx"))
                                            , p("")
-                                           , textInput("part.names", "Particle names, comma separated", paste(paste0("molecule", 1:4), collapse = ", "))
+                                           , textInput("part.names", "Component names, comma separated", paste(paste0("molecule", 1:4), collapse = ", "))
                                            )
                                     , column(2
                                              , h4("K: lg constants")
@@ -151,19 +152,27 @@ ui <- navbarPage("KEV",
                                              )
                                     , column(5
                                              , h4("Concentrations")
-                                             , tabsetPanel(type = "tabs"
-                                                           , tabPanel("Input"
+                                             , tabsetPanel(type = "tabs", id = "eq.conc.tab"
+                                                           , tabPanel("Input", value = "input"
                                                                       , rHandsontableOutput("dt.conc")
                                                                       , rHandsontableOutput("part.eq")
                                                                       , fluidRow(class = "download-row"
                                                                                  , downloadButton("dt.conc.csv", "csv")
                                                                                  , downloadButton("dt.conc.xlsx", "xlsx")))
-                                                           , tabPanel("Total"
+                                                           , tabPanel("Total", value = "total"
                                                                       , rHandsontableOutput("dt.conc.tot")
                                                                       , fluidRow(class = "download-row"
                                                                                  , downloadButton("dt.conc.tot.csv", "csv")
                                                                                  , downloadButton("dt.conc.tot.xlsx", "xlsx")))
-                                                           )
+                                                           , tabPanel("pC range (optional)", value = "pc"
+                                                                      , h5("Variable component and its pC range")
+                                                                      , textInput("eq.pc.name", "", "molecule1")
+                                                                      , sliderInput("eq.pc.range", "", min = 0, max = 15, value = c(0, 3))
+                                                                      , h5("Total concentations of other components")
+                                                                      , rHandsontableOutput("eq.dt.conc.pc")
+                                                                      , fluidRow(class = "download-row"
+                                                                                 , actionButton("eq.pc.update.btn", "Update Input Concentrations")))
+                                             )
                                              , fileInput("file.dt.conc", "Choose CSV File",
                                                          accept = c(
                                                            "text/csv",
@@ -196,10 +205,15 @@ ui <- navbarPage("KEV",
 
                                 , fluidRow(column(12
                                                   , h4(textOutput("txt.frac"))
-                                                  , rHandsontableOutput("dt.frac")
-                                                  , fluidRow(class = "download-row"
-                                                             , downloadButton("dt.frac.csv", "csv")
-                                                             , downloadButton("dt.frac.xlsx", "xlsx"))))
+                                                  , tabsetPanel(type = "tabs"
+                                                                , tabPanel("Table"
+                                                                           , rHandsontableOutput("dt.frac")
+                                                                           , fluidRow(class = "download-row"
+                                                                                      , downloadButton("dt.frac.csv", "csv")
+                                                                                      , downloadButton("dt.frac.xlsx", "xlsx")))
+                                                                , tabPanel("Plot"
+                                                                           , plotlyOutput("plot.eq.dt.frac"))
+                                                  )))
                                 
                                 , fluidRow(column(12
                                                   , h4("Residuals matrix")
@@ -240,7 +254,7 @@ ui <- navbarPage("KEV",
                                                                    , ";" = "semicolon"
                                                                    , "tab" = "tab")))
                                          , column(3
-                                                  , HTML("<h4>Constants to evaluate</h4><p>Particle names, comma separated</p>")
+                                                  , HTML("<h4>Constants to evaluate</h4><p>Component names, comma separated</p>")
                                                   , textInput("cnst.tune", "", "molecule1"))
                                          , column(3
                                                   , HTML(paste("<h4>Threshold</h4><p>Search algorithm precision"
@@ -295,7 +309,7 @@ ui <- navbarPage("KEV",
                                                       , downloadButton("ab.dt.coef.csv", "csv")
                                                       , downloadButton("ab.dt.coef.xlsx", "xlsx"))
                                            , p("")
-                                           , textInput("ab.part.names", "Particle names, comma separated"
+                                           , textInput("ab.part.names", "Component names, comma separated"
                                                        , paste(paste0("molecule", 1:4), collapse = ", "))
                                     )
                                     , column(2
@@ -396,6 +410,10 @@ ui <- navbarPage("KEV",
                                                                            , fluidRow(class = "download-row"
                                                                                       , downloadButton("dt.ab.rel.csv", "csv")
                                                                                       , downloadButton("dt.ab.rel.xlsx", "xlsx")))
+                                                                , tabPanel("Plot (Peaks)"
+                                                                           , plotlyOutput("plot.dt.ab.cut"))
+                                                                , tabPanel("Plot (Full)"
+                                                                           , plotlyOutput("plot.dt.ab"))
                                                   )))
                                 
                                 , fluidRow(column(12)
@@ -519,7 +537,7 @@ ui <- navbarPage("KEV",
                                                   , ";" = "semicolon"
                                                   , "tab" = "tab")))
                         , column(3
-                                 , HTML("<h4>Constants to evaluate</h4><p>Particle names, comma separated</p>")
+                                 , HTML("<h4>Constants to evaluate</h4><p>Component names, comma separated</p>")
                                  , textInput("emf.cnst.tune", "", "molecule1"))
                         , column(3
                                  , HTML(paste("<h4>Threshold</h4><p>Search algorithm precision"
@@ -574,7 +592,7 @@ ui <- navbarPage("KEV",
                                      , downloadButton("emf.dt.coef.csv", "csv")
                                      , downloadButton("emf.dt.coef.xlsx", "xlsx"))
                           , p("")
-                          , textInput("emf.part.names", "Particle names, comma separated"
+                          , textInput("emf.part.names", "Component names, comma separated"
                                       , paste(paste0("molecule", 1:4), collapse = ", "))
                    )
                    , column(2
@@ -669,6 +687,8 @@ ui <- navbarPage("KEV",
                                                           , fluidRow(class = "download-row"
                                                                      , downloadButton("dt.emf.rel.csv", "csv")
                                                                      , downloadButton("dt.emf.rel.xlsx", "xlsx")))
+                                               , tabPanel("Plot"
+                                                          , plotlyOutput("plot.dt.emf"))
                                  )))
                
                , fluidRow(column(12)
@@ -716,12 +736,15 @@ server <- function(input, output, session) {
     eq.dt.coef.bulk = FALSE
     , eq.dt.conc.bulk = FALSE
     , eq.cnst.bulk = FALSE
+    , eq.dt.conc.pc.fl = FALSE
+    
     , ab.dt.coef.bulk = FALSE
     , ab.dt.conc.bulk = FALSE
     , ab.cnst.bulk = FALSE
     , dt.ab.bulk = FALSE
     , dt.mol.bulk = FALSE
     , dt.mol.memory = FALSE
+    
     , emf.dt.coef.bulk = FALSE
     , emf.dt.conc.bulk = FALSE
     , emf.cnst.bulk = FALSE
@@ -765,15 +788,22 @@ server <- function(input, output, session) {
     # concentrations
     
     if (nrow(as.data.table(input$file.eq.bulk.input)[name %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*"]) > 0){
+      
       input.source$eq.dt.conc.bulk <- TRUE
+      input.source$eq.dt.conc.pc.fl <- FALSE
+      
     }
     
     if (nrow(as.data.table(input$file.eq.bulk.input)[name %like% "\\.xlsx$"]) > 0){
       
       shts <- getSheetNames(input$file.eq.bulk.input$datapath)
       
-      if (length(shts[shts %like% "concentrations"]))
+      if (length(shts[shts %like% "concentrations"])) {
+        
         input.source$eq.dt.conc.bulk <- TRUE
+        input.source$eq.dt.conc.pc.fl <- FALSE
+        
+      }
       
     }
     
@@ -803,6 +833,7 @@ server <- function(input, output, session) {
   observeEvent(input$file.eq.dt.conc, {
     
     input.source$eq.dt.conc.bulk <- FALSE
+    input.source$eq.dt.conc.pc.fl <- FALSE
     
   }, priority = 1000)
   
@@ -812,7 +843,14 @@ server <- function(input, output, session) {
     
   }, priority = 1000)
   
-
+  observeEvent(input$eq.pc.update.btn, {
+    
+    input.source$eq.dt.conc.pc.fl <- TRUE
+    updateTabsetPanel(session, "eq.conc.tab", selected = "input")
+    
+  }, priority = 1000)
+  
+  
   
   # data --------------------- #
   
@@ -936,6 +974,46 @@ server <- function(input, output, session) {
     
   })
   
+  eq.dt.conc.pc.data <- reactive({
+    
+    if (!is.null(input$eq.dt.conc.pc)) {
+      
+      eq.dt.conc.pc <- hot_to_r(input$eq.dt.conc.pc)
+      
+    } else {
+      
+      if (is.null(values[["eq.dt.conc.pc"]])) {
+        
+        eq.dt.conc.pc <- as.data.table(matrix(rep(1e-03, 3), 1))
+        setnames(eq.dt.conc.pc, paste0("molecule", 2:4))
+        
+      } else {
+        
+        eq.dt.conc.pc <- values[["eq.dt.conc.pc"]]
+        
+      }
+      
+    }
+    
+    eq.dt.conc.pc <- as.data.table(eq.dt.conc.pc)
+    
+    cln <- part.names.data()[1:(ncol(eq.dt.conc.pc) + 1)]
+    cln <- cln[!(cln %in% eq.pc.name.data())]
+    
+    validate(
+      
+      need(ncol(eq.dt.conc.pc) == length(cln), "Check if the variable component name is consistent with component names")
+      
+    )
+    
+    setnames(eq.dt.conc.pc, cln)
+    
+    values[["eq.dt.conc.pc"]] <- eq.dt.conc.pc
+    
+    eq.dt.conc.pc
+    
+  })
+  
   cnst.data <- reactive({
     
     if (!is.null(input$cnst)) {
@@ -1035,7 +1113,12 @@ server <- function(input, output, session) {
       
     } else if (!is.null(in.file.xlsx)) {
       
-      bs.name <- try(read.xlsx(in.file.xlsx$datapath, sheet = "particle_names", colNames = FALSE), silent = TRUE)
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "^(particle|component)_name"]
+      shts <- sort(shts)
+      
+      bs.name <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE), silent = TRUE)
       
     } else {
       
@@ -1049,9 +1132,83 @@ server <- function(input, output, session) {
     updateTextInput(session, "bs.name", value = paste(bs.name, collapse = ", "))
     
   })
+
+  eq.pc.name.data <- reactive({
+    
+    if (!is.null(input$eq.pc.name)) {
+      
+      eq.pc.name <- input$eq.pc.name
+      eq.pc.name <- str_trim(eq.pc.name)
+
+    } else {
+      
+      if (is.null(values[["eq.pc.name"]])) {
+        
+        eq.pc.name <- "molecule1"
+        
+      } else {
+        
+        eq.pc.name <- values[["eq.pc.name"]]
+        
+      }
+      
+    }
+    
+    values[["eq.pc.name"]] <- eq.pc.name
+    
+    eq.pc.name
+    
+  })
   
-  
+
   # execute
+  
+  eq.pc.update <- eventReactive(input$eq.pc.update.btn, {
+    
+    # get data
+    
+    eq.dt.conc.pc <- eq.dt.conc.pc.data()
+    pc.name <- eq.pc.name.data()
+    pc.range <- input$eq.pc.range
+    
+    # pc.range
+    
+    pc.range <- seq(pc.range[1], pc.range[2], (pc.range[2] - pc.range[1]) / 100)
+    pc.range <- 10 ^ -pc.range
+    
+    pc.range <- data.table(pc.range)
+    setnames(pc.range, pc.name)
+    
+    # concentrations data table
+
+    dt.conc <- data.table(eq.dt.conc.pc, pc.range)
+    
+    # type of concentration
+    
+    part.eq <- data.table(t(c(rep("tot", ncol(eq.dt.conc.pc)), "eq")))
+    
+    cln <- c(colnames(eq.dt.conc.pc), pc.name)
+    setnames(part.eq, cln)
+
+    # restore column order
+    
+    cln <- colnames(dt.coef.data())
+    
+    setcolorder(dt.conc, cln)
+    setcolorder(part.eq, cln)
+    
+    # update values
+    
+    values[["dt.conc"]] <- dt.conc
+    values[["part.eq"]] <- part.eq
+    
+    # input.source$eq.dt.conc.pc <- TRUE
+    
+    # return
+
+    list(dt.conc = dt.conc, part.eq = part.eq)
+    
+  })
   
   eval.data <- reactive({
     
@@ -1061,11 +1218,16 @@ server <- function(input, output, session) {
         
       validate(
         
-        need(length(colnames(dt.coef.data())[colnames(dt.coef.data()) == bs.name.data()]) > 0, "Input correct particle name to get fractions of")
+        need(length(colnames(dt.coef.data())[colnames(dt.coef.data()) == bs.name.data()]) > 0, "Input correct component name to get fractions of")
         
       )
       
       incProgress(.3)
+      
+      pc.name <- bs.name.data()
+      
+      if (input.source$eq.dt.conc.pc.fl)
+        pc.name <- eq.pc.name.data()
       
       res <- eq.evaluation.runner(mode = "app"
                                  , sep = eq.sep()
@@ -1076,7 +1238,8 @@ server <- function(input, output, session) {
                                                   , cnst = cnst.data()
                                                   , dt.conc = dt.conc.data()
                                                   , part.eq = part.eq.data())
-                                 , save.res = FALSE)
+                                 , save.res = FALSE
+                                 , pc.name = pc.name)
     
       incProgress(.6)
       
@@ -1085,6 +1248,7 @@ server <- function(input, output, session) {
     res
     
   })
+  
   
   # output data
   
@@ -1096,7 +1260,14 @@ server <- function(input, output, session) {
   
   dt.frac.data <- eventReactive(input$eq.conc.exec.btn, {
     
-    eval.data()$dt.frac
+    dt.frac <- eval.data()$dt.frac
+    
+    dt.frac <- as.data.table(t(dt.frac), keep.rownames = TRUE)
+    setnames(dt.frac, unlist(dt.frac[1]))
+    
+    dt.frac <- dt.frac[!1]
+    
+    dt.frac
     
   })
 
@@ -1112,15 +1283,57 @@ server <- function(input, output, session) {
     
   })
   
+  output$plot.eq.dt.frac <- renderPlotly({
+    
+    # get data
+    
+    dt <- dt.frac.data()
+    
+    # remove garbage
+    
+    dt[, rn := NULL]
+    
+    # convert to numerics
+    
+    cln <- colnames(dt)
+    
+    for (cl in cln)
+      dt[, eval(cl) := as.numeric(eval(as.name(cl)))]
+    
+    # get pC component name and set names
+    
+    cln <- colnames(dt)
+    cln <- cln[cln %like% "^p\\(.*\\)$"][1]
+    
+    setnames(dt, cln, "pC")
+    
+    # melt
+    
+    dt <- melt(dt, id.vars = "pC", variable.name = "Component")
+    
+    # plot
+    
+    g <- ggplot(data = dt) +
+      geom_point(aes(x = pC, y = value, group = Component, color = Component), size = .5) +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      labs(x = str_replace_all(cln, "[\\(\\)]", ""), y = "%")
+    
+    g <- ggplotly(g)
+    g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
+    g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
 
+    g
+    
+  })
+  
+  
+  
   
   # text --------------------- #
   
-  output$txt.frac <- renderText(
-    {
+  output$txt.frac <- renderText({
       paste("Fractions per ", bs.name.data())
-    }
-  )
+    })
   
   
   
@@ -1244,6 +1457,13 @@ server <- function(input, output, session) {
       
     }
     
+    if (input.source$eq.dt.conc.pc.fl) {
+        
+      in.file <- NULL
+      in.file.xlsx <- NULL
+      
+    }
+    
     # choose source
     
     if (!is.null(in.file)) {
@@ -1276,6 +1496,10 @@ server <- function(input, output, session) {
       tmp <- colnames(dt.conc)
       updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
       
+    } else if (input.source$eq.dt.conc.pc.fl) {
+      
+      dt.conc <- eq.pc.update()$dt.conc
+      
     } else {
       
       dt.conc <- dt.conc.data()
@@ -1284,9 +1508,23 @@ server <- function(input, output, session) {
     
     setnames(dt.conc, part.names.data()[1:ncol(dt.conc)])
     
-    if (!is.null(dt.conc))
-      rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    if (!is.null(dt.conc)) {
+      
+      if (nrow(dt.conc) > 15) {
+        
+        rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE, height = 300) %>%
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        
+      } else {
+        
+        rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE, height = NULL) %>%
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        
+      }
+      
+    }
+    
+    
     
   })
 
@@ -1317,6 +1555,13 @@ server <- function(input, output, session) {
       
       if (!is.null(in.file.xlsx))
         in.file <- NULL
+      
+    }
+    
+    if (input.source$eq.dt.conc.pc.fl) {
+      
+      in.file <- NULL
+      in.file.xlsx <- NULL
       
     }
     
@@ -1372,10 +1617,24 @@ server <- function(input, output, session) {
       
       colnames(part.eq) <- tmp
       
+    } else if (input.source$eq.dt.conc.pc.fl) {
+      
+      part.eq <- eq.pc.update()$part.eq
+      
     }
     
     if (!is.null(part.eq))
       rhandsontable(part.eq, stretchH = "all", useTypes = FALSE, colHeaders = NULL) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+  output$eq.dt.conc.pc <- renderRHandsontable({
+    
+    eq.dt.conc.pc <- eq.dt.conc.pc.data()
+
+    if (!is.null(eq.dt.conc.pc))
+      rhandsontable(eq.dt.conc.pc, stretchH = "all", useTypes = FALSE) %>%
       hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
     
   })
@@ -1462,18 +1721,29 @@ server <- function(input, output, session) {
       renderer <- "
       function (instance, td, row, col, prop, value, cellProperties) {
       
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (parseInt(value, 10) < 0) {
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (parseInt(value, 10) < 0) {
         td.style.background = 'pink';
+        }
+        
+      }" 
+      
+      if (nrow(dt.res) > 15) {
+        
+        rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE, height = 300) %>%
+          hot_cols(renderer = renderer)
+        
+      } else {
+        
+        rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE, height = NULL) %>%
+          hot_cols(renderer = renderer)
+        
       }
       
-      }" 
-
-      rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
-        hot_cols(renderer = renderer)
     }
     
+
   })
   
   output$dt.frac <- renderRHandsontable({
@@ -1482,13 +1752,21 @@ server <- function(input, output, session) {
     
     if (!is.null(dt.frac)) {
       
-      dt.frac <- as.data.table(t(dt.frac), keep.rownames = TRUE)
-      setnames(dt.frac, unlist(dt.frac[1]))
-      
-      dt.frac <- dt.frac[!1]
-
-      rhandsontable(dt.frac, stretchH = FALSE, useTypes = FALSE) %>%
-        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+      if (!is.null(dt.frac)) {
+        
+        if (nrow(dt.frac) > 15) {
+          
+          rhandsontable(dt.frac, stretchH = FALSE, useTypes = FALSE, height = 300) %>%
+            hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+          
+        } else {
+          
+          rhandsontable(dt.frac, stretchH = FALSE, useTypes = FALSE, height = NULL) %>%
+            hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+          
+        }
+        
+      }
       
     }
     
@@ -1498,9 +1776,21 @@ server <- function(input, output, session) {
     
     dt.err <- dt.err.data()
     
-    if (!is.null(dt.err))
-      rhandsontable(dt.err, stretchH = FALSE, useTypes = FALSE) %>%
-      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    if (!is.null(dt.err)) {
+      
+      if (nrow(dt.err) > 15) {
+
+        rhandsontable(dt.err, stretchH = FALSE, useTypes = FALSE, height = 300) %>%
+          hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+        
+      } else {
+
+        rhandsontable(dt.err, stretchH = FALSE, useTypes = FALSE, height = NULL) %>%
+          hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+        
+      }
+      
+    }
     
   })
 
@@ -1653,12 +1943,6 @@ server <- function(input, output, session) {
     input.source$dt.mol.memory <- TRUE
     
   }, priority = 1000)
-  
-  # observeEvent(input$dt.mol, {
-  #   
-  #   print("update")
-  #   
-  # }, priority = 1000)
   
   
   
@@ -2141,7 +2425,7 @@ server <- function(input, output, session) {
       
       validate(
         
-        need(length(particles %in% cnst.tune.data()) > 0, "Input correct particle names for constants evaluation")
+        need(length(particles %in% cnst.tune.data()) > 0, "Input correct component names for constants evaluation")
         
       )
       
@@ -2217,12 +2501,64 @@ server <- function(input, output, session) {
     
   })
 
+  plot.dt.ab.data <- eventReactive(input$ab.conc.exec.btn, {
+    
+    # get data
+    
+    dt.calc <- copy(ab.eval.data()$dt.ab.calc)
+    
+    dt.obs <- dt.ab.data()[data %like% "^observ"]
+    dt.obs[, data := "Observed"]
+    
+    # unify column names
+    
+    cln <- colnames(dt.calc)
+    cln <- cln[!(cln %in% c("wavelength", "data"))]
+
+    setnames(dt.obs, c("data", "wavelength", cln))
+
+    dt.calc[, data := "Calculated"]
+    
+    # melt
+    
+    dt.calc <- melt(dt.calc, id.vars = c("wavelength", "data"), variable.name = "solution", value.name = "absorbance")
+    dt.obs <- melt(dt.obs, id.vars = c("wavelength", "data"), variable.name = "solution", value.name = "absorbance")
+
+    # convert observed absorbance to numerics if not
+    
+    dt.obs[, absorbance := as.character(absorbance)]
+    dt.obs[, absorbance := str_replace_all(absorbance, " ", "")]
+    dt.obs[, absorbance := str_replace_all(absorbance, "\\,", "\\.")]
+    dt.obs[, absorbance := as.numeric(absorbance)]
+    
+    # bind
+    
+    intr <- intersect(dt.obs[, wavelength], dt.calc[, wavelength])
+    
+    dt <- rbind(dt.obs[wavelength %in% intr], dt.calc[wavelength %in% intr], use.names = TRUE, fill = TRUE)
+
+    # convert wavelength to numeric if not
+
+    dt[, wavelength := as.character(wavelength)]
+    dt[, wavelength := str_replace_all(wavelength, " ", "")]
+    dt[, wavelength := str_replace_all(wavelength, "\\,", "\\.")]
+    dt[, wavelength := as.numeric(wavelength)]
+    
+    # select wavelengths used in calculation
+    dt.cut <- dt[wavelength %in% as.numeric(wl.tune.data())]
+    
+    # return
+
+    list(dt.full = dt, dt.cut = dt.cut)
+    
+  })
+  
   cnst.dev.data <- eventReactive(input$ab.conc.exec.btn, {
     
     cnst.dev <- ab.eval.data()$cnst.dev
     cnst.dev <- as.data.table(cnst.dev)
     
-    setnames(cnst.dev, c("Particle", "Constant", "St.Deviation", "Validity"))
+    setnames(cnst.dev, c("Component", "Constant", "St.Deviation", "Validity"))
     
   })
 
@@ -2247,7 +2583,7 @@ server <- function(input, output, session) {
   err.diff.data <- eventReactive(input$ab.conc.exec.btn, {
     
     err.diff <- ab.eval.data()$err.diff
-    err.diff <- data.table(Particle = cnst.tune.data(), Fmin.Last = err.diff)
+    err.diff <- data.table(Component = cnst.tune.data(), Fmin.Last = err.diff)
     
     err.diff
     
@@ -2311,7 +2647,7 @@ server <- function(input, output, session) {
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
           need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file") %then%
-          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate particle names")
+          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate component names")
         
       )
       
@@ -2334,7 +2670,7 @@ server <- function(input, output, session) {
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
           need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file") %then%
-          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate particle names")
+          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate component names")
         
       )
       
@@ -3029,7 +3365,51 @@ server <- function(input, output, session) {
     
   })
   
+  output$plot.dt.ab <- renderPlotly({
+      
+      dt <- plot.dt.ab.data()$dt.full
+      
+      lbl <- sort(unique(dt[, wavelength]))
+      
+      g <- ggplot(data = dt) +
+        geom_point(aes(x = wavelength, y = absorbance, group = data, color = data), size = .5) +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+        facet_grid(. ~ solution) +
+        labs(x = "Wavelength, nm", y = "Absorbance")
+      
+      g <- ggplotly(g)
+      g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
+      g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
+      
+      # g$x$data[[1]]$hoverinfo <- "none"
+      
+      g
+      
+    })
   
+  output$plot.dt.ab.cut <- renderPlotly({
+    
+    dt <- plot.dt.ab.data()$dt.cut
+    
+    lbl <- sort(unique(dt[, wavelength]))
+    
+    g <- ggplot(data = dt) +
+      geom_point(aes(x = wavelength, y = absorbance, group = data, color = data), size = .5) +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      facet_grid(. ~ solution) +
+      labs(x = "Wavelength, nm", y = "Absorbance")
+    
+    g <- ggplotly(g)
+    g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
+    g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
+    
+    # g$x$data[[1]]$hoverinfo <- "none"
+    
+    g
+    
+  })
+
+    
   
   # extinction coefficients -------------------------------------------------
   
@@ -3081,7 +3461,7 @@ server <- function(input, output, session) {
         pt.name <- readLines(con, n = 1)
         close(con)
         
-        # define where to get particle name and whether to skip first row of the file
+        # define where to get component name and whether to skip first row of the file
         
         skp <- 1
         
@@ -3130,7 +3510,7 @@ server <- function(input, output, session) {
         if (is.null(pt.name) || is.na(pt.name))
           pt.name <- ""
 
-        # define where to get particle name and whether to skip first row of the file
+        # define where to get component name and whether to skip first row of the file
         
         strt <- 2
         
@@ -3538,6 +3918,49 @@ server <- function(input, output, session) {
     
   })
   
+  plot.dt.emf.data <- eventReactive(input$emf.conc.exec.btn, {
+    
+    # get data
+    
+    dt.calc <- copy(emf.eval.data()$dt.emf.calc)
+    
+    dt.obs <- dt.emf.data()[data %like% "^observ"]
+    dt.obs[, data := "Observed"]
+    
+    dt.obs[, particle := NULL]
+    dt.calc[, particle := NULL]
+    
+    # unify column names
+    
+    cln <- colnames(dt.calc)
+    setnames(dt.obs, c("data", cln))
+    
+    dt.calc[, data := "Calculated"]
+    
+    # melt
+    
+    dt.calc <- melt(dt.calc, id.vars = c("data"), variable.name = "solution", value.name = "EMF")
+    dt.obs <- melt(dt.obs, id.vars = c("data"), variable.name = "solution", value.name = "EMF")
+    
+    # convert observed EMF to numerics if not
+    
+    dt.obs[, EMF := as.character(EMF)]
+    dt.obs[, EMF := str_replace_all(EMF, " ", "")]
+    dt.obs[, EMF := str_replace_all(EMF, "\\,", "\\.")]
+    dt.obs[, EMF := as.numeric(EMF)]
+    
+    # bind
+    
+    dt <- rbind(dt.obs, dt.calc, use.names = TRUE, fill = TRUE)
+    
+    # return
+    
+    dt
+    
+  })
+  
+  
+  
   emf.dt.params.data <- reactive({
     
     if (!is.null(input$emf.dt.params)) {
@@ -3713,7 +4136,7 @@ server <- function(input, output, session) {
       
       validate(
         
-        need(length(particles %in% cnst.tune.data()) > 0, "Input correct particle names for constants evaluation")
+        need(length(particles %in% cnst.tune.data()) > 0, "Input correct component names for constants evaluation")
         
       )
       
@@ -3786,7 +4209,7 @@ server <- function(input, output, session) {
     cnst.dev <- emf.eval.data()$cnst.dev
     cnst.dev <- as.data.table(cnst.dev)
     
-    setnames(cnst.dev, c("Particle", "Constant", "St.Deviation", "Validity"))
+    setnames(cnst.dev, c("Component", "Constant", "St.Deviation", "Validity"))
     
   })
   
@@ -3799,7 +4222,7 @@ server <- function(input, output, session) {
   emf.err.diff.data <- eventReactive(input$emf.conc.exec.btn, {
     
     err.diff <- emf.eval.data()$err.diff
-    err.diff <- data.table(Particle = emf.cnst.tune.data(), Fmin.Last = err.diff)
+    err.diff <- data.table(Component = emf.cnst.tune.data(), Fmin.Last = err.diff)
     
     err.diff
     
@@ -3859,7 +4282,7 @@ server <- function(input, output, session) {
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
           need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file") %then%
-          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate particle names")
+          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate component names")
         
       )
       
@@ -3880,7 +4303,7 @@ server <- function(input, output, session) {
         
         need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
           need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file") %then%
-          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate particle names")
+          need(nrow(dt.coef) + ncol(dt.coef) == length(unique(c(colnames(dt.coef), dt.coef$name))), "Duplicate component names")
         
       )
       
@@ -4501,6 +4924,26 @@ server <- function(input, output, session) {
     
   })
   
+  output$plot.dt.emf <- renderPlotly({
+    
+    dt <- plot.dt.emf.data()
+
+    g <- ggplot(data = dt) +
+      geom_point(aes(x = solution, y = EMF, group = data, color = data), size = 1) +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      labs(x = "Solution", y = "EMF")
+    
+    g <- ggplotly(g)
+    g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
+    g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
+    
+    # g$x$data[[1]]$hoverinfo <- "none"
+    
+    g
+    
+  })
+  
+  
   
   
 
@@ -4815,7 +5258,7 @@ server <- function(input, output, session) {
         , dt.res = "equilibrium_concentrations.csv"
         , dt.frac = paste0(bs.name.data(), "_fractions.csv")
         , dt.err = "percent_error.csv"
-        , bs.name = "particle_names.csv"
+        , bs.name = "component_names.csv"
 
 
       )
@@ -4847,7 +5290,7 @@ server <- function(input, output, session) {
               
             }
             
-            if ((data.files[i] %like% "particle_names(\\.csv|\\.txt)$")) {
+            if ((data.files[i] %like% "(particle|component)_names(\\.csv|\\.txt)$")) {
               
               write.table(dt, data.files[i], sep = ";", dec = ",", row.names = FALSE, col.names = FALSE)
               
@@ -4876,7 +5319,7 @@ server <- function(input, output, session) {
               
             }
             
-            if ((data.files[i] %like% "particle_names(\\.csv|\\.txt)$")) {
+            if ((data.files[i] %like% "(particle|component)_names(\\.csv|\\.txt)$")) {
               
               write.table(dt, data.files[i], sep = ",", dec = ".", row.names = FALSE, col.names = FALSE)
               
@@ -4934,7 +5377,7 @@ server <- function(input, output, session) {
         , dt.res = "equilibrium_concentrations"
         , dt.frac = paste0(bs.name.data(), "_fractions")
         , dt.err = "percent_error"
-        , bs.name = "particle_names"
+        , bs.name = "component_names"
         
       )
       

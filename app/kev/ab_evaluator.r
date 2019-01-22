@@ -301,11 +301,11 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
     # loop algorithms(s)
     
     for (j in 1:(hardstop)) {
-      
+      # browser()
       cnst.back <- cnst.m[cnst.iter]
       step.success <- grid.opt[closed >= length(cnst.tune.wrk), max(step.id)]
       step.last <- grid.opt[, max(step.id)]
-      err.base <- grid.opt[step.success, err]
+      err.base <- min(grid.opt[step.success, err], grid.opt[nrow(grid.opt), err], na.rm = TRUE)
       
       # add current row
       
