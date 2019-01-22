@@ -1316,14 +1316,12 @@ server <- function(input, output, session) {
     g <- ggplot(data = dt) +
       geom_point(aes(x = pC, y = value, group = Component, color = Component), size = .5) +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-      labs(x = str_replace_all(cln, "\\(\\)", ""), y = "%")
+      labs(x = str_replace_all(cln, "[\\(\\)]", ""), y = "%")
     
     g <- ggplotly(g)
     g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
     g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
-    
-    # g$x$data[[1]]$hoverinfo <- "none"
-    
+
     g
     
   })
