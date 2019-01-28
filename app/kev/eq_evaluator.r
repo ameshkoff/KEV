@@ -143,8 +143,19 @@ newton.wrapper <- function(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, thr.t
     # N tries to converge
     for (j in 1:tr.nm) {
       
-      if (j > 1)
-        dt.conc.out.init[-part.eq] <- copy(dt.conc.in[-part.eq]) * runif(1, 1e-9, .999)
+      if (j > 1) {
+        
+        if (length(part.eq) == 0) {
+          
+          dt.conc.out.init <- copy(dt.conc.in) * runif(1, 1e-9, .999)
+          
+        } else {
+          
+          dt.conc.out.init[-part.eq] <- copy(dt.conc.in[-part.eq]) * runif(1, 1e-9, .999)
+          
+        }
+        
+      }
       
       out <- newton.evaluator(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out.init, part.eq, thr.type, threshold, max.it)
       
