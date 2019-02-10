@@ -4270,11 +4270,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (emf.sep() == ";") {
-        dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (emf.sep() == ",") {
-        dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (emf.sep() == "tab") {
-        dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       }
       
       setDT(dt.coef)
@@ -4363,11 +4363,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (emf.sep() == ";") {
-        dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+        dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, check.names = FALSE), silent = TRUE)
       } else if (emf.sep() == ",") {
-        dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+        dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, check.names = FALSE), silent = TRUE)
       } else if (emf.sep() == "tab") {
-        dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+        dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, check.names = FALSE), silent = TRUE)
       }
       
       setDT(dt.conc)
