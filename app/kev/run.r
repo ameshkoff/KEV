@@ -86,6 +86,22 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl
                      , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
                      , save.res = FALSE, wl.tune = c(200, 300))
 
+ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl.4/full.spectra"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     # , cnst.tune = "SB"
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
+                     , save.res = FALSE
+                     # , wl.tune = c(306, 387)
+                     )
+
+ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl.7"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     # , cnst.tune = "ZnL"
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
+                     , save.res = FALSE, wl.tune = c(299, 329, 414))
+
 #
 
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.1"
