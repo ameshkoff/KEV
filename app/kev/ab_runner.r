@@ -30,7 +30,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
                                  , subdir = ""
                                  , eq.thr.type = c("rel", "abs")
                                  , eq.threshold = 1e-08
-                                 , cnst.tune = c("HL", "H2L")
+                                 , cnst.tune = NULL
                                  , wl.tune = NULL
                                  , algorithm = "direct search"
                                  , method = "basic wls"
@@ -88,6 +88,12 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   
   dt.ab <- dt.ttl[["dt.ab"]]
   dt.mol <- dt.ttl[["dt.mol"]]
+  
+  if (is.null(cnst.tune))
+    cnst.tune <- dt.ttl[["cnst.tune"]]
+  
+  if (is.null(wl.tune))
+    wl.tune <- dt.ttl[["wl.tune"]]
   
   
   # preproc data --------------- #
