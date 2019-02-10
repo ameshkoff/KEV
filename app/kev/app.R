@@ -2196,9 +2196,9 @@ server <- function(input, output, session) {
     
     # bulk input
     
-    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"]) > 0){
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants*_names*|targets*)(\\.csv|\\.txt)*"]) > 0){
 
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants*_names*|targets*)(\\.csv|\\.txt)*"][1]
       in.file <- as.data.frame(in.file)
       
     }
@@ -2434,7 +2434,7 @@ server <- function(input, output, session) {
       dt.mol <- dt.mol.data()
       
       if (ncol(dt.mol) <= 1)
-        dt.mol <- "no.data"
+        dt.mol <- NA #"no.data"
       
       incProgress(.3)
       
@@ -2631,11 +2631,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (ab.sep() == ";") {
-        dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == ",") {
-        dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == "tab") {
-        dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       }
 
       setDT(dt.coef)
@@ -2728,11 +2728,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (ab.sep() == ";") {
-        dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+        dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == ",") {
-        dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+        dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == "tab") {
-        dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+        dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, check.names = FALSE), silent = TRUE)
       }
       
       setDT(dt.conc)
@@ -2902,11 +2902,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (ab.sep() == ";") {
-        cnst <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        cnst <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == ",") {
-        cnst <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        cnst <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (ab.sep() == "tab") {
-        cnst <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        cnst <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       }
       
       setDT(cnst)
@@ -3091,10 +3091,14 @@ server <- function(input, output, session) {
         dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       }
       
-      setDT(dt.mol)
-      
-      cln <- colnames(dt.mol)
-      setnames(dt.mol, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
+      if (is.data.frame(dt.mol)) {
+        
+        setDT(dt.mol)
+        
+        cln <- colnames(dt.mol)
+        setnames(dt.mol, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
+        
+      }
       
     } else if (!is.null(in.file.xlsx) & !input.source$dt.mol.memory) {
       
@@ -4266,11 +4270,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (emf.sep() == ";") {
-        dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (emf.sep() == ",") {
-        dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       } else if (emf.sep() == "tab") {
-        dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       }
       
       setDT(dt.coef)
@@ -4359,11 +4363,11 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (emf.sep() == ";") {
-        dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+        dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, check.names = FALSE), silent = TRUE)
       } else if (emf.sep() == ",") {
-        dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+        dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, check.names = FALSE), silent = TRUE)
       } else if (emf.sep() == "tab") {
-        dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+        dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, check.names = FALSE), silent = TRUE)
       }
       
       setDT(dt.conc)
