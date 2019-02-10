@@ -69,8 +69,12 @@ ab.scripts.load <- function(sep = ";", subdir = "") {
   
   for (tb in tbl) {
     
-    cln <- colnames(tb)
-    setnames(tb, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), ""))
+    if (is.data.table(tb)) {
+      
+      cln <- colnames(tb)
+      setnames(tb, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), ""))
+      
+    }
     
   }
   
