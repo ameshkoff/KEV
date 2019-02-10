@@ -53,7 +53,7 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , cnst.tune = c("SB")
                      , algorithm = "direct search", ab.mode = "base", method = "basic wls"
-                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-2
+                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-7
                      , save.res = FALSE)
 
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.2"
@@ -64,6 +64,13 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl
                      , save.res = FALSE)
 
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.3"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , cnst.tune = c("HL", "H2L")
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
+                     , save.res = FALSE, wl.tune = c(200, 300))
+
+ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.3.no.ext"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , cnst.tune = c("HL", "H2L")
                      , algorithm = "direct search", ab.mode = "base", method = "basic wls"
@@ -100,7 +107,7 @@ sp.evaluation.runner(mode = "script", sep = "tab", subdir = "molar.extinction.co
 
 source("app/KEV/emf_runner.r", chdir = TRUE)
 
-emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.1"
+emf.evaluation.runner(mode = "script", sep = ";", subdir = "emf/dsp.1/csv.semicolon"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      # , cnst.tune = c("HL")
                      , algorithm = "direct search", emf.mode = "base", method = "basic wls"
@@ -118,7 +125,7 @@ emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.2"
 
 
 
-emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.1"
+emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.1/comma"
                       , eq.thr.type = "rel", eq.threshold = 1e-08
                       , cnst.tune = c("HL")
                       , algorithm = "direct search", emf.mode = "base", method = "basic wls"
@@ -132,6 +139,11 @@ emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.2"
                       , search.density = 1, lrate.init = .5, emf.threshold = 5e-4
                       , save.res = FALSE)
 
+emf.evaluation.runner(mode = "script", sep = ";", subdir = "emf/dsp.3"
+                      , eq.thr.type = "rel", eq.threshold = 1e-08
+                      , algorithm = "direct search", emf.mode = "base", method = "basic wls"
+                      , search.density = 1, lrate.init = .5, emf.threshold = 5e-4
+                      , save.res = FALSE)
 
 
 

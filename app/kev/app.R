@@ -2434,7 +2434,7 @@ server <- function(input, output, session) {
       dt.mol <- dt.mol.data()
       
       if (ncol(dt.mol) <= 1)
-        dt.mol <- "no.data"
+        dt.mol <- NA #"no.data"
       
       incProgress(.3)
       
@@ -3091,10 +3091,14 @@ server <- function(input, output, session) {
         dt.mol <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       }
       
-      setDT(dt.mol)
-      
-      cln <- colnames(dt.mol)
-      setnames(dt.mol, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
+      if (is.data.frame(dt.mol)) {
+        
+        setDT(dt.mol)
+        
+        cln <- colnames(dt.mol)
+        setnames(dt.mol, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
+        
+      }
       
     } else if (!is.null(in.file.xlsx) & !input.source$dt.mol.memory) {
       

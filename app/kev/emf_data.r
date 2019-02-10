@@ -72,6 +72,7 @@ emf.scripts.load <- function(sep = ";", subdir = "") {
   
   cln <- colnames(trg)
   setnames(trg, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), ""))
+  trg[1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), "")]
   
   # split trg into separate data sets
   # not in preproc to keep consistent wuth the GUI input

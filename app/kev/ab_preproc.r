@@ -16,47 +16,61 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
   cln <- colnames(dt.ab)
   if (length(cln[cln == "wave.length"]) > 0)
     setnames(dt.ab, "wave.length", "wavelength")
-  
-  cln <- colnames(dt.mol)
-  if (length(cln[cln == "wave.length"]) > 0)
-    setnames(dt.mol, "wave.length", "wavelength")
-  
-  # remove standard errors (if output of the previously calculations loaded)
-  
-  cln <- colnames(dt.mol)
-  if (length(cln[cln %like% "adj\\.r\\.squared"]) > 0)
-    dt.mol <- dt.mol[, !(cln[cln %like% "adj\\.r\\.squared"]), with = FALSE]
-  
-  # check consistence
 
-  ab.w <- dt.ab[data %like% "^obs", wavelength]
-  mol.w <- dt.mol[, wavelength]
-
-  if (length(mol.w) != length(mol.w %in% ab.w)) {
+  if (is.data.table(dt.mol)) {
     
-    stop("Absorbance data is inconsistent with molar extinction coefficients")
+    cln <- colnames(dt.mol)
+    if (length(cln[cln == "wave.length"]) > 0)
+      setnames(dt.mol, "wave.length", "wavelength")
+    
+    # remove standard errors (if output of the previously calculations loaded)
+    
+    cln <- colnames(dt.mol)
+    if (length(cln[cln %like% "adj\\.r\\.squared"]) > 0)
+      dt.mol <- dt.mol[, !(cln[cln %like% "adj\\.r\\.squared"]), with = FALSE]
+    
+    # check consistence
+    
+    ab.w <- dt.ab[data %like% "^obs", wavelength]
+    mol.w <- dt.mol[, wavelength]
+    
+    if (length(mol.w) != length(mol.w %in% ab.w)) {
+      
+      stop("Absorbance data is inconsistent with molar extinction coefficients")
+      
+    }
+    
+    # wavelengths consistence again
+    
+    if (is.character(dt.ab[, wavelength])){
+      
+      dt.ab[, wavelength := str_replace(wavelength, "\\,", ".")]
+      dt.ab[, wavelength := str_replace(wavelength, " ", "")]
+      
+    }
+    
+    if (is.character(dt.mol[, wavelength])){
+      
+      dt.mol[, wavelength := str_replace(wavelength, "\\,", ".")]
+      dt.mol[, wavelength := str_replace(wavelength, " ", "")]
+      
+    }
+    
+    # remove uncalculatable absorbance
+    
+    dt.ab <- dt.ab[wavelength %in% mol.w]
     
   }
   
-  # wavelenghts consistence again
+  # wavelengths consistence again : duplicate : what for?
   
   if (is.character(dt.ab[, wavelength])){
     
     dt.ab[, wavelength := str_replace(wavelength, "\\,", ".")]
     dt.ab[, wavelength := str_replace(wavelength, " ", "")]
-
-  }
-
-  if (is.character(dt.mol[, wavelength])){
-    
-    dt.mol[, wavelength := str_replace(wavelength, "\\,", ".")]
-    dt.mol[, wavelength := str_replace(wavelength, " ", "")]
     
   }
   
-  # remove uncalculatable absorbance
-  
-  dt.ab <- dt.ab[wavelength %in% mol.w]
   ab.w <- dt.ab[data %like% "^obs", wavelength]
   
   # transpose absorbance data
