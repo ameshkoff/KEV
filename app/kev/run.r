@@ -10,16 +10,25 @@
 
 source("app/KEV/eq_runner.r", chdir = TRUE)
 
-eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.2p", bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = TRUE)
-eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.3p", bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = TRUE)
-eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.5p", bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = TRUE)
-eq.evaluation.runner(mode = "script", sep = "tab", subdir = "concentrations/ds.5p.tab", bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = TRUE)
+eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.2p"
+                     , bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = TRUE)
+eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.3p"
+                     , bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = TRUE)
+eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.5p"
+                     , bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = TRUE)
+eq.evaluation.runner(mode = "script", sep = "tab", subdir = "concentrations/ds.5p.tab"
+                     , bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = TRUE)
 
-eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.1eq", bs.name = "L", thr.type = c("rel"), threshold = 1e-08, save.res = FALSE)
-eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.3p", bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
-eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.5p", bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
-eq.evaluation.runner(mode = "script", sep = "tab", subdir = "concentrations/ds.5p.tab", bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
-eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.2eq", bs.name = "L", thr.type = c("rel"), threshold = 1e-08, save.res = FALSE)
+eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.1eq"
+                     , bs.name = "L", thr.type = c("rel"), threshold = 1e-08, save.res = FALSE)
+eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.3p"
+                     , bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
+eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.5p"
+                     , bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
+eq.evaluation.runner(mode = "script", sep = "tab", subdir = "concentrations/ds.5p.tab"
+                     , bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
+eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.2eq"
+                     , bs.name = "L", thr.type = c("rel"), threshold = 1e-08, save.res = FALSE)
 
 
 #
@@ -89,7 +98,7 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl
 
 #
 
-ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl.4.full"
+ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl.4/full.spectra"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , cnst.tune = c("SB")
                      , algorithm = "direct search", ab.mode = "base", method = "basic wls"

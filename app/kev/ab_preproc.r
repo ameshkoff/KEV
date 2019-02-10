@@ -41,6 +41,7 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
     }
     
     # wavelengths consistence again
+    # after first check : to preserve wavelength vector to keep consistence for second use of the dataset
     
     if (is.character(dt.ab[, wavelength])){
       
@@ -60,16 +61,19 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
     
     dt.ab <- dt.ab[wavelength %in% mol.w]
     
+  } else {
+    
+    # after first check : to preserve wavelength vector to keep consistence for second use of the dataset
+    
+    if (is.character(dt.ab[, wavelength])){
+      
+      dt.ab[, wavelength := str_replace(wavelength, "\\,", ".")]
+      dt.ab[, wavelength := str_replace(wavelength, " ", "")]
+      
+    }
+    
   }
   
-  # wavelengths consistence again : duplicate : what for?
-  
-  if (is.character(dt.ab[, wavelength])){
-    
-    dt.ab[, wavelength := str_replace(wavelength, "\\,", ".")]
-    dt.ab[, wavelength := str_replace(wavelength, " ", "")]
-    
-  }
   
   ab.w <- dt.ab[data %like% "^obs", wavelength]
   
