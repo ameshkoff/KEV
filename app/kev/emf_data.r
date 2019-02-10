@@ -37,7 +37,7 @@ emf.scripts.load <- function(sep = ";", subdir = "") {
   fls <- list.files(subdir)
   
   dt.emf.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*emf(\\.csv|\\.txt)*"][1])
-  trg.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*targets(\\.csv|\\.txt)*"][1])
+  trg.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*(targets*|constants*\\_names*)(\\.csv|\\.txt)*"][1])
   
   if (sep == ";") {
     

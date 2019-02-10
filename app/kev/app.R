@@ -2196,9 +2196,9 @@ server <- function(input, output, session) {
     
     # bulk input
     
-    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"]) > 0){
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants*_names*|targets*)(\\.csv|\\.txt)*"]) > 0){
 
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants*_names*|targets*)(\\.csv|\\.txt)*"][1]
       in.file <- as.data.frame(in.file)
       
     }
