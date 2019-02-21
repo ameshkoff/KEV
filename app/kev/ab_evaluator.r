@@ -24,6 +24,22 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
     x.known.v <- dt.res.m[, cln.known, drop = FALSE] %*% x.known
     y <- as.vector(y.raw - x.known.v)
     
+    if (length(cln.known) == ncol(dt.res.m)) {
+      
+      x.known.v <- as.vector(x.known.v)
+      
+      if (mode[1] == "postproc") {
+        
+        return(list(mol.coef = x.known, y.calc = x.known.v, mol.coef.dev = NULL))
+        
+      } else {
+        
+        return(list(mol.coef = x.known, y.calc = x.known.v))
+        
+      }
+
+    }
+    
   } else {
     
     cln.known <- ""
@@ -114,7 +130,7 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
     list(mol.coef = mol.coef, y.calc = y.calc, mol.coef.dev = mol.coef.dev)
     
   } else {
-   
+    
     list(mol.coef = mol.coef, y.calc = y.calc) 
     
   }
