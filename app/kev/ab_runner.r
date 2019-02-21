@@ -226,7 +226,19 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   cln <- colnames(mol.coef)
   cln <- cln[!(cln %in% colnames(dt.mol))]
   
-  setnames(mol.coef.dev, cln)
+  # if all mol coefs are predefined and so no real deviations
+  
+  if (length(cln) > 0) {
+    
+    setnames(mol.coef.dev, cln)
+    
+  } else {
+    
+    tbl <- tbl[!(tbl == "mol.coef.dev")]
+    
+  }
+  
+  # add wavelengths
   
   for (i in tbl) {
     
@@ -289,7 +301,13 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
     # molar coefficients to data table
     
     mol.coef.dev.full <- copy(mol.coef)
-    cln <- colnames(mol.coef.dev)
+    
+    cln <- ""
+    if (is.data.table(mol.coef.dev)) {
+      
+      cln <- colnames(mol.coef.dev)
+      
+    }
     
     for (i in colnames(mol.coef.dev.full)) {
       
