@@ -56,6 +56,12 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl
                      , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
                      , save.res = TRUE)
 
+ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl.12/csv.semicolon"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
+                     , save.res = TRUE)
+
 #
 
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.1"
