@@ -25,37 +25,22 @@ library(stringr)
 
 # runner -------------------------------------------- #
 
-# nm.evaluation.runner <- function(mode = c("api", "script", "app")
-#                                  , sep = ";"
-#                                  , subdir = ""
-#                                  , eq.thr.type = c("rel", "abs")
-#                                  , eq.threshold = 1e-08
-#                                  , cnst.tune = NULL
-#                                  , wl.tune = NULL
-#                                  , algorithm = "direct search"
-#                                  , method = "basic wls"
-#                                  , nm.mode = c("base", "grid", "debug")
-#                                  , search.density = 1
-#                                  , lrate.init = .5
-#                                  , nm.threshold = 5e-7
-#                                  , save.res = TRUE
-#                                  , dt.list = NULL) {
-mode = "script"
-sep = ","
-subdir = "nmr/dsn.1"
-eq.thr.type = c("rel", "abs")
-eq.threshold = 1e-08
-cnst.tune = NULL
-wl.tune = NULL
-algorithm = "direct search"
-method = "basic wls"
-nm.mode = c("base", "grid", "debug")
-search.density = 1
-lrate.init = .5
-nm.threshold = 5e-7
-save.res = TRUE
-dt.list = NULL
-  
+nm.evaluation.runner <- function(mode = c("api", "script", "app")
+                                 , sep = ";"
+                                 , subdir = ""
+                                 , eq.thr.type = c("rel", "abs")
+                                 , eq.threshold = 1e-08
+                                 , cnst.tune = NULL
+                                 , wl.tune = NULL
+                                 , algorithm = "direct search"
+                                 , method = "basic wls"
+                                 , nm.mode = c("base", "grid", "debug")
+                                 , search.density = 1
+                                 , lrate.init = .5
+                                 , nm.threshold = 5e-7
+                                 , save.res = TRUE
+                                 , dt.list = NULL) {
+
   #
   
   nm.threshold <- log(10 ^ nm.threshold)
@@ -74,13 +59,13 @@ dt.list = NULL
   source(paste0(dir.start, "eq_preproc.r"), chdir = TRUE)
   source(paste0(dir.start, "nm_preproc.r"), chdir = TRUE)
 
-  # source(paste0(dir.start, "eq_evaluator.r"), chdir = TRUE)
-  # source(paste0(dir.start, "nm_evaluator.r"), chdir = TRUE)
-  # 
-  # source(paste0(dir.start, "eq_postproc.r"), chdir = TRUE)
-  # source(paste0(dir.start, "nm_postproc.r"), chdir = TRUE)
-  # 
-  # source(paste0(dir.start, "nm_save.r"), chdir = TRUE)
+  source(paste0(dir.start, "eq_evaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "nm_evaluator.r"), chdir = TRUE)
+
+  source(paste0(dir.start, "eq_postproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "nm_postproc.r"), chdir = TRUE)
+
+  source(paste0(dir.start, "nm_save.r"), chdir = TRUE)
   
   
   # load data ---------------- #
@@ -110,8 +95,7 @@ dt.list = NULL
   
   # preproc data --------------- #
   
-  dt.ttl <- c(eq.preproc(dt.coef, cnst, dt.conc, part.eq)
-              , nm.preproc(dt.nm, dt.ind))
+  dt.ttl <- eq.preproc(dt.coef, cnst, dt.conc, part.eq)
   
   dt.coef <- dt.ttl[["dt.coef"]]
   dt.conc <- dt.ttl[["dt.conc"]]
@@ -122,13 +106,13 @@ dt.list = NULL
   reac.nm <- dt.ttl[["reac.nm"]]
   part.nm <- dt.ttl[["part.nm"]]
   
+  dt.ttl <- nm.preproc(dt.nm, dt.ind, dt.coef, dt.conc.m, part.eq)
+  
   dt.nm <- dt.ttl[["dt.nm"]]
-  dt.nm.err <- dt.ttl[["dt.nm.err"]]
   dt.ind <- dt.ttl[["dt.ind"]]
-  dt.nm.m <- dt.ttl[["dt.nm.m"]]
-  dt.nm.err.m <- dt.ttl[["dt.nm.err.m"]]
-  dt.ind.m <- dt.ttl[["dt.ind.m"]]
   cr.name <- dt.ttl[["cr.name"]]
+  coef.b <- dt.ttl[["coef.b"]]
+  conc.b <- dt.ttl[["conc.b"]]
   
   cnst.tune.nm <- which(dt.coef[, name] %in% cnst.tune)
   
@@ -136,9 +120,10 @@ dt.list = NULL
   # run evaluator --------------- #
   
   exec.time <- system.time(
-    dt.ttl <- constant.optimizer(dt.coef, cnst.m, cnst.tune
-                                 , dt.nm.m, dt.nm.err.m, dt.ind.m
+    dt.ttl <- nm.constant.optimizer(dt.coef, cnst.m, cnst.tune
+                                 , dt.nm, dt.ind
                                  , dt.coef.m, dt.conc.m, part.eq, reac.nm
+                                 , coef.b, conc.b
                                  , hardstop = 1000
                                  , lrate.init
                                  , search.density
@@ -151,7 +136,7 @@ dt.list = NULL
   
   cnst.m <- dt.ttl[["cnst.m"]]
   cnst.m.10 <- log(exp(cnst.m), 10)
-  mol.coef <- dt.ttl[["mol.coef"]]
+  ind.shift <- dt.ttl[["ind.shift"]]
   dt.nm.calc <- dt.ttl[["dt.nm.calc"]]
   dt.res.m <- dt.ttl[["dt.res.m"]]
   nm.err <- tail(dt.ttl[["grid.opt"]][!is.na(err), err], 1)
@@ -160,9 +145,10 @@ dt.list = NULL
   
   # postprocessing ---------------- #
   
-  cnst.valid <- cnst.validation(dt.coef, cnst.m, cnst.tune
-                                , dt.nm.m, dt.nm.err.m, dt.ind.m
+  cnst.valid <- nm.cnst.validation(dt.coef, cnst.m, cnst.tune
+                                , dt.nm, dt.ind
                                 , dt.coef.m, dt.conc.m, part.eq, reac.nm
+                                , coef.b, conc.b
                                 , lrate.fin
                                 , nm.threshold
                                 , eq.threshold
@@ -181,7 +167,8 @@ dt.list = NULL
                   , cnst.m
                   , cnst.tune.nm
                   , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
-                  , dt.nm.m, dt.nm.err.m, dt.ind.m
+                  , dt.nm, dt.ind
+                  , coef.b, conc.b
                   , eq.thr.type, eq.threshold
                   , method, nm.threshold)
   
@@ -189,32 +176,46 @@ dt.list = NULL
   cor.m <- cov.m$cor.m
   cov.m <- cov.m$cov.m
   
-  cnst.dev <- constant.deviations(cnst.m, cov.m, cnst.tune.nm, cnst.valid)
+  cnst.dev <- nm.constant.deviations(cnst.m, cov.m, cnst.tune.nm, cnst.valid)
   
-  mol.coef.dev <- molar.coef.deviations(cnst.m
+  ind.shift.dev <- nm.ind.shift.deviations(cnst.m
                                         , cnst.tune.nm
                                         , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
-                                        , dt.nm.full.m, dt.nm.err.full.m, dt.ind.full.m
+                                        , dt.nm, dt.ind
+                                        , coef.b, conc.b
                                         , eq.thr.type, eq.threshold
                                         , method
                                         , nm.threshold)
   
-  mol.coef <- mol.coef.dev$mol.coef
-  dt.nm.calc <- mol.coef.dev$dt.nm.calc
-  mol.coef.dev <- mol.coef.dev$mol.coef.dev
+  ind.shift <- ind.shift.dev$ind.shift
+  dt.nm.calc <- ind.shift.dev$dt.nm.calc
+  ind.shift.dev <- ind.shift.dev$ind.shift.dev
   
-  nm.res.nms <- absorbance.residuals(dt.nm.full.m, dt.nm.calc)
-  nm.res.rel <- nm.res.nms$nm.res.rel
-  nm.res.nms <- nm.res.nms$nm.res.nms
+  nm.res.abs <- nm.shift.residuals(dt.nm[, observation], dt.nm.calc[, calculated])
+  nm.res.rel <- nm.res.abs$nm.res.rel
+  nm.res.abs <- nm.res.abs$nm.res.abs
   
-  # prepare data to return (transpose wave data)
+  # prepare data to return (transpose shifts data)
   
   tbl <- objects()
-  tbl <- tbl[tbl %in% c("dt.nm.calc", "nm.res.nms", "nm.res.rel")]
+  tbl <- tbl[tbl %in% c("nm.res.abs", "nm.res.rel")]
+
+  for (i in tbl) {
+    
+    dt <- dt.nm.calc[, .(signal, solution, calculated = get(i))]
+    assign(i, dt)
+    
+  }
+
+  tbl <- objects()
+  tbl <- tbl[tbl %in% c("dt.nm.calc", "nm.res.abs", "nm.res.rel")]
   
   for (i in tbl) {
     
-    dt <- data.table("wavelength" = wavelength, t(get(i)))
+    dt <- get(i)
+    
+    dt[, particle := cr.name]
+    dt <- dcast.data.table(dt, particle + signal ~ solution, value.var = "calculated")
     
     cln <- colnames(dt)
     cln <- cln[cln %like% "^V[0-9]"]
@@ -226,33 +227,18 @@ dt.list = NULL
   }
   
   tbl <- objects()
-  tbl <- tbl[tbl %in% c("mol.coef", "mol.coef.dev")]
-  
-  cln <- colnames(mol.coef)
-  cln <- cln[!(cln %in% colnames(dt.ind))]
-  
-  setnames(mol.coef.dev, cln)
-  
-  for (i in tbl) {
-    
-    dt <- data.table("wavelength" = wavelength, get(i))
-    assign(i, dt)
-    
-  }
+  tbl <- tbl[tbl %in% c("ind.shift", "ind.shift.dev")]
   
   
   # save
   
   if (mode == "script" & save.res) {
     
-    if (is.null(wl.tune))
-      wl.tune <- wavelength
-    
-    target <- list(constant = cnst.tune, wavelength = wl.tune)
+    target <- list(constant = cnst.tune)
     target <- setDT(lapply(target, "length<-", max(lengths(target))))[]
     target <- as.data.table(t(target), keep.rownames = TRUE)
     
-    nm.save(subdir, sep, dt.res, dt.nm.calc, nm.res.nms, nm.res.rel, nm.err, cnst.dev, cor.m, mol.coef, mol.coef.dev, err.diff, target)
+    nm.save(subdir, sep, dt.res, dt.nm.calc, nm.res.abs, nm.res.rel, nm.err, cnst.dev, cor.m, ind.shift, ind.shift.dev, err.diff, target)
     
   }
   
@@ -264,13 +250,13 @@ dt.list = NULL
     list("grid.opt" = grid.opt
          ,"dt.eq.conc" = dt.res
          , "dt.nm.calc" = dt.nm.calc
-         , "nm.res.nms" = nm.res.nms
+         , "nm.res.abs" = nm.res.abs
          , "nm.res.rel" = nm.res.rel
          , "nm.err" = nm.err
          , "cnst.dev" = cnst.dev
          , "cor.m" = cor.m
-         , "mol.coef" = mol.coef
-         , "mol.coef.dev" = mol.coef.dev
+         , "ind.shift" = ind.shift
+         , "ind.shift.dev" = ind.shift.dev
          , "err.diff" = err.diff
          , "cnst.tune" = cnst.tune
          , "exec.time" = exec.time
@@ -278,10 +264,8 @@ dt.list = NULL
     
   } else {
     
-    # constants to data table
-    
-    dt.cnst.dev <- as.data.table(cnst.dev)
-    dt.cnst.dev <- cbind(name = dt.coef[, name], dt.cnst.dev)
+    # component name to constants
+    dt.cnst.dev <- cbind(name = dt.coef[, name], cnst.dev)
     
     # correlation matrix to data table
     
@@ -291,201 +275,28 @@ dt.list = NULL
     dt.cor.m <- as.data.frame(dt.cor.m)
     rownames(dt.cor.m) <- cnst.tune
     
-    # molar coefficients to data table
-    
-    mol.coef.dev.full <- copy(mol.coef)
-    cln <- colnames(mol.coef.dev)
-    
-    for (i in colnames(mol.coef.dev.full)) {
-      
-      if (i %in% cln) {
-        
-        mol.coef.dev.full[, eval(i) := mol.coef.dev[, eval(as.name(i))]]
-        
-      } else {
-        
-        mol.coef.dev.full[, eval(i) := 0]
-        
-      }
-      
-    }
-    
-    # remove extra data
-    
-    vld <- dt.nm.calc[!is.na(S1), which = TRUE]
-    
     # return
     
     list("dt.eq.conc" = dt.res
-         , "dt.nm.calc" = dt.nm.calc[vld]
-         , "nm.res.nms" = nm.res.nms[vld]
-         , "nm.res.rel" = nm.res.rel[vld]
+         , "dt.nm.calc" = dt.nm.calc
+         , "nm.res.abs" = nm.res.abs
+         , "nm.res.rel" = nm.res.rel
          , "nm.err" = nm.err
-         , "cnst.dev" = dt.cnst.dev # return data table with additional field for particle names
+         , "cnst.dev" = dt.cnst.dev
          , "cor.m" = dt.cor.m
-         , "mol.coef" = mol.coef[vld]
-         , "mol.coef.dev" = mol.coef.dev.full[vld]
+         , "ind.shift" = ind.shift
+         , "ind.shift.dev" = ind.shift.dev
          , "err.diff" = err.diff
          , "cnst.tune" = cnst.tune
          , "lrate.fin" = lrate.fin)
     
   }
   
-# }
+}
 
 
 
-# # grid research -------------------------------------------- #
-# 
-# nm.evaluation.grid <- function(mode = c("api", "script", "app")
-#                                , sep = ";"
-#                                , subdir = ""
-#                                , eq.thr.type = c("rel", "abs")
-#                                , eq.threshold = 1e-08
-#                                , cnst.tune = c("HL", "H2L")
-#                                , wl.tune = NULL
-#                                , method = "basic wls"
-#                                , search.density = 1
-#                                , lrate.init = .5
-#                                , nm.threshold = 5e-7
-#                                , dt.list = NULL) {
-#   
-#   #
-#   
-#   nm.threshold <- log(10 ^ nm.threshold)
-#   
-#   
-#   # source code ------------- #
-#   
-#   dir.start <- ""
-#   
-#   if (mode %in% c("script", "api"))
-#     dir.start <- "app/KEV/"
-#   
-#   source(paste0(dir.start, "eq_data.r"), chdir = TRUE)
-#   source(paste0(dir.start, "nm_data.r"), chdir = TRUE)
-#   
-#   source(paste0(dir.start, "eq_preproc.r"), chdir = TRUE)
-#   source(paste0(dir.start, "nm_preproc.r"), chdir = TRUE)
-#   
-#   source(paste0(dir.start, "eq_evaluator.r"), chdir = TRUE)
-#   source(paste0(dir.start, "nm_evaluator.r"), chdir = TRUE)
-#   
-#   source(paste0(dir.start, "eq_postproc.r"), chdir = TRUE)
-#   source(paste0(dir.start, "nm_postproc.r"), chdir = TRUE)
-#   
-#   source(paste0(dir.start, "nm_save.r"), chdir = TRUE)
-#   
-#   
-#   # load data ---------------- #
-#   
-#   if (mode == "script") {
-#     
-#     dt.ttl <- c(eq.scripts.load(sep, subdir)
-#                 , nm.scripts.load(sep, subdir))
-#     
-#   } else if (mode %in% c("app", "api")) {
-#     
-#     dt.ttl <- dt.list
-#     
-#   }
-#   
-#   dt.coef <- dt.ttl[["dt.coef"]]
-#   dt.conc <- dt.ttl[["dt.conc"]]
-#   cnst <- dt.ttl[["cnst"]]
-#   part.eq <- dt.ttl[["part.eq"]]
-#   
-#   dt.nm <- dt.ttl[["dt.nm"]]
-#   dt.ind <- dt.ttl[["dt.ind"]]
-#   
-#   
-#   # preproc data --------------- #
-#   
-#   dt.ttl <- c(eq.preproc(dt.coef, cnst, dt.conc, part.eq)
-#               , nm.preproc(dt.nm, dt.ind, wl.tune))
-#   
-#   dt.coef <- dt.ttl[["dt.coef"]]
-#   dt.conc <- dt.ttl[["dt.conc"]]
-#   cnst.m <- dt.ttl[["cnst.m"]]
-#   part.eq <- dt.ttl[["part.eq"]]
-#   dt.coef.m <- dt.ttl[["dt.coef.m"]]
-#   dt.conc.m <- dt.ttl[["dt.conc.m"]]
-#   reac.nm <- dt.ttl[["reac.nm"]]
-#   part.nm <- dt.ttl[["part.nm"]]
-#   
-#   dt.nm <- dt.ttl[["dt.nm"]]
-#   dt.nm.full <- dt.ttl[["dt.nm.full"]]
-#   dt.nm.err <- dt.ttl[["dt.nm.err"]]
-#   dt.nm.err.full <- dt.ttl[["dt.nm.err.full"]]
-#   dt.ind <- dt.ttl[["dt.ind"]]
-#   dt.ind.full <- dt.ttl[["dt.ind.full"]]
-#   dt.nm.m <- dt.ttl[["dt.nm.m"]]
-#   dt.nm.full.m <- dt.ttl[["dt.nm.full.m"]]
-#   dt.nm.err.m <- dt.ttl[["dt.nm.err.m"]]
-#   dt.nm.err.full.m <- dt.ttl[["dt.nm.err.full.m"]]
-#   dt.ind.m <- dt.ttl[["dt.ind.m"]]
-#   dt.ind.full.m <- dt.ttl[["dt.ind.full.m"]]
-#   partprod.nm <- dt.ttl[["partprod.nm"]]
-#   wavelength <- dt.ttl[["wavelength"]]
-#   
-#   cnst.tune.nm <- which(dt.coef[, name] %in% cnst.tune)
-#   
-#   
-#   # run evaluator --------------- #
-#   
-#   # create grid
-#   
-#   grid.iter <- lapply(cnst.m[cnst.tune.nm], function(x) { seq(x * .2, x * 2, lrate.init * x) })
-#   names(grid.iter) <- cnst.tune.nm
-#   
-#   grid.iter <- data.table(expand.grid(grid.iter))
-#   
-#   remove(grid.opt)
-#   
-#   # run loop
-#   
-#   for (i in 1:nrow(grid.iter)) {
-#     
-#     cnst.m[cnst.tune.nm] <- unlist(grid.iter[i])
-#     
-#     tmp <- constant.optimizer(dt.coef, cnst.m, cnst.tune
-#                               , dt.nm.m, dt.nm.err.m, dt.ind.m
-#                               , dt.coef.m, dt.conc.m, part.eq, reac.nm
-#                               , hardstop = 1
-#                               , lrate.init
-#                               , search.density
-#                               , nm.threshold
-#                               , eq.threshold
-#                               , eq.thr.type
-#                               , mode = "grid"
-#                               , method
-#                               , algorithm = "basic search")$grid.opt
-#     
-#     if (exists("grid.opt")) {
-#       
-#       grid.opt <- rbind(grid.opt, tmp)
-#       
-#     } else {
-#       
-#       grid.opt <- copy(tmp)
-#       
-#     }
-#     
-#   }
-#   
-#   # postproc
-#   
-#   cln <- colnames(grid.opt)
-#   cln <- cln[cln %like% "^[0-9]+$"]
-#   
-#   for (cl in cln) {
-#     
-#     grid.opt[, eval(cl) := log(exp(eval(as.name(cl))), 10)]
-#     
-#   }
-#   
-#   grid.opt
-#   
-# }
-# 
-# 
+
+
+  
+  

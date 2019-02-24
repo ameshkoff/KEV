@@ -10,37 +10,70 @@
 
 # evaluators ---------------------------------------------- #
 
-molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = c("lm", "basic wls"), mode = c("base", "posptroc")) {
+nm.shift.evaluator <- function(dt, dt.ind, dt.res.m, coef.b, conc.b
+                               , method = c("lm", "basic wls"), mode = c("base", "posptroc")) {
   
+  obs.shift <- dt[, observation]
+  wght <- dt[, wght]
+  signal.p <- dt[, signal][1]
   
-  # if some molar coefficients already known
+  # known forms
   
-  if (!is.null(x.known)) {
+  if (is.data.table(dt.ind)) {
     
-    cln.known <- names(x.known)
-    
-    # subtract already known from y
-    
-    x.known.v <- dt.res.m[, cln.known, drop = FALSE] %*% x.known
-    y <- as.vector(y.raw - x.known.v)
+    x.known <- dt.ind[signal == signal.p]
     
   } else {
     
-    cln.known <- ""
-    y <- as.vector(y.raw)
-    x.known.v <- rep(0, length(y))
+    x.known <- ""
+    names(x.known) <- ""
     
   }
   
+  # independent variables matrix
   
-  # prepare data set from updated y and still unknown molar ext. coeff-s
+  dt.frac <- t(diag(coef.b, nrow = length(coef.b)) %*% t(dt.res.m[, names(coef.b)] * (1 / conc.b)))
+  colnames(dt.frac) <- names(coef.b)
   
-  cln.unknown <- colnames(dt.res.m)
-  cln.unknown <- setdiff(cln.unknown, cln.known)
+  cln <- colnames(dt.frac)
+  cln <- cln[!(cln %in% colnames(x.known))]
   
-  cln.unknown <- colSums(dt.res.m[, cln.unknown, drop = FALSE])
-  cln.unknown <- cln.unknown[cln.unknown > 0]
-  cln.unknown <- names(cln.unknown)
+  dt.frac.u <- dt.frac[, cln, drop = FALSE]
+  
+  # if some molar coefficients already known
+  
+  if (is.data.table(x.known)) {
+    
+    # subtract already known from y
+    
+    cln <- colnames(dt.frac)
+    cln <- cln[(cln %in% colnames(x.known))]
+    
+    x.known.v <- rowSums(dt.frac[, cln, drop = FALSE] %*% unlist(x.known[, !"signal", with = FALSE]))
+    y <- as.vector(obs.shift - x.known.v)
+    
+    if (length(x.known) - 1 == length(coef.b)) {
+      
+      x.known.v <- as.vector(x.known.v)
+      
+      if (mode[1] == "postproc") {
+        
+        return(list(ind.shift = x.known, y.calc = x.known.v, ind.shift.dev = NULL))
+        
+      } else {
+        
+        return(list(ind.shift = x.known, y.calc = x.known.v))
+        
+      }
+      
+    }
+    
+  } else {
+    
+    y <- as.vector(obs.shift)
+    x.known.v <- rep(0, length(y))
+    
+  }
   
   # run linear model and get coefficients from it
   
@@ -48,21 +81,23 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
     
     # classic R (weighted) lm linear model
     
-    dt <- data.table(y = y, dt.res.m[, cln.unknown, drop = FALSE])
+    dt <- data.table(y = y, dt.frac.u)
     
-    frm <- paste("y ~ 0 +", paste(paste0("`", cln.unknown, "`"), collapse = "+"))
+    frm <- paste("y ~ 0 +", paste(paste0("`", colnames(dt.frac.u), "`"), collapse = "+"))
     frm <- as.formula(frm)
     
     md <- lm(frm, dt, weights = wght)
     
-    mol.coef.new <- md$coefficients
-    names(mol.coef.new) <- str_replace_all(names(mol.coef.new), "`", "")
+    ind.shift.new <- md$coefficients
+    # ind.shift.new <- ind.shift.new[!(ind.shift.new %like% "^\\(Intercept\\)$")]
+    
+    names(ind.shift.new) <- str_replace_all(names(ind.shift.new), "`", "")
     
     y.calc <- predict(md) + x.known.v
     
     if (mode[1] == "postproc") {
       
-      mol.coef.dev <- summary(md)$coef[, "Std. Error"]
+      ind.shift.dev <- summary(md)$coef[, "Std. Error"]
       
     }
     
@@ -70,21 +105,17 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
     
     # basic (weighted) least squares
     
-    # if (length(colnames(dt.res.m)[colnames(dt.res.m) %in% cln.unknown]) == 0)
-    #   browser()
+    ind.shift.new <- ginv((t(dt.frac.u) %*% diag(wght)) %*% dt.frac.u, tol = 0) %*% ((t(dt.frac.u) %*% diag(wght)) %*% y)
     
-    dt.m <- dt.res.m[, cln.unknown, drop = FALSE]
+    ind.shift.new <- as.vector(ind.shift.new)
+    names(ind.shift.new) <- colnames(dt.frac.u)
     
-    mol.coef.new <- ginv((t(dt.m) %*% diag(wght)) %*% dt.m, tol = 0) %*% ((t(dt.m) %*% diag(wght)) %*% y)
-    
-    mol.coef.new <- as.vector(mol.coef.new)
-    names(mol.coef.new) <- cln.unknown
-    
-    y.calc <- as.vector(dt.res.m[, cln.unknown, drop = FALSE] %*% mol.coef.new + x.known.v)
-    
+    y.calc <- as.vector(dt.frac.u %*% ind.shift.new + x.known.v)
+
     if (mode[1] == "postproc") {
       
-      mol.coef.dev <- (diag(sum((y.raw - y.calc) ^ 2)/(length(y) - length(cln.unknown)) * ginv((t(dt.m)) %*% diag(wght) %*% dt.m, tol = 0))) ^ .5
+      ind.shift.dev <- (diag(sum((obs.shift - y.calc) ^ 2)/(length(y) - length(ncol(dt.frac.u))) *
+                               ginv((t(dt.frac.u)) %*% diag(wght) %*% dt.frac.u, tol = 0))) ^ .5
       
     }
   }
@@ -92,30 +123,37 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
   
   # fill NAs (0 actually)
   
-  mol.coef.new[is.na(mol.coef.new)] <- 0
+  ind.shift.new[is.na(ind.shift.new)] <- 0
   
   # now the trick to place them all in the original order (too dirty maybe)
   
-  mol.coef <- rep(1, ncol(dt.res.m))
-  names(mol.coef) <- colnames(dt.res.m)
+  ind.shift <- coef.b
   
-  if (!is.null(x.known)) {
+  if (is.data.table(x.known)) {
     
-    for (j in names(x.known))
-      mol.coef[names(mol.coef) == j] <- x.known[names(x.known) == j]
+    for (j in colnames(dt.frac)[colnames(dt.frac) %in% colnames(x.known)])
+      ind.shift[names(ind.shift) == j] <- unlist(x.known[, eval(as.name(j))])
     
   }
   
-  for (j in names(mol.coef.new))
-    mol.coef[names(mol.coef) == j] <- mol.coef.new[names(mol.coef.new) == j]
+  for (j in names(ind.shift.new))
+    ind.shift[names(ind.shift) == j] <- ind.shift.new[names(ind.shift.new) == j]
   
+  # to list
+  
+  ind.shift <- as.list(ind.shift)
+  
+  # return
   if (mode[1] == "postproc") {
     
-    list(mol.coef = mol.coef, y.calc = y.calc, mol.coef.dev = mol.coef.dev)
+    names(ind.shift.dev) <- colnames(dt.frac.u)
+    ind.shift.dev <- as.list(ind.shift.dev)
+    
+    list(ind.shift = ind.shift, y.calc = y.calc, ind.shift.dev = ind.shift.dev)
     
   } else {
     
-    list(mol.coef = mol.coef, y.calc = y.calc) 
+    list(ind.shift = ind.shift, y.calc = y.calc) 
     
   }
   
@@ -123,10 +161,11 @@ molar.ext.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = 
 
 # for postprocessing only : lots of data passed as arguments, too slow for loop call
 
-molar.ext.wrapper <- function(cnst.m
+nm.shift.evaluator.wrapper <- function(cnst.m
                               , cnst.tune.nm
                               , dt.coef, dt.coef.m, dt.conc.m, part.eq, reac.nm
-                              , dt.nm.m, dt.nm.err.m, dt.ind.m
+                              , dt.nm, dt.ind
+                              , coef.b, conc.b
                               , eq.thr.type, eq.threshold
                               , method = c("lm", "basic wls")
                               , mode = "postproc") {
@@ -137,53 +176,40 @@ molar.ext.wrapper <- function(cnst.m
   dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, eq.thr.type[1], eq.threshold)
   colnames(dt.res.m) <- dt.coef[, name]
   
-  #  run molar extinction evaluator
+  # run individual chemical shift evaluator
   
-  mol.coef <- data.table()
-  dt.nm.calc <- data.table()
-  mol.coef.dev <- data.table()
+  splt <- split(dt.nm, dt.nm[, signal])
+  splt <- lapply(splt, nm.shift.evaluator, dt.ind, dt.res.m, coef.b, conc.b, method, mode = "postproc")
   
-  for (i in 1:ncol(dt.nm.m)) {
+  ind.shift <- lapply(splt, function(x) { x$ind.shift })
+  ind.shift <- rbindlist(ind.shift)
+  
+  ind.shift.dev <- lapply(splt, function(x) { x$ind.shift.dev })
+  ind.shift.dev <- rbindlist(ind.shift.dev)
+  
+  if (is.data.table(dt.ind)) {
     
-    y.raw <- dt.nm.m[, i, drop = FALSE]
+    ind.shift <- cbind(dt.ind[, .(signal)], ind.shift)
+    ind.shift.dev <- cbind(dt.ind[, .(signal)], ind.shift.dev)
     
-    # weights for linear model
+  } else {
     
-    wght <- sum((dt.nm.err.m[, i] ^ 2)) / ((dt.nm.err.m[, i] ^ 2) * length(dt.nm.err.m[, i]))
-    
-    # if some molar coefficients are already known
-    # browser()
-    if (is.matrix(dt.ind.m)) {
-      
-      x.known <- dt.ind.m[i, ]
-      
-      rtrn <- molar.ext.evaluator(x.known, y.raw, dt.res.m, wght, method, mode = "postproc")
-      
-    } else {
-      
-      rtrn <- molar.ext.evaluator(NULL, y.raw, dt.res.m, wght, method, mode = "postproc")
-      
-    }
-    
-    mol.coef <- rbind(mol.coef, as.data.table(as.list(rtrn$mol.coef)))
-    dt.nm.calc <- rbind(dt.nm.calc, as.data.table(as.list(rtrn$y.calc)))
-    mol.coef.dev <- rbind(mol.coef.dev, as.data.table(as.list(rtrn$mol.coef.dev)))
+    ind.shift <- data.table(signal = dt.nm[, sort(unique(signal))], ind.shift)
+    ind.shift.dev <- data.table(signal = dt.nm[, sort(unique(signal))], ind.shift.dev)
     
   }
   
-  
-  dt.nm.calc <- data.table(t(dt.nm.calc))
+  dt.nm.calc <- unlist(lapply(splt, function(x) { x$y.calc }))
+  dt.nm.calc <- dt.nm[, .(signal, solution, calculated = dt.nm.calc)]
   
   # evaluate cost function
   
-  observed <- as.vector(dt.nm.m)
-  predicted <- as.vector(as.matrix(dt.nm.calc))
+  observed <- dt.nm[, observation]
+  predicted <- dt.nm.calc[, calculated]
   
-  wght <- sum(as.vector(dt.nm.err.m) ^ 2) / ((as.vector(dt.nm.err.m) ^ 2) * length(as.vector(dt.nm.err.m)))
+  err <- sum(((observed - predicted) ^ 2) * dt.nm[, wght])
   
-  err <- sum(((observed - predicted) ^ 2) * wght)
-  
-  list(dt.nm.calc = dt.nm.calc, mol.coef = mol.coef, mol.coef.dev = mol.coef.dev, err = err)
+  list(dt.nm.calc = dt.nm.calc, ind.shift = ind.shift, ind.shift.dev = ind.shift.dev, err = err)
   
 }
 
@@ -191,9 +217,10 @@ molar.ext.wrapper <- function(cnst.m
 
 # optimizer wrapper --------------------------------------- #
 
-constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
-                               , dt.nm.m, dt.nm.err.m, dt.ind.m
+nm.constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
+                               , dt.nm, dt.ind
                                , dt.coef.m, dt.conc.m, part.eq, reac.nm
+                               , coef.b, conc.b
                                , hardstop = 100
                                , lrate.init = .5
                                , search.density = 1
@@ -206,7 +233,6 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
   
   
   # additional functions are defined inner the main optimizing function so not to pass lots of data as arguments
-  # time saved: 2.56 -> 2.07 on dsl.3 dataset
   # sorry for monstruosity!
   
   # step function -------------------- #
@@ -224,47 +250,33 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
     
     cnst.tune.nm <- which(colnames(dt.res.m) %in% cnst.tune)
     
-    #  run molar extinction evaluator
+    # run individual chemical shift evaluator
     
-    mol.coef <- data.table()
-    dt.nm.calc <- data.table()
+    splt <- split(dt.nm, dt.nm[, signal])
+    splt <- lapply(splt, nm.shift.evaluator, dt.ind, dt.res.m, coef.b, conc.b, method)
     
-    for (i in 1:ncol(dt.nm.m)) {
+    ind.shift <- lapply(splt, function(x) { x$ind.shift })
+    ind.shift <- rbindlist(ind.shift)
+    
+    if (is.data.table(dt.ind)) {
       
-      y.raw <- dt.nm.m[, i, drop = FALSE]
+      ind.shift <- cbind(dt.ind[, .(signal)], ind.shift)
       
-      # weights for linear model
-      wght <- sum((dt.nm.err.m[, i] ^ 2)) / ((dt.nm.err.m[, i] ^ 2) * length(dt.nm.err.m[, i]))
+    } else {
       
-      # if some molar coefficients are already known
-      
-      if (is.matrix(dt.ind.m)) {
-        
-        x.known <- dt.ind.m[i, ]
-        rtrn <- molar.ext.evaluator(x.known, y.raw, dt.res.m, wght, method)
-        
-      } else {
-        
-        rtrn <- molar.ext.evaluator(NULL, y.raw, dt.res.m, wght, method)
-        
-      }
-      
-      mol.coef <- rbind(mol.coef, as.data.table(as.list(rtrn$mol.coef)))
-      dt.nm.calc <- rbind(dt.nm.calc, as.data.table(as.list(rtrn$y.calc)))
+      ind.shift <- data.table(signal = dt.nm[, sort(unique(signal))], ind.shift)
       
     }
-    
-    dt.nm.calc <- data.table(t(dt.nm.calc))
-    
-    
+
+    dt.nm.calc <- unlist(lapply(splt, function(x) { x$y.calc }))
+    dt.nm.calc <- dt.nm[, .(signal, solution, calculated = dt.nm.calc)]
+
     # evaluate cost function
     
-    observed <- as.vector(dt.nm.m)
-    predicted <- as.vector(as.matrix(dt.nm.calc))
+    observed <- dt.nm[, observation]
+    predicted <- dt.nm.calc[, calculated]
     
-    wght <- sum(as.vector(dt.nm.err.m) ^ 2) / ((as.vector(dt.nm.err.m) ^ 2) * length(as.vector(dt.nm.err.m)))
-    
-    err <- sum(((observed - predicted) ^ 2) * wght)
+    err <- sum(((observed - predicted) ^ 2) * dt.nm[, wght])
     
     if (mode[1] == "iterator") {
       
@@ -272,11 +284,11 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
       
     } else if (mode[1] == "return") {
       
-      list(err = err, mol.coef = mol.coef, dt.nm.calc = dt.nm.calc)
+      list(err = err, ind.shift = ind.shift, dt.nm.calc = dt.nm.calc)
       
     } else if (mode[1] == "debug") {
       
-      list(err = err, mol.coef = mol.coef, dt.nm.calc = dt.nm.calc, err.v = (predicted - observed))
+      list(err = err, ind.shift = ind.shift, dt.nm.calc = dt.nm.calc, err.v = (predicted - observed))
       
     }
     
@@ -301,7 +313,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
     # loop algorithms(s)
     
     for (j in 1:(hardstop)) {
-      # browser()
+      
       cnst.back <- cnst.m[cnst.iter]
       step.success <- grid.opt[closed >= length(cnst.tune.wrk), max(step.id)]
       step.last <- grid.opt[, max(step.id)]
@@ -313,7 +325,6 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
         
         grid.opt <- rbind(grid.opt, list(step.id = step.iter, step.type = "xpl", closed = 0, lrate = lrate.init), use.names = TRUE, fill = TRUE)
         
-        # browser()
         if (grid.opt[step.success, step.type] != "ptrn" & step.iter > 2 & algorithm[1] == "direct search"){
           
           step.success.xpl.prev <- tail(which(grid.opt[!is.na(err), step.type] != "ptrn"), 2)[1]
@@ -573,14 +584,14 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
     }
     
     
-    if (mode == "debug") {
+    if (mode[1] == "debug") {
       
       rtrn <- constant.error.evaluator(cnst.m, method, mode = "debug")
       
       dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, eq.thr.type, eq.threshold)
       colnames(dt.res.m) <- dt.coef[, name]
       
-      list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = rtrn$mol.coef, dt.nm.calc = rtrn$dt.nm.calc, dt.res.m = dt.res.m
+      list(grid.opt = grid.opt, cnst.m = cnst.m, ind.shift = rtrn$ind.shift, dt.nm.calc = rtrn$dt.nm.calc, dt.res.m = dt.res.m
            , err.v = rtrn$err.v, lrate.fin = lrate.init)
       
     } else {
@@ -590,7 +601,7 @@ constant.optimizer <- function(dt.coef, cnst.m, cnst.tune
       dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, eq.thr.type, eq.threshold)
       colnames(dt.res.m) <- dt.coef[, name]
       
-      list(grid.opt = grid.opt, cnst.m = cnst.m, mol.coef = rtrn$mol.coef, dt.nm.calc = rtrn$dt.nm.calc, dt.res.m = dt.res.m, lrate.fin = lrate.init)
+      list(grid.opt = grid.opt, cnst.m = cnst.m, ind.shift = rtrn$ind.shift, dt.nm.calc = rtrn$dt.nm.calc, dt.res.m = dt.res.m, lrate.fin = lrate.init)
       
     }
     
