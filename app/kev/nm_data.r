@@ -105,6 +105,14 @@ nm.scripts.load <- function(sep = ";", subdir = "") {
     }
     
   }
+  
+  # remove empty table (possible when BOM)
+  
+  if (is.data.table(tbl[["dt.ind"]]) && nrow(tbl[["dt.ind"]]) == 0) {
+    
+    tbl[["dt.ind"]] <- NA
+    
+  }
 
   tbl
   

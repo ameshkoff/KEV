@@ -166,9 +166,7 @@ emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.2"
                       , search.density = 1, lrate.init = .5, emf.threshold = 5e-7
                       , save.res = TRUE)
 
-
-
-
+#
 
 emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.1/comma"
                       , eq.thr.type = "rel", eq.threshold = 1e-08
@@ -189,6 +187,29 @@ emf.evaluation.runner(mode = "script", sep = ";", subdir = "emf/dsp.3"
                       , algorithm = "direct search", emf.mode = "base", method = "basic wls"
                       , search.density = 1, lrate.init = .5, emf.threshold = 5e-4
                       , save.res = FALSE)
+
+#
+
+source("app/KEV/nm_runner.r", chdir = TRUE)
+
+nm.evaluation.runner(mode = "script", sep = ",", subdir = "nmr/dsn.1"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", nm.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, nm.threshold = 5e-7
+                     , save.res = TRUE)
+
+nm.evaluation.runner(mode = "script", sep = ";", subdir = "nmr/dsn.2"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", nm.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, nm.threshold = 5e-7
+                     , save.res = TRUE)
+
+nm.evaluation.runner(mode = "script", sep = "tab", subdir = "nmr/dsn.3"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", nm.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, nm.threshold = 5e-7
+                     , save.res = TRUE)
+
 
 
 

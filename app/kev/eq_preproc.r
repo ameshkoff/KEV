@@ -85,6 +85,9 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
     
   }
   
+  # deal with zeroes (not calculable because of log transformation)
+  
+  dt.conc.m[dt.conc.m == 0] <- 1e-20
   
   # restore constants
   

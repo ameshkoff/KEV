@@ -9,13 +9,13 @@
 
 
 
-nm.preproc <- function(dt.nm, dt.ind) {
+nm.preproc <- function(dt.nm, dt.ind, dt.coef, dt.conc.m, part.eq) {
 
-  # extract signal names
+  # extract signal names ---------------------- #
   
   nm.s <- dt.nm[data %like% "^obs", signal]
   
-  # if some individual shifts are provided
+  # if some individual shifts are provided ---- #
   
   if (is.data.table(dt.ind)) {
     
@@ -39,32 +39,83 @@ nm.preproc <- function(dt.nm, dt.ind) {
     
   }
 
-  # extract core particle name
+  # extract core particle name ------- #
   
   cr.name <- dt.nm[, particle][1]
   
-  # melt chemical shifts data
+  # melt chemical shifts data -------- #
 
-  dt.nm <- melt(dt.nm, id.vars = c("data", "signal", "particle"), variable.name = "solution", value.name = "chem.shift")
+  dt.nm <- melt(dt.nm, id.vars = c("data", "signal", "particle")
+                , variable.factor = FALSE, variable.name = "solution", value.name = "chem.shift")
+  
+  cln <- colnames(dt.nm)
+  cln <- cln[(cln %in% c("solution", "chem.shift"))]
+  
+  dt.nm[, eval(cln) := lapply(.SD, str_replace, "\\,", "."), .SDcols = cln]
+  dt.nm[, eval(cln) := lapply(.SD, as.numeric), .SDcols = cln]
+  
   dt.nm <- dt.nm[order(signal, particle, solution)]
   
-  # split chemical shifts data.table in chemical shifts matrix and error tables
+  # cast chemical shifts data.table in chemical shifts matrix and error tables
   
-  dt.nm.err <- dt.nm[data %like% "^dev"]
-  dt.nm <- dt.nm[data %like% "^obs"]
+  dt.nm <- dcast.data.table(dt.nm, signal + particle + solution ~ data, fun.aggregate = sum, na.rm = TRUE)
+  dt.nm[, `:=`(particle = NULL)]
+
+  dt.nm[, wght := sum(deviation ^ 2) / ((deviation ^ 2) * .N), signal]
   
-  dt.nm.err[, `:=`(data = NULL, particle = NULL)]
-  dt.nm[, `:=`(data = NULL, particle = NULL)]
+  # basis component stoich coefs ------- #
   
-  setnames(dt.nm.err, "chem.shift", "chem.shift.err")
+  dt.coef <- copy(dt.coef)
   
-  # explode individual shifts
+  cln <- colnames(dt.coef)
+  cln <- cln[!(cln %in% c("name"))]
   
-  dt.ind <- merge(dt.nm[, !c("chem.shift"), with = FALSE], dt.ind, by = "signal")
+  # cleanse
   
-  # convert to numeric matrices
+  dt.coef[, eval(cln) := lapply(.SD, str_replace, "\\,", "."), .SDcols = cln]
+  dt.coef[, eval(cln) := lapply(.SD, as.numeric), .SDcols = cln]
   
-  tbl <- c("dt.nm", "dt.nm.err", "dt.ind")
+  coef.b <- dt.coef[eval(as.name(cr.name)) > 0, .(coef.b = eval(as.name(cr.name)), name)]
+  
+  coef.b.names <- coef.b[, name]
+  coef.b <- coef.b[, coef.b]
+
+  names(coef.b) <- coef.b.names
+  
+  # basis component total concentrations #
+  
+  conc.b <- dt.conc.m[, cr.name]
+  
+  if (length(part.eq) > 0 && which(colnames(dt.conc.m) == cr.name) %in% part.eq) {
+    
+    conc.b <- rep(conc.b[1], length(conc.b[1]))
+    
+  }
+  
+  # reorder dt.ind to correspond concentations, coefficients, coef.b and dt.nm
+  
+  if (is.data.table(dt.ind)) {
+    
+    cln <- colnames(dt.ind)
+    cln <- cln[!(cln %like% "signal")]
+    
+    cln <- dt.coef[, name][dt.coef[, name] %in% cln]
+    
+    tmp <- dt.ind[, .(signal)]
+    
+    for (cl in cln) {
+      tmp[, eval(cl) := dt.ind[, eval(as.name(cl))]]
+    }
+    
+    dt.ind <- tmp
+    
+    dt.ind <- dt.ind[order(signal)]
+    
+  }
+  
+  # convert to numeric matrices -------- #
+  
+  tbl <- c("dt.nm", "dt.ind")
   
   # remove row names
   
@@ -91,26 +142,20 @@ nm.preproc <- function(dt.nm, dt.ind) {
     cln <- colnames(f)
     cln <- cln[!(cln %in% c("signal", "solution"))]
     
-    for (i in cln) {
-      
-      # replace commas with points
-      f[, eval(i) := str_replace(eval(as.name(i)), "\\,", ".")]
-      
-    }
+    # cleanse
     
-    # to numbers
+    f[, eval(cln) := lapply(.SD, str_replace, "\\,", "."), .SDcols = cln]
+    f[, eval(cln) := lapply(.SD, as.numeric), .SDcols = cln]
     
-    f <- as.matrix(f[, cln, with = FALSE])
-    class(f) <- "numeric"
-    
-    assign(paste0(j, ".m"), f)
+    assign(j, f)
     
   }
   
-  list("dt.nm" = dt.nm, "dt.nm.m" = dt.nm.m
-       , "dt.nm.err" = dt.nm.err, "dt.nm.err.m" = dt.nm.err.m
-       , "dt.ind" = dt.ind, "dt.ind.m" = dt.ind.m
-       , "signal" = nm.s, "cr.name" = cr.name)
+  list("dt.nm" = dt.nm
+       , "dt.ind" = dt.ind
+       , "signal" = nm.s, "cr.name" = cr.name
+       , "coef.b" = coef.b
+       , "conc.b" = conc.b)
   
 }
 
