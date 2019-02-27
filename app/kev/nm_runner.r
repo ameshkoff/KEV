@@ -275,6 +275,31 @@ nm.evaluation.runner <- function(mode = c("api", "script", "app")
     dt.cor.m <- as.data.frame(dt.cor.m)
     rownames(dt.cor.m) <- cnst.tune
     
+    # fill deviations for known individual shifts
+    
+    ind.shift.dev.res <- copy(ind.shift)
+    
+    if (is.data.table(ind.shift.dev)) {
+      
+      cln <- colnames(ind.shift.dev)
+      
+    }
+    
+    for (i in colnames(ind.shift.dev.res)) {
+      
+      if (i %in% cln) {
+        
+        ind.shift.dev.res[, eval(i) := ind.shift.dev[, eval(as.name(i))]]
+        
+      } else {
+        
+        ind.shift.dev.res[, eval(i) := 0]
+        
+      }
+      
+    }
+    
+    
     # return
     
     list("dt.eq.conc" = dt.res
@@ -285,7 +310,7 @@ nm.evaluation.runner <- function(mode = c("api", "script", "app")
          , "cnst.dev" = dt.cnst.dev
          , "cor.m" = dt.cor.m
          , "ind.shift" = ind.shift
-         , "ind.shift.dev" = ind.shift.dev
+         , "ind.shift.dev" = ind.shift.dev.res
          , "err.diff" = err.diff
          , "cnst.tune" = cnst.tune
          , "lrate.fin" = lrate.fin)
