@@ -53,6 +53,7 @@ source("eq_runner.r", chdir = TRUE)
 source("ab_runner.r", chdir = TRUE)
 source("sp_runner.r", chdir = TRUE)
 source("emf_runner.r", chdir = TRUE)
+source("nm_runner.r", chdir = TRUE)
 
 
 
@@ -888,17 +889,17 @@ ui <- navbarPage("KEV",
                                  , h4("Calculated Chemical Shifts")
                                  , tabsetPanel(type = "tabs"
                                                , tabPanel("Absolute Errors"
-                                                          , rHandsontableOutput("dt.nm.nms")
+                                                          , rHandsontableOutput("dt.nm.abs")
                                                           , fluidRow(class = "download-row"
-                                                                     , downloadButton("dt.nm.nms.csv", "csv")
-                                                                     , downloadButton("dt.nm.nms.xlsx", "xlsx")))
+                                                                     , downloadButton("dt.nm.abs.csv", "csv")
+                                                                     , downloadButton("dt.nm.abs.xlsx", "xlsx")))
                                                , tabPanel("Relative Errors"
                                                           , rHandsontableOutput("dt.nm.rel")
                                                           , fluidRow(class = "download-row"
                                                                      , downloadButton("dt.nm.rel.csv", "csv")
                                                                      , downloadButton("dt.nm.rel.xlsx", "xlsx")))
                                                , tabPanel("Plot"
-                                                          , plotlyOutput("plot.dt.nm.cut"))
+                                                          , plotlyOutput("plot.dt.nm"))
                                  )))
                
                , fluidRow(column(12)
@@ -2789,6 +2790,8 @@ server <- function(input, output, session) {
     
     cor.m <- ab.eval.data()$cor.m
     
+    cor.m
+    
   })
   
   mol.coef.data <- eventReactive(input$ab.conc.exec.btn, {
@@ -4444,6 +4447,8 @@ server <- function(input, output, session) {
     
     cor.m <- emf.eval.data()$cor.m
     
+    cor.m
+    
   })
   
   emf.err.diff.data <- eventReactive(input$emf.conc.exec.btn, {
@@ -5614,9 +5619,9 @@ server <- function(input, output, session) {
     
     setDT(cnst.tune)
     
-    if (nrow(cnst.tune[X1 == "constant"]) > 0) {
+    if (nrow(cnst.tune[X1 %like% "^constants*$"]) > 0) {
       
-      cnst.tune <- cnst.tune[X1 == "constant"][, !"X1", with = FALSE]
+      cnst.tune <- cnst.tune[X1 %like% "^constants*$"][, !"X1", with = FALSE]
       cnst.tune <- unlist(cnst.tune)
       cnst.tune <- cnst.tune[!is.na(cnst.tune) & cnst.tune != ""]
       
@@ -5650,8 +5655,6 @@ server <- function(input, output, session) {
   })
   
   
-  # ==== HERE =====
-  
   # execute
   
   nm.eval.data <- reactive({
@@ -5664,7 +5667,7 @@ server <- function(input, output, session) {
       
       validate(
         
-        need(length(particles %in% cnst.tune.data()) > 0, "Input correct component names for constants evaluation")
+        need(length(particles %in% nm.cnst.tune.data()) > 0, "Input correct component names for constants evaluation")
         
       )
       
@@ -5673,7 +5676,7 @@ server <- function(input, output, session) {
       nm.dt.ind <- nm.dt.ind.data()
       
       if (ncol(nm.dt.ind) <= 1)
-        nm.dt.ind <- NA #"no.data"
+        nm.dt.ind <- NA
       
       incProgress(.3)
       
@@ -5683,20 +5686,19 @@ server <- function(input, output, session) {
                                   , sep = nm.sep()
                                   , eq.thr.type = "rel"
                                   , eq.threshold = 1e-08
-                                  , cnst.tune = cnst.tune.data()
+                                  , cnst.tune = nm.cnst.tune.data()
                                   , algorithm = "direct search"
                                   , nm.mode = "base"
                                   , method = "basic wls"
-                                  , search.density = as.numeric(input$search.density)
+                                  , search.density = as.numeric(input$nm.search.density)
                                   , lrate.init = .5
                                   , nm.threshold = as.numeric(input$nm.threshold)
-                                  , wl.tune = head(wl.tune.data(), 10)
                                   , dt.list = list(dt.coef = nm.dt.coef.data()
                                                    , cnst = nm.cnst.data()
                                                    , dt.conc = nm.dt.conc.data()
                                                    , part.eq = nm.part.eq.data()
                                                    , dt.nm = dt.nm.data()
-                                                   , nm.dt.ind = nm.dt.ind)
+                                                   , dt.ind = nm.dt.ind)
                                   , save.res = FALSE)
       
       incProgress(.6)
@@ -5743,56 +5745,51 @@ server <- function(input, output, session) {
   plot.dt.nm.data <- eventReactive(input$nm.conc.exec.btn, {
     
     # get data
-    
+
     dt.calc <- copy(nm.eval.data()$dt.nm.calc)
-    
+
     dt.obs <- dt.nm.data()[data %like% "^observ"]
     dt.obs[, data := "Observed"]
-    
+
     # unify column names
     
     cln <- colnames(dt.calc)
-    cln <- cln[!(cln %in% c("wavelength", "data"))]
-    
-    setnames(dt.obs, c("data", "wavelength", cln))
-    
+    cln <- cln[!(cln %in% c("particle", "signal", "data"))]
+
+    setnames(dt.obs, c("data", "particle", "signal", cln))
+
     dt.calc[, data := "Calculated"]
-    
+
     # melt
-    
-    dt.calc <- melt(dt.calc, id.vars = c("wavelength", "data"), variable.name = "solution", value.name = "absorbance")
-    dt.obs <- melt(dt.obs, id.vars = c("wavelength", "data"), variable.name = "solution", value.name = "absorbance")
-    
-    # convert observed absorbance to numerics if not
-    
-    dt.obs[, absorbance := as.character(absorbance)]
-    dt.obs[, absorbance := str_replace_all(absorbance, " ", "")]
-    dt.obs[, absorbance := str_replace_all(absorbance, "\\,", "\\.")]
-    dt.obs[, absorbance := as.numeric(absorbance)]
-    
+
+    dt.calc <- melt(dt.calc, id.vars = c("particle", "signal", "data"), variable.name = "solution", value.name = "chem_shift")
+    dt.obs <- melt(dt.obs, id.vars = c("particle", "signal", "data"), variable.name = "solution", value.name = "chem_shift")
+
+    # convert observed chemical shifts to numerics if not
+
+    dt.obs[, chem_shift := as.character(chem_shift)]
+    dt.obs[, chem_shift := str_replace_all(chem_shift, " ", "")]
+    dt.obs[, chem_shift := str_replace_all(chem_shift, "\\,", "\\.")]
+    dt.obs[, chem_shift := as.numeric(chem_shift)]
+
     # bind
-    
-    intr <- intersect(dt.obs[, wavelength], dt.calc[, wavelength])
-    
-    dt <- rbind(dt.obs[wavelength %in% intr], dt.calc[wavelength %in% intr], use.names = TRUE, fill = TRUE)
-    
-    # convert wavelength to numeric if not
-    
-    dt[, wavelength := as.character(wavelength)]
-    dt[, wavelength := str_replace_all(wavelength, " ", "")]
-    dt[, wavelength := str_replace_all(wavelength, "\\,", "\\.")]
-    dt[, wavelength := as.numeric(wavelength)]
-    
-    # select wavelengths used in calculation
-    dt.cut <- dt[wavelength %in% as.numeric(wl.tune.data())]
-    
+
+    dt <- rbind(dt.obs, dt.calc, use.names = TRUE, fill = TRUE)
+
+    # convert solution to numeric if not
+
+    dt[, solution := as.character(solution)]
+    dt[, solution := str_replace_all(solution, " ", "")]
+    dt[, solution := str_replace_all(solution, "\\,", "\\.")]
+    dt[, solution := as.numeric(solution)]
+
     # return
-    
-    list(dt.full = dt, dt.cut = dt.cut)
+
+    dt
     
   })
   
-  cnst.dev.data <- eventReactive(input$nm.conc.exec.btn, {
+  nm.cnst.dev.data <- eventReactive(input$nm.conc.exec.btn, {
     
     cnst.dev <- nm.eval.data()$cnst.dev
     cnst.dev <- as.data.table(cnst.dev)
@@ -5801,16 +5798,18 @@ server <- function(input, output, session) {
     
   })
   
-  cor.m.data <- eventReactive(input$nm.conc.exec.btn, {
+  nm.cor.m.data <- eventReactive(input$nm.conc.exec.btn, {
     
     cor.m <- nm.eval.data()$cor.m
+    
+    cor.m
     
   })
   
   nm.ind.shift.data <- eventReactive(input$nm.conc.exec.btn, {
     
-    dt <- nm.eval.data()$nm.ind.shift
-    dt.err <- nm.eval.data()$nm.ind.shift.dev
+    dt <- nm.eval.data()$ind.shift
+    dt.err <- nm.eval.data()$ind.shift.dev
     
     dt.comb <- data.table(data = c(rep("observation", nrow(dt)), rep("error", nrow(dt.err)))
                           , rbind(dt, dt.err, use.names = TRUE))
@@ -5819,7 +5818,7 @@ server <- function(input, output, session) {
     
   })
   
-  err.diff.data <- eventReactive(input$nm.conc.exec.btn, {
+  nm.err.diff.data <- eventReactive(input$nm.conc.exec.btn, {
     
     err.diff <- nm.eval.data()$err.diff
     err.diff <- data.table(Component = cnst.tune.data(), Fmin.Last = err.diff)
@@ -5841,9 +5840,7 @@ server <- function(input, output, session) {
     
     if (input.source$nm.dt.coef.bulk) {
       
-      try(cnst.tune.load(), silent = TRUE)
-      try(wl.tune.load(), silent = TRUE)
-      
+      try(nm.cnst.tune.load(), silent = TRUE)
       
       in.file <- as.data.table(input$nm.file.bulk.input)[name %like% "^(input\\_)*stoich(iometric)*\\_coefficients(\\.csv|\\.txt)*"][1]
       in.file <- as.data.frame(in.file)
@@ -6203,7 +6200,7 @@ server <- function(input, output, session) {
     
     if (input.source$dt.nm.bulk) {
       
-      in.file <- as.data.table(input$nm.file.bulk.input)[name %like% "^(input\\_)*absorbance(\\.csv|\\.txt)*$"][1]
+      in.file <- as.data.table(input$nm.file.bulk.input)[name %like% "^(input\\_)*chemical\\_shifts*(\\.csv|\\.txt)*$"][1]
       in.file <- as.data.frame(in.file)
       
       in.file.xlsx <- as.data.table(input$nm.file.bulk.input)[name %like% "\\.xlsx$"]
@@ -6251,7 +6248,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(in.file.xlsx$datapath)
       
-      shts <- shts[shts %like% "(input_|output_)*absorbance"]
+      shts <- shts[shts %like% "chemical\\_shifts*" & !(shts %like% "ind(ividual)*\\_(chemical\\_)*shifts*")]
       shts <- sort(shts, decreasing = TRUE)
       
       dt.nm <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
@@ -6298,7 +6295,7 @@ server <- function(input, output, session) {
     
     if (input.source$nm.dt.ind.bulk) {
       
-      in.file <- as.data.table(input$nm.file.bulk.input)[name %like% "^(input\\_)*mol(ar)*\\_ext(inction)*\\_coefficients(\\.csv|\\.txt)*$"][1]
+      in.file <- as.data.table(input$nm.file.bulk.input)[name %like% "^(input\\_)*ind(ividual)*\\_(chemical\\_)*shifts*(\\.csv|\\.txt)*$"][1]
       in.file <- as.data.frame(in.file)
       
       in.file.xlsx <- as.data.table(input$nm.file.bulk.input)[name %like% "\\.xlsx$"]
@@ -6320,7 +6317,7 @@ server <- function(input, output, session) {
     
     # choose source
     
-    if (!is.null(in.file) & !input.source$nm.dt.ind.memory) {
+    if (!is.null(in.file)) {
       
       if (nm.sep() == ";") {
         nm.dt.ind <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
@@ -6339,24 +6336,21 @@ server <- function(input, output, session) {
         
       }
       
-    } else if (!is.null(in.file.xlsx) & !input.source$nm.dt.ind.memory) {
+      if (is.data.frame(nm.dt.ind) && nrow(nm.dt.ind) == 0) {
+        
+        nm.dt.ind <- NA
+        
+      }
+      
+      
+    } else if (!is.null(in.file.xlsx)) {
       
       shts <- getSheetNames(in.file.xlsx$datapath)
       
-      shts <- shts[shts %like% "^(input_|output_)*mol(ar)*_ext(inction)*_coefficients"]
+      shts <- shts[shts %like% "^(input\\_)*ind(ividual)*\\_(chemical\\_)*shifts*"]
       shts <- sort(shts)
       
       nm.dt.ind <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
-      
-    } else if (input.source$nm.dt.ind.memory) {
-      
-      nm.dt.ind <- sp.nm.dt.ind.full.data()
-      
-      validate(
-        
-        need(is.data.frame(nm.dt.ind), "Extinction coefficients are not yet calculated (check Extinction Coefficients tab)")
-        
-      )
       
     } else {
       
@@ -6444,31 +6438,13 @@ server <- function(input, output, session) {
       
       row_highlight <- dt.nm.abs[data == "observation", which = TRUE] - 1
       
-      renderer <- "
-      function (instance, td, row, col, prop, value, cellProperties) {
-      
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (instance.params) {
-      hrows = instance.params.row_highlight
-      hrows = hrows instanceof Array ? hrows : [hrows]
-      }
-      
-      if (instance.params && hrows.includes(row) && value < 0) {
-      td.style.background = 'pink';
-      }
-      
-      }" 
-
       if (nrow(dt.nm.abs) > 25) {
         
-        rhandsontable(dt.nm.abs, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
-          hot_cols(renderer = renderer)
+        rhandsontable(dt.nm.abs, stretchH = "all", row_highlight = row_highlight, height = 550)
         
       } else {
         
-        rhandsontable(dt.nm.abs, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
-          hot_cols(renderer = renderer)
+        rhandsontable(dt.nm.abs, stretchH = "all", row_highlight = row_highlight, height = NULL)
         
       }
       
@@ -6484,31 +6460,13 @@ server <- function(input, output, session) {
       
       row_highlight <- dt.nm.rel[data == "observation", which = TRUE] - 1
       
-      renderer <- "
-      function (instance, td, row, col, prop, value, cellProperties) {
-      
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (instance.params) {
-      hrows = instance.params.row_highlight
-      hrows = hrows instanceof Array ? hrows : [hrows]
-      }
-      
-      if (instance.params && hrows.includes(row) && value < 0) {
-      td.style.background = 'pink';
-      }
-      
-      }" 
-
       if (nrow(dt.nm.rel) > 25) {
         
-        rhandsontable(dt.nm.rel, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
-          hot_cols(renderer = renderer)
+        rhandsontable(dt.nm.rel, stretchH = "all", row_highlight = row_highlight, height = 550)
         
       } else {
         
-        rhandsontable(dt.nm.rel, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
-          hot_cols(renderer = renderer)
+        rhandsontable(dt.nm.rel, stretchH = "all", row_highlight = row_highlight, height = NULL)
         
       }
       
@@ -6516,9 +6474,9 @@ server <- function(input, output, session) {
     
     })
   
-  output$cnst.dev <- renderRHandsontable({
+  output$nm.cnst.dev <- renderRHandsontable({
     
-    cnst.dev <- cnst.dev.data()
+    cnst.dev <- nm.cnst.dev.data()
     
     if (!is.null(cnst.dev))
       
@@ -6546,9 +6504,9 @@ server <- function(input, output, session) {
     
   })
   
-  output$cor.m <- renderRHandsontable({
+  output$nm.cor.m <- renderRHandsontable({
     
-    cor.m <- cor.m.data()
+    cor.m <- nm.cor.m.data()
     
     if (!is.null(cor.m))
       
@@ -6565,31 +6523,13 @@ server <- function(input, output, session) {
       
       row_highlight <- nm.ind.shift[data == "observation", which = TRUE] - 1
       
-      renderer <- "
-      function (instance, td, row, col, prop, value, cellProperties) {
-      
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (instance.params) {
-      hrows = instance.params.row_highlight
-      hrows = hrows instanceof Array ? hrows : [hrows]
-      }
-      
-      if (instance.params && hrows.includes(row) && value < 0) {
-      td.style.background = 'pink';
-      }
-      
-      }" 
-
       if (nrow(nm.ind.shift) > 25) {
         
-        rhandsontable(nm.ind.shift, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
-          hot_cols(renderer = renderer)
+        rhandsontable(nm.ind.shift, stretchH = "all", row_highlight = row_highlight, height = 550)
         
       } else {
         
-        rhandsontable(nm.ind.shift, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
-          hot_cols(renderer = renderer)
+        rhandsontable(nm.ind.shift, stretchH = "all", row_highlight = row_highlight, height = NULL)
         
       }
       
@@ -6597,9 +6537,9 @@ server <- function(input, output, session) {
     
     })
   
-  output$err.diff <- renderRHandsontable({
+  output$nm.err.diff <- renderRHandsontable({
     
-    err.diff <- err.diff.data()
+    err.diff <- nm.err.diff.data()
     
     if (!is.null(err.diff))
       
@@ -6610,48 +6550,25 @@ server <- function(input, output, session) {
   
   output$plot.dt.nm <- renderPlotly({
     
-    dt <- plot.dt.nm.data()$dt.full
-    
-    lbl <- sort(unique(dt[, wavelength]))
-    
+    dt <- plot.dt.nm.data()
+
     g <- ggplot(data = dt) +
-      geom_point(aes(x = wavelength, y = absorbance, group = data, color = data), size = .5) +
+      geom_point(aes(x = solution, y = chem_shift, group = data, color = data), size = .5) +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-      facet_grid(. ~ solution) +
-      labs(x = "Wavelength, nm", y = "Absorbance")
-    
+      facet_grid(. ~ signal) +
+      labs(x = "Solution", y = "Chemical Shifts")
+
     g <- ggplotly(g)
     g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
     g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
-    
+
     # g$x$data[[1]]$hoverinfo <- "none"
-    
+
     g
     
   })
   
-  output$plot.dt.nm.cut <- renderPlotly({
-    
-    dt <- plot.dt.nm.data()$dt.cut
-    
-    lbl <- sort(unique(dt[, wavelength]))
-    
-    g <- ggplot(data = dt) +
-      geom_point(aes(x = wavelength, y = absorbance, group = data, color = data), size = .5) +
-      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-      facet_grid(. ~ solution) +
-      labs(x = "Wavelength, nm", y = "Absorbance")
-    
-    g <- ggplotly(g)
-    g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
-    g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
-    
-    # g$x$data[[1]]$hoverinfo <- "none"
-    
-    g
-    
-  })
-  
+
   
   
   # end of main server part ----------------------------

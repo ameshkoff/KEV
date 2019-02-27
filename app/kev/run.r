@@ -210,6 +210,14 @@ nm.evaluation.runner(mode = "script", sep = "tab", subdir = "nmr/dsn.3"
                      , search.density = 1, lrate.init = .5, nm.threshold = 5e-7
                      , save.res = TRUE)
 
+#
+
+nm.evaluation.runner(mode = "script", sep = "tab", subdir = "nmr/dsn.3"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", nm.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, nm.threshold = 1e-7
+                     , save.res = FALSE)
+
 
 
 
