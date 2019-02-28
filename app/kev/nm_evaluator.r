@@ -58,11 +58,11 @@ nm.shift.evaluator <- function(dt, dt.ind, dt.res.m, coef.b, conc.b
       
       if (mode[1] == "postproc") {
         
-        return(list(ind.shift = x.known, y.calc = x.known.v, ind.shift.dev = NULL))
+        return(list(ind.shift = as.list(x.known[, !"signal", with = FALSE]), y.calc = x.known.v, ind.shift.dev = NULL))
         
       } else {
         
-        return(list(ind.shift = x.known, y.calc = x.known.v))
+        return(list(ind.shift = as.list(x.known[, !"signal", with = FALSE]), y.calc = x.known.v))
         
       }
       
@@ -186,6 +186,18 @@ nm.shift.evaluator.wrapper <- function(cnst.m
   
   ind.shift.dev <- lapply(splt, function(x) { x$ind.shift.dev })
   ind.shift.dev <- rbindlist(ind.shift.dev)
+  
+  if (is.null(ind.shift.dev) || nrow(ind.shift.dev) == 0) {
+    
+    cln <- colnames(dt.ind)
+    cln <- cln[!(cln == "signal")]
+    
+    ind.shift.dev <- lapply(cln, function(x) {rep(0, nrow(dt.ind))})
+    ind.shift.dev <- as.data.table(ind.shift.dev)
+    
+    setnames(ind.shift.dev, cln)
+    
+  }
   
   if (is.data.table(dt.ind)) {
     
