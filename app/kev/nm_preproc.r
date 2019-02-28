@@ -21,11 +21,14 @@ nm.preproc <- function(dt.nm, dt.ind, dt.coef, dt.conc.m, part.eq) {
     
     cln <- colnames(dt.ind)
 
-    # remove standard errors (if output of the previously calculations loaded)
+    # remove errors (if output of the previously calculations loaded)
     
-    cln <- colnames(dt.ind)
-    if (length(cln[cln %like% "adj\\.r\\.squared"]) > 0)
-      dt.ind <- dt.ind[, !(cln[cln %like% "adj\\.r\\.squared"]), with = FALSE]
+    if (length(cln[cln == "data"]) > 0) {
+      
+      dt.ind <- dt.ind[data %like% "^obs"]
+      dt.ind[, data := NULL]
+      
+    }
     
     # check consistence
     
