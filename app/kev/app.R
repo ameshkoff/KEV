@@ -71,11 +71,9 @@ ui <- navbarPage("KEV",
                             
                             includeCSS("styles.css")
                             
-                            , titlePanel("KEV: Chemistry Constant Evaluator")
+                            , fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
                             
-                            , fluidRow(column(12), p(HTML(paste("<br/>"))))
-                            
-                            , titlePanel("Calculate Equilibrium Concentrations")
+                            , titlePanel("Equilibrium Concentrations")
                             
                             , fluidRow(column(
                               12
@@ -239,11 +237,9 @@ ui <- navbarPage("KEV",
                             
                             includeCSS("styles.css")
                             
-                            , titlePanel("KEV: Chemistry Constant Evaluator")
+                            , fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
                             
-                            , fluidRow(column(12), p(HTML(paste("<br/>"))))
-                            
-                            , titlePanel("Calculate Equilibrium Constants")
+                            , titlePanel(HTML("Equilibrium Constants <i>via Spectrophotometry</i>"))
                             
                             , fluidRow(column(
                               12
@@ -461,9 +457,7 @@ ui <- navbarPage("KEV",
            
            includeCSS("styles.css")
            
-           , titlePanel("KEV: Chemistry Constant Evaluator")
-           
-           , fluidRow(column(12), p(HTML(paste("<br/>"))))
+           , fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
            
            , titlePanel("Calculate Molar Extinction Coefficients")
            
@@ -522,11 +516,9 @@ ui <- navbarPage("KEV",
            
            includeCSS("styles.css")
            
-           , titlePanel("KEV: Chemistry Constant Evaluator")
+           , fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
            
-           , fluidRow(column(12), p(HTML(paste("<br/>"))))
-           
-           , titlePanel("Calculate Equilibrium Constants")
+           , titlePanel(HTML("Equilibrium Constants <i>via E.M.F.</i>"))
            
            , fluidRow(column(
              12
@@ -731,11 +723,9 @@ ui <- navbarPage("KEV",
            
            includeCSS("styles.css")
            
-           , titlePanel("KEV: Chemistry Constant Evaluator")
+           , fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
            
-           , fluidRow(column(12), p(HTML(paste("<br/>"))))
-           
-           , titlePanel("Calculate Equilibrium Constants")
+           , titlePanel(HTML("Equilibrium Constants <i>via NMR (Fast Exchange)</i>"))
            
            , fluidRow(column(
              12
