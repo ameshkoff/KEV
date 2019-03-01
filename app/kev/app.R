@@ -6429,13 +6429,27 @@ server <- function(input, output, session) {
       
       row_highlight <- dt.nm.abs[data == "observation", which = TRUE] - 1
       
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+      
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      
+      if (instance.params) {
+      hrows = instance.params.row_highlight
+      hrows = hrows instanceof Array ? hrows : [hrows]
+      }
+      
+      }" 
+      
       if (nrow(dt.nm.abs) > 25) {
         
-        rhandsontable(dt.nm.abs, stretchH = "all", row_highlight = row_highlight, height = 550)
+        rhandsontable(dt.nm.abs, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
+          hot_cols(renderer = renderer)
         
       } else {
         
-        rhandsontable(dt.nm.abs, stretchH = "all", row_highlight = row_highlight, height = NULL)
+        rhandsontable(dt.nm.abs, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+          hot_cols(renderer = renderer)
         
       }
       
@@ -6451,13 +6465,27 @@ server <- function(input, output, session) {
       
       row_highlight <- dt.nm.rel[data == "observation", which = TRUE] - 1
       
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+      
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      
+      if (instance.params) {
+      hrows = instance.params.row_highlight
+      hrows = hrows instanceof Array ? hrows : [hrows]
+      }
+      
+      }" 
+      
       if (nrow(dt.nm.rel) > 25) {
         
-        rhandsontable(dt.nm.rel, stretchH = "all", row_highlight = row_highlight, height = 550)
+        rhandsontable(dt.nm.rel, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
+          hot_cols(renderer = renderer)
         
       } else {
         
-        rhandsontable(dt.nm.rel, stretchH = "all", row_highlight = row_highlight, height = NULL)
+        rhandsontable(dt.nm.rel, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+          hot_cols(renderer = renderer)
         
       }
       
@@ -6514,13 +6542,27 @@ server <- function(input, output, session) {
       
       row_highlight <- nm.ind.shift[data == "observation", which = TRUE] - 1
       
+      renderer <- "
+        function (instance, td, row, col, prop, value, cellProperties) {
+        
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+        hrows = instance.params.row_highlight
+        hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+      }" 
+      
       if (nrow(nm.ind.shift) > 25) {
         
-        rhandsontable(nm.ind.shift, stretchH = "all", row_highlight = row_highlight, height = 550)
+        rhandsontable(nm.ind.shift, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
+          hot_cols(renderer = renderer)
         
       } else {
         
-        rhandsontable(nm.ind.shift, stretchH = "all", row_highlight = row_highlight, height = NULL)
+        rhandsontable(nm.ind.shift, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+          hot_cols(renderer = renderer)
         
       }
       
