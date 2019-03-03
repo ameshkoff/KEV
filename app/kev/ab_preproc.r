@@ -29,17 +29,6 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
     if (length(cln[cln %like% "adj\\.r\\.squared"]) > 0)
       dt.mol <- dt.mol[, !(cln[cln %like% "adj\\.r\\.squared"]), with = FALSE]
     
-    # check consistence
-    
-    ab.w <- dt.ab[data %like% "^obs", wavelength]
-    mol.w <- dt.mol[, wavelength]
-    
-    if (length(mol.w) != length(mol.w %in% ab.w)) {
-      
-      stop("Absorbance data is inconsistent with molar extinction coefficients")
-      
-    }
-    
     # wavelengths consistence again
     # after first check : to preserve wavelength vector to keep consistence for second use of the dataset
     
@@ -54,6 +43,17 @@ ab.preproc <- function(dt.ab, dt.mol, wl.tune = NULL) {
       
       dt.mol[, wavelength := str_replace(wavelength, "\\,", ".")]
       dt.mol[, wavelength := str_replace(wavelength, " ", "")]
+      
+    }
+    
+    # check consistence
+    
+    ab.w <- dt.ab[data %like% "^obs", wavelength]
+    mol.w <- dt.mol[, wavelength]
+    
+    if (length(mol.w) != length(mol.w %in% ab.w)) {
+      
+      stop("Absorbance data is inconsistent with molar extinction coefficients")
       
     }
     
