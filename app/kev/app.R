@@ -97,7 +97,7 @@ ui <- navbarPage("KEV",
                                 fluidRow(column(12
                                                 , h4("Bulk upload / download (optional)")))
                                 
-                                , fluidRow(column(6
+                                , fluidRow(column(5
                                                   , h4("Upload all data")
                                                   , fileInput("file.eq.bulk.input", "Choose CSV files or XLSX file with multiple sheets",
                                                               accept = c(
@@ -107,11 +107,23 @@ ui <- navbarPage("KEV",
                                                                 , ".xlsx")
                                                               , multiple = TRUE
                                                   ))
-                                           , column(6
+                                           , column(3
                                                     , h4("Download all data")
                                                     , fluidRow(class = "download-row"
                                                                , downloadButton("kev.eq.data.zip", "zip")
-                                                               , downloadButton("kev.eq.data.xlsx", "xlsx"))))
+                                                               , downloadButton("kev.eq.data.xlsx", "xlsx")))
+                                           , column(4
+                                                    , h4("Example data")
+                                                    , p("Learn how to prepare data via example datasets")
+                                                    , fluidRow(
+                                                      column(12
+                                                             , actionButton(inputId = "eq.example.data"
+                                                                              , label = HTML("&nbsp;Check examples")
+                                                                              , icon = icon("database")
+                                                                              , onclick = paste0("window.open('https://gitlab.com/"
+                                                                                                 , "a.meshkov/KEV/tree/"
+                                                                                                 ,"master/input/concentrations', '_blank')")))))
+                                           )
                               )))
                             
                             , fluidRow(
@@ -269,7 +281,7 @@ ui <- navbarPage("KEV",
                                 fluidRow(column(12
                                                 , h4("Bulk upload / download (optional)")))
                                 
-                                , fluidRow(column(6
+                                , fluidRow(column(5
                                                   , h4("Upload all data")
                                                   , fileInput("file.bulk.input", "Choose CSV files or XLSX file with multiple sheets",
                                                               accept = c(
@@ -279,11 +291,23 @@ ui <- navbarPage("KEV",
                                                                 , ".xlsx")
                                                               , multiple = TRUE
                                                   ))
-                                           , column(6
+                                           , column(3
                                                     , h4("Download all data")
                                                     , fluidRow(class = "download-row"
                                                                , downloadButton("kev.data.zip", "zip")
-                                                               , downloadButton("kev.data.xlsx", "xlsx"))))
+                                                               , downloadButton("kev.data.xlsx", "xlsx")))
+                                           , column(4
+                                                    , h4("Example data")
+                                                    , p("Learn how to prepare data via example datasets")
+                                                    , fluidRow(
+                                                      column(12
+                                                             , actionButton(inputId = "ab.example.data"
+                                                                            , label = HTML("&nbsp;Check examples")
+                                                                            , icon = icon("database")
+                                                                            , onclick = paste0("window.open('https://gitlab.com/"
+                                                                                               , "a.meshkov/KEV/tree/"
+                                                                                               , "master/input/spectrophotometry', '_blank')")))))
+                                )
                               )))
                             
                             , fluidRow(
@@ -489,7 +513,19 @@ ui <- navbarPage("KEV",
                                                , ".csv"
                                                , ".xlsx")
                                              , multiple = TRUE
-                                 )))
+                                 ))
+                          , column(6
+                                   , h4("Example data")
+                                   , p("Learn how to prepare data via example datasets")
+                                   , fluidRow(
+                                     column(12
+                                            , actionButton(inputId = "mol.coef.example.data"
+                                                           , label = HTML("&nbsp;Check examples")
+                                                           , icon = icon("database")
+                                                           , onclick = paste0("window.open('https://gitlab.com/"
+                                                                              , "a.meshkov/KEV/tree/"
+                                                                              ,"master/input/molar.extinction.coefficients', '_blank')")))))
+               )
              )))
            
            , fluidRow(column(
@@ -548,7 +584,7 @@ ui <- navbarPage("KEV",
                fluidRow(column(12
                                , h4("Bulk upload / download (optional)")))
                
-               , fluidRow(column(6
+               , fluidRow(column(5
                                  , h4("Upload all data")
                                  , fileInput("file.emf.bulk.input", "Choose CSV files or XLSX file with multiple sheets",
                                              accept = c(
@@ -558,11 +594,23 @@ ui <- navbarPage("KEV",
                                                , ".xlsx")
                                              , multiple = TRUE
                                  ))
-                          , column(6
+                          , column(3
                                    , h4("Download all data")
                                    , fluidRow(class = "download-row"
                                               , downloadButton("kev.emf.data.zip", "zip")
-                                              , downloadButton("kev.emf.data.xlsx", "xlsx"))))
+                                              , downloadButton("kev.emf.data.xlsx", "xlsx")))
+                          , column(4
+                                   , h4("Example data")
+                                   , p("Learn how to prepare data via example datasets")
+                                   , fluidRow(
+                                     column(12
+                                            , actionButton(inputId = "emf.example.data"
+                                                           , label = HTML("&nbsp;Check examples")
+                                                           , icon = icon("database")
+                                                           , onclick = paste0("window.open('https://gitlab.com/"
+                                                                              , "a.meshkov/KEV/tree/"
+                                                                              ,"master/input/emf', '_blank')")))))
+               )
              )))
            
            , fluidRow(
@@ -755,7 +803,7 @@ ui <- navbarPage("KEV",
                fluidRow(column(12
                                , h4("Bulk upload / download (optional)")))
                
-               , fluidRow(column(6
+               , fluidRow(column(5
                                  , h4("Upload all data")
                                  , fileInput("nm.file.bulk.input", "Choose CSV files or XLSX file with multiple sheets",
                                              accept = c(
@@ -765,11 +813,23 @@ ui <- navbarPage("KEV",
                                                , ".xlsx")
                                              , multiple = TRUE
                                  ))
-                          , column(6
+                          , column(3
                                    , h4("Download all data")
                                    , fluidRow(class = "download-row"
                                               , downloadButton("kev.nm.data.zip", "zip")
-                                              , downloadButton("kev.nm.data.xlsx", "xlsx"))))
+                                              , downloadButton("kev.nm.data.xlsx", "xlsx")))
+                          , column(4
+                                   , h4("Example data")
+                                   , p("Learn how to prepare data via example datasets")
+                                   , fluidRow(
+                                     column(12
+                                            , actionButton(inputId = "nm.example.data"
+                                                           , label = HTML("&nbsp;Check examples")
+                                                           , icon = icon("database")
+                                                           , onclick = paste0("window.open('https://gitlab.com/"
+                                                                              , "a.meshkov/KEV/tree/"
+                                                                              ,"master/input/nmr', '_blank')")))))
+               )
              )))
            
            , fluidRow(
