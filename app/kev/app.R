@@ -451,11 +451,11 @@ ui <- navbarPage("KEV",
                                                                , downloadButton("cor.m.csv", "csv")
                                                                , downloadButton("cor.m.xlsx", "xlsx")))
                                            , column(3
-                                                    , h4("Last Fmin Step")
-                                                    , rHandsontableOutput("err.diff")
+                                                    , h4(HTML("Adjusted R<sup>2</sup>"))
+                                                    , rHandsontableOutput("ab.adj.r.squared")
                                                     , fluidRow(class = "download-row"
-                                                               , downloadButton("err.diff.csv", "csv")
-                                                               , downloadButton("err.diff.xlsx", "xlsx"))))
+                                                               , downloadButton("ab.adj.r.squared.csv", "csv")
+                                                               , downloadButton("ab.adj.r.squared.xlsx", "xlsx"))))
                                 
                                 , fluidRow(column(12
                                                   , h4("Extinction Molar Coefficients with St.Errors")
@@ -2856,12 +2856,12 @@ server <- function(input, output, session) {
     
   })
 
-  err.diff.data <- eventReactive(input$ab.conc.exec.btn, {
+  ab.adj.r.squared.data <- eventReactive(input$ab.conc.exec.btn, {
     
-    err.diff <- ab.eval.data()$err.diff
-    err.diff <- data.table(Component = cnst.tune.data(), Fmin.Last = err.diff)
+    ab.adj.r.squared <- ab.eval.data()$adj.r.squared
+    ab.adj.r.squared <- data.table(`Adj. R^2` = ab.adj.r.squared)
     
-    err.diff
+    ab.adj.r.squared
     
   })
   
@@ -3634,13 +3634,13 @@ server <- function(input, output, session) {
     
   })
 
-  output$err.diff <- renderRHandsontable({
+  output$ab.adj.r.squared <- renderRHandsontable({
     
-    err.diff <- err.diff.data()
+    ab.adj.r.squared <- ab.adj.r.squared.data()
     
-    if (!is.null(err.diff))
+    if (!is.null(ab.adj.r.squared))
       
-      rhandsontable(err.diff, stretchH = FALSE, useTypes = FALSE) %>%
+      rhandsontable(ab.adj.r.squared, stretchH = FALSE, useTypes = FALSE) %>%
       hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     
   })
@@ -7523,20 +7523,20 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$err.diff.csv <- downloadHandler(
+  output$ab.adj.r.squared.csv <- downloadHandler(
     # ----
     filename = function() {
       
-      "fmin_last_step.csv"
+      "adj_r_squared.csv"
       
     },
     
     content = function(file) {
       
       if (ab.sep() == ";") {
-        write.csv2(err.diff.data(), file, row.names = FALSE)
+        write.csv2(ab.adj.r.squared.data(), file, row.names = FALSE)
       } else {
-        write.csv(err.diff.data(), file, row.names = FALSE)
+        write.csv(ab.adj.r.squared.data(), file, row.names = FALSE)
       }
       
     }
@@ -7544,17 +7544,17 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$err.diff.xlsx <- downloadHandler(
+  output$ab.adj.r.squared.xlsx <- downloadHandler(
     # ----
     filename = function() {
       
-      "fmin_last_step.xlsx"
+      "adj_r_squared.xlsx"
       
     },
     
     content = function(file) {
       
-      write.xlsx(err.diff.data(), file)
+      write.xlsx(ab.adj.r.squared.data(), file)
       
     }
     
@@ -7621,7 +7621,7 @@ server <- function(input, output, session) {
         , dt.ab.rel = "absorbance_calculated_rel_errors.csv"
         , cnst.dev = "constants_evaluated.csv"
         , cor.m = "correlation_matrix.csv"
-        , err.diff = "fmin_last_step.csv"
+        , ab.adj.r.squared = "adj_r_squared.csv"
         , mol.coef = "mol_ext_coefficients_calculated.csv"
         , target = "target.csv"
         
@@ -7730,7 +7730,7 @@ server <- function(input, output, session) {
         , dt.ab.rel = "absorbance_calc_rel_errors"
         , cnst.dev = "constants_evaluated"
         , cor.m = "correlation_matrix"
-        , err.diff = "fmin_last_step"
+        , ab.adj.r.squared = "adj_r_squared"
         , mol.coef = "mol_ext_coefficients_calc"
         
       )
