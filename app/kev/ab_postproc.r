@@ -195,12 +195,17 @@ molar.coef.deviations <- function(cnst.m
 
 # absorbance residuals ---------------------------------------- #
 
-absorbance.residuals <- function(dt.ab.m, dt.ab.calc) {
+absorbance.residuals <- function(dt.ab.m, dt.ab.calc, reac.nm) {
   
   ab.res.abs <- as.matrix(dt.ab.calc) - dt.ab.m
   ab.res.rel <- ab.res.abs / dt.ab.m
   
-  list(ab.res.abs = ab.res.abs, ab.res.rel = ab.res.rel)
+  obs <- as.vector(dt.ab.m)
+  pred <- as.vector(as.matrix(dt.ab.calc))
+  
+  adj.r.squared <- 1 - (sum((obs - pred) ^ 2) / (length(obs) - reac.nm)) / var(obs)
+  
+  list(ab.res.abs = ab.res.abs, ab.res.rel = ab.res.rel, adj.r.squared = adj.r.squared)
   
 }
 
