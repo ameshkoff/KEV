@@ -746,11 +746,11 @@ ui <- navbarPage("KEV",
                                               , downloadButton("emf.cor.m.csv", "csv")
                                               , downloadButton("emf.cor.m.xlsx", "xlsx")))
                           , column(3
-                                   , h4("Last Fmin Step")
-                                   , rHandsontableOutput("emf.err.diff")
+                                   , h4(HTML("Adjusted R<sup>2</sup>"))
+                                   , rHandsontableOutput("emf.adj.r.squared")
                                    , fluidRow(class = "download-row"
-                                              , downloadButton("emf.err.diff.csv", "csv")
-                                              , downloadButton("emf.err.diff.xlsx", "xlsx"))))
+                                              , downloadButton("emf.adj.r.squared.csv", "csv")
+                                              , downloadButton("emf.adj.r.squared.xlsx", "xlsx"))))
                
 
              ))
@@ -966,11 +966,11 @@ ui <- navbarPage("KEV",
                                               , downloadButton("nm.cor.m.csv", "csv")
                                               , downloadButton("nm.cor.m.xlsx", "xlsx")))
                           , column(3
-                                   , h4("Last Fmin Step")
-                                   , rHandsontableOutput("nm.err.diff")
+                                   , h4(HTML("Adjusted R<sup>2</sup>"))
+                                   , rHandsontableOutput("nm.adj.r.squared")
                                    , fluidRow(class = "download-row"
-                                              , downloadButton("nm.err.diff.csv", "csv")
-                                              , downloadButton("nm.err.diff.xlsx", "xlsx"))))
+                                              , downloadButton("nm.adj.r.squared.csv", "csv")
+                                              , downloadButton("nm.adj.r.squared.xlsx", "xlsx"))))
                
                , fluidRow(column(12
                                  , h4("Individual Chemical Shifts with St.Errors")
@@ -4501,12 +4501,12 @@ server <- function(input, output, session) {
     
   })
   
-  emf.err.diff.data <- eventReactive(input$emf.conc.exec.btn, {
+  emf.adj.r.squared.data <- eventReactive(input$emf.conc.exec.btn, {
     
-    err.diff <- emf.eval.data()$err.diff
-    err.diff <- data.table(Component = emf.cnst.tune.data(), Fmin.Last = err.diff)
+    emf.adj.r.squared <- emf.eval.data()$adj.r.squared
+    emf.adj.r.squared <- data.table(`Adj. R^2` = emf.adj.r.squared)
     
-    err.diff
+    emf.adj.r.squared
     
   })
   
@@ -5195,13 +5195,13 @@ server <- function(input, output, session) {
     
   })
   
-  output$emf.err.diff <- renderRHandsontable({
+  output$emf.adj.r.squared <- renderRHandsontable({
     
-    err.diff <- emf.err.diff.data()
+    emf.adj.r.squared <- emf.adj.r.squared.data()
     
-    if (!is.null(err.diff))
+    if (!is.null(emf.adj.r.squared))
       
-      rhandsontable(err.diff, stretchH = FALSE, useTypes = FALSE) %>%
+      rhandsontable(emf.adj.r.squared, stretchH = FALSE, useTypes = FALSE) %>%
       hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     
   })
@@ -5869,12 +5869,12 @@ server <- function(input, output, session) {
     
   })
   
-  nm.err.diff.data <- eventReactive(input$nm.conc.exec.btn, {
+  nm.adj.r.squared.data <- eventReactive(input$nm.conc.exec.btn, {
     
-    err.diff <- nm.eval.data()$err.diff
-    err.diff <- data.table(Component = nm.cnst.tune.data(), Fmin.Last = err.diff)
+    nm.adj.r.squared <- nm.eval.data()$adj.r.squared
+    nm.adj.r.squared <- data.table(`Adj. R^2` = nm.adj.r.squared)
     
-    err.diff
+    nm.adj.r.squared
     
   })
   
@@ -6630,13 +6630,13 @@ server <- function(input, output, session) {
     
     })
   
-  output$nm.err.diff <- renderRHandsontable({
+  output$nm.adj.r.squared <- renderRHandsontable({
     
-    err.diff <- nm.err.diff.data()
+    nm.adj.r.squared <- nm.adj.r.squared.data()
     
-    if (!is.null(err.diff))
+    if (!is.null(nm.adj.r.squared))
       
-      rhandsontable(err.diff, stretchH = FALSE, useTypes = FALSE) %>%
+      rhandsontable(nm.adj.r.squared, stretchH = FALSE, useTypes = FALSE) %>%
       hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     
   })
@@ -8202,20 +8202,20 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$emf.err.diff.csv <- downloadHandler(
+  output$emf.adj.r.squared.csv <- downloadHandler(
     # ----
     filename = function() {
       
-      "fmin_last_step.csv"
+      "adj_r_squared.csv"
       
     },
     
     content = function(file) {
       
       if (emf.sep() == ";") {
-        write.csv2(emf.err.diff.data(), file, row.names = FALSE)
+        write.csv2(emf.adj.r.squared.data(), file, row.names = FALSE)
       } else {
-        write.csv(emf.err.diff.data(), file, row.names = FALSE)
+        write.csv(emf.adj.r.squared.data(), file, row.names = FALSE)
       }
       
     }
@@ -8223,17 +8223,17 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$emf.err.diff.xlsx <- downloadHandler(
+  output$emf.adj.r.squared.xlsx <- downloadHandler(
     # ----
     filename = function() {
       
-      "fmin_last_step.xlsx"
+      "adj_r_squared.xlsx"
       
     },
     
     content = function(file) {
       
-      write.xlsx(emf.err.diff.data(), file)
+      write.xlsx(emf.adj.r.squared.data(), file)
       
     }
     
@@ -8261,7 +8261,7 @@ server <- function(input, output, session) {
         , dt.emf.rel = "emf_calculated_rel_errors.csv"
         , emf.cnst.dev = "constants_evaluated.csv"
         , emf.cor.m = "correlation_matrix.csv"
-        , emf.err.diff = "fmin_last_step.csv"
+        , emf.adj.r.squared = "adj_r_squared.csv"
         , emf.target = "target.csv"
         
       )
@@ -8367,7 +8367,7 @@ server <- function(input, output, session) {
         , dt.emf.rel = "emf_calc_rel_errors"
         , emf.cnst.dev = "constants_evaluated"
         , emf.cor.m = "correlation_matrix"
-        , emf.err.diff = "fmin_last_step"
+        , emf.adj.r.squared = "adj_r_squared"
 
       )
       
@@ -8797,20 +8797,20 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$nm.err.diff.csv <- downloadHandler(
+  output$nm.adj.r.squared.csv <- downloadHandler(
     # ----
     filename = function() {
       
-      "fmin_last_step.csv"
+      "adj_r_squared.csv"
       
     },
     
     content = function(file) {
       
       if (nm.sep() == ";") {
-        write.csv2(nm.err.diff.data(), file, row.names = FALSE)
+        write.csv2(nm.adj.r.squared.data(), file, row.names = FALSE)
       } else {
-        write.csv(nm.err.diff.data(), file, row.names = FALSE)
+        write.csv(nm.adj.r.squared.data(), file, row.names = FALSE)
       }
       
     }
@@ -8818,17 +8818,17 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$nm.err.diff.xlsx <- downloadHandler(
+  output$nm.adj.r.squared.xlsx <- downloadHandler(
     # ----
     filename = function() {
       
-      "fmin_last_step.xlsx"
+      "adj_r_squared.xlsx"
       
     },
     
     content = function(file) {
       
-      write.xlsx(nm.err.diff.data(), file)
+      write.xlsx(nm.adj.r.squared.data(), file)
       
     }
     
@@ -8895,7 +8895,7 @@ server <- function(input, output, session) {
         , dt.nm.rel = "chemical_shifts_calculated_rel_errors.csv"
         , nm.cnst.dev = "constants_evaluated.csv"
         , nm.cor.m = "correlation_matrix.csv"
-        , nm.err.diff = "fmin_last_step.csv"
+        , nm.adj.r.squared = "adj_r_squared.csv"
         , nm.ind.shift = "individual_shifts_calculated.csv"
         , nm.target = "target.csv"
         
@@ -9004,7 +9004,7 @@ server <- function(input, output, session) {
         , dt.nm.rel = "chemical_shifts_calc_rel_err"
         , nm.cnst.dev = "constants_evaluated"
         , nm.cor.m = "correlation_matrix"
-        , nm.err.diff = "fmin_last_step"
+        , nm.adj.r.squared = "adj_r_squared"
         , nm.ind.shift = "individual_shifts_calc"
         
       )

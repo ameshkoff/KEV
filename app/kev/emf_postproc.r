@@ -195,12 +195,17 @@ emf.params.deviations <- function(cnst.m
 
 # emf residuals ---------------------------------------- #
 
-emf.residuals <- function(dt.emf.m, dt.emf.calc) {
+emf.residuals <- function(dt.emf.m, dt.emf.calc, reac.nm) {
   
   emf.res.abs <- as.matrix(dt.emf.calc) - dt.emf.m
   emf.res.rel <- emf.res.abs / dt.emf.m
   
-  list(emf.res.abs = emf.res.abs, emf.res.rel = emf.res.rel)
+  obs <- as.vector(dt.emf.m)
+  pred <- as.vector(as.matrix(dt.emf.calc))
+  
+  adj.r.squared <- 1 - (sum((obs - pred) ^ 2) / (length(obs) - reac.nm)) / var(obs)
+  
+  list(emf.res.abs = emf.res.abs, emf.res.rel = emf.res.rel, adj.r.squared = adj.r.squared)
   
 }
 
