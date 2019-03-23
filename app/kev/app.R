@@ -2705,11 +2705,22 @@ server <- function(input, output, session) {
     
       incProgress(.1)
       
+      # validity tests
+      
       particles <- c(colnames(ab.dt.coef.data()), ab.dt.coef.data()[, name])
       
       validate(
         
         need(length(particles %in% cnst.tune.data()) > 0, "Input correct component names for constants evaluation")
+        
+      )
+      
+      dt.ab <- dt.ab.data()
+      
+      validate(
+        
+        need(identical(as.data.table(dt.ab)[data %like% "observ", wavelength] %>% sort, as.data.table(dt.ab)[data %like% "deviat", wavelength] %>% sort)
+             , "Wavelengths in Observation part are inconsistent with ones in Deviation part")
         
       )
       
@@ -2740,7 +2751,7 @@ server <- function(input, output, session) {
                                               , cnst = ab.cnst.data()
                                               , dt.conc = ab.dt.conc.data()
                                               , part.eq = ab.part.eq.data()
-                                              , dt.ab = dt.ab.data()
+                                              , dt.ab = dt.ab
                                               , dt.mol = dt.mol)
                              , save.res = FALSE)
     
@@ -5732,6 +5743,16 @@ server <- function(input, output, session) {
         
       )
       
+      dt.nm <- dt.nm.data()
+      
+      validate(
+        
+        need(identical(as.data.table(dt.nm)[data %like% "observ", signal] %>% sort, as.data.table(dt.nm)[data %like% "deviat", signal] %>% sort)
+             , "Signal names in Observation part are inconsistent with ones in Deviation part")
+        
+      )
+      
+      
       # check if no molar extinction coefficients are known
       
       nm.dt.ind <- nm.dt.ind.data()
@@ -5758,7 +5779,7 @@ server <- function(input, output, session) {
                                                    , cnst = nm.cnst.data()
                                                    , dt.conc = nm.dt.conc.data()
                                                    , part.eq = nm.part.eq.data()
-                                                   , dt.nm = dt.nm.data()
+                                                   , dt.nm = dt.nm
                                                    , dt.ind = nm.dt.ind)
                                   , save.res = FALSE)
       
@@ -6300,7 +6321,7 @@ server <- function(input, output, session) {
       
       validate(
         
-        need(is.data.frame(dt.nm), "Your file doesn't look like an absorbance file")
+        need(is.data.frame(dt.nm), "Your file doesn't look like an chemical shifts file")
         
       )
       
@@ -6316,7 +6337,7 @@ server <- function(input, output, session) {
       
       validate(
         
-        need(is.data.frame(dt.nm), "Your file doesn't look like an absorbance file")
+        need(is.data.frame(dt.nm), "Your file doesn't look like an chemical shifts file")
         
       )
       
