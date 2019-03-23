@@ -241,8 +241,9 @@ ui <- navbarPage("KEV",
                           )),
 
 # absorbance (spectrophotometry) ----------------------------------
-
-                 tabPanel(title = "Spectrophotometry"
+  
+              navbarMenu("Eqilibrium Constants"
+                 , tabPanel(title = "Spectrophotometry"
                           , id = "page.ab"
                           
                           , fluidPage(
@@ -474,7 +475,7 @@ ui <- navbarPage("KEV",
 
 # extinction coefficients ----------------------------------
 
-      tabPanel(title = "Extinction Coefficients"
+      tabPanel(title = "Extinction Coefficients for Spectrophotometry"
          , id = "page.sp"
          
          , fluidPage(
@@ -762,9 +763,10 @@ ui <- navbarPage("KEV",
 
 # nmr (fast) ----------------------------------
 
-  tabPanel(title = HTML(paste0("NMR (Fast Ex.)</a></li>"
-                               ,"<li><a href='https://gitlab.com/a.meshkov/KEV/raw/master/userguide/User_Guide_20190206.pdf?inline=false' target='_blank'>Help</a></li>"
-                               ,"<li><a href='https://k-ev.org' target='_blank'>Home"))
+  tabPanel(title = "NMR (Fast Ex.)"
+             # HTML(paste0("NMR (Fast Ex.)</a></li>"
+             #                   ,"<li><a href='https://gitlab.com/a.meshkov/KEV/raw/master/userguide/User_Guide_20190206.pdf?inline=false' target='_blank'>Help</a></li>"
+             #                   ,"<li><a href='https://k-ev.org' target='_blank'>Home"))
          , id = "page.nm"
          
          , fluidPage(
@@ -985,8 +987,16 @@ ui <- navbarPage("KEV",
            
          )
          
+    )
   )
 
+# info ---------------------------------------
+
+  , navbarMenu("More",
+               tabPanel(HTML(paste0(
+                 "<li><a href='https://gitlab.com/a.meshkov/KEV/raw/master/userguide/User_Guide_20190206.pdf?inline=false' target='_blank'>Help</a></li>"
+                 ,"<li><a href='https://k-ev.org' target='_blank'>Home"))
+               ))
 # ---------------------------------------
 
 )
