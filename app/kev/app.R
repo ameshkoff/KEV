@@ -546,7 +546,7 @@ ui <- navbarPage("KEV",
     ),
 # emf (potentiometry) ----------------------------------
 
-    tabPanel(title = "E.M.F."
+    tabPanel(title = "E.M.F. (Potentiometry)"
          , id = "page.emf"
          
          , fluidPage(
@@ -763,7 +763,7 @@ ui <- navbarPage("KEV",
 
 # nmr (fast) ----------------------------------
 
-  tabPanel(title = "NMR (Fast Ex.)"
+  tabPanel(title = "NMR (Fast Exchange)"
              # HTML(paste0("NMR (Fast Ex.)</a></li>"
              #                   ,"<li><a href='https://gitlab.com/a.meshkov/KEV/raw/master/userguide/User_Guide_20190206.pdf?inline=false' target='_blank'>Help</a></li>"
              #                   ,"<li><a href='https://k-ev.org' target='_blank'>Home"))
