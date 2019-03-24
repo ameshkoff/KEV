@@ -11,6 +11,14 @@
 
 nm.preproc <- function(dt.nm, dt.ind, dt.coef, dt.conc.m, part.eq) {
 
+  # unify solution number names --------------- #
+  
+  cln <- colnames(dt.nm)
+  cln <- cln[cln %like% "^[VS][0-9]+$"]
+  
+  if (length(cln) > 0)
+    setnames(dt.nm, cln, str_replace(cln, "^[VS]", ""))
+  
   # extract signal names ---------------------- #
   
   nm.s <- dt.nm[data %like% "^obs", signal]
