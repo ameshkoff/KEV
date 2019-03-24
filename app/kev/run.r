@@ -224,6 +224,25 @@ nm.evaluation.runner(mode = "script", sep = "tab", subdir = "nmr/dsn.3"
                      , search.density = 1, lrate.init = .5, nm.threshold = 5e-7
                      , save.res = TRUE)
 
+nm.evaluation.runner(mode = "script", sep = ",", subdir = "nmr/dsn.4/comma"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", nm.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, nm.threshold = 5e-7
+                     , save.res = TRUE)
+
+nm.evaluation.runner(mode = "script", sep = ";", subdir = "nmr/dsn.4/semicolon"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", nm.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, nm.threshold = 5e-7
+                     , save.res = TRUE)
+
+nm.evaluation.runner(mode = "script", sep = "tab", subdir = "nmr/dsn.4/tab"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", nm.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, nm.threshold = 5e-7
+                     , save.res = TRUE)
+
+
 #
 
 nm.evaluation.runner(mode = "script", sep = "tab", subdir = "nmr/dsn.3"
