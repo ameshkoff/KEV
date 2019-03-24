@@ -191,7 +191,9 @@ nm.evaluation.runner <- function(mode = c("api", "script", "app")
   dt.nm.calc <- ind.shift.dev$dt.nm.calc
   ind.shift.dev <- ind.shift.dev$ind.shift.dev
   
-  nm.res.abs <- nm.shift.residuals(dt.nm[, observation], dt.nm.calc[, calculated])
+  nm.res.abs <- nm.shift.residuals(dt.nm[, observation], dt.nm.calc[, calculated], reac.nm)
+  
+  adj.r.squared <- nm.res.abs$adj.r.squared
   nm.res.rel <- nm.res.abs$nm.res.rel
   nm.res.abs <- nm.res.abs$nm.res.abs
   
@@ -260,7 +262,8 @@ nm.evaluation.runner <- function(mode = c("api", "script", "app")
          , "err.diff" = err.diff
          , "cnst.tune" = cnst.tune
          , "exec.time" = exec.time
-         , "lrate.fin" = lrate.fin)
+         , "lrate.fin" = lrate.fin
+         , "adj.r.squared" = adj.r.squared)
     
   } else {
     
@@ -313,7 +316,8 @@ nm.evaluation.runner <- function(mode = c("api", "script", "app")
          , "ind.shift.dev" = ind.shift.dev.res
          , "err.diff" = err.diff
          , "cnst.tune" = cnst.tune
-         , "lrate.fin" = lrate.fin)
+         , "lrate.fin" = lrate.fin
+         , "adj.r.squared" = adj.r.squared)
     
   }
   

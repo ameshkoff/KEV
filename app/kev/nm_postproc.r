@@ -201,12 +201,17 @@ nm.ind.shift.deviations <- function(cnst.m
 
 # chemical shifts residuals ---------------------------------------- #
 
-nm.shift.residuals <- function(dt.nm.m, dt.nm.calc) {
+nm.shift.residuals <- function(dt.nm.m, dt.nm.calc, reac.nm) {
   
   nm.res.abs <- as.matrix(dt.nm.calc) - dt.nm.m
   nm.res.rel <- nm.res.abs / dt.nm.m
   
-  list(nm.res.abs = nm.res.abs, nm.res.rel = nm.res.rel)
+  obs <- as.vector(dt.nm.m)
+  pred <- as.vector(as.matrix(dt.nm.calc))
+  
+  adj.r.squared <- 1 - (sum((obs - pred) ^ 2) / (length(obs) - reac.nm)) / var(obs)
+  
+  list(nm.res.abs = nm.res.abs, nm.res.rel = nm.res.rel, adj.r.squared = adj.r.squared)
   
 }
 

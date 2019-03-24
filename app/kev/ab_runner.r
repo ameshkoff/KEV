@@ -153,6 +153,8 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   grid.opt <- dt.ttl[["grid.opt"]]
   lrate.fin <- dt.ttl[["lrate.fin"]]
   
+  dt.ab.calc.cut <- dt.ab.calc
+  
   # postprocessing ---------------- #
   
   cnst.valid <- cnst.validation(dt.coef, cnst.m, cnst.tune
@@ -198,10 +200,13 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   dt.ab.calc <- mol.coef.dev$dt.ab.calc
   mol.coef.dev <- mol.coef.dev$mol.coef.dev
   
-  ab.res.abs <- absorbance.residuals(dt.ab.full.m, dt.ab.calc)
+  ab.res.abs <- absorbance.residuals(dt.ab.full.m, dt.ab.calc, reac.nm)
   ab.res.rel <- ab.res.abs$ab.res.rel
   ab.res.abs <- ab.res.abs$ab.res.abs
+
+  adj.r.squared <- absorbance.residuals(dt.ab.m, dt.ab.calc.cut, reac.nm)$adj.r.squared
   
+    
   # prepare data to return (transpose wave data)
 
   tbl <- objects()
@@ -281,7 +286,8 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
          , "err.diff" = err.diff
          , "cnst.tune" = cnst.tune
          , "exec.time" = exec.time
-         , "lrate.fin" = lrate.fin)
+         , "lrate.fin" = lrate.fin
+         , "adj.r.squared" = adj.r.squared)
     
   } else {
     
@@ -340,7 +346,8 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
          , "mol.coef.dev" = mol.coef.dev.full[vld]
          , "err.diff" = err.diff
          , "cnst.tune" = cnst.tune
-         , "lrate.fin" = lrate.fin)
+         , "lrate.fin" = lrate.fin
+         , "adj.r.squared" = adj.r.squared)
     
   }
   

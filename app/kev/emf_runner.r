@@ -194,7 +194,9 @@ emf.evaluation.runner <- function(mode = c("api", "script", "app")
     
   }
   
-  emf.res.abs <- emf.residuals(dt.emf.m, dt.emf.calc)
+  emf.res.abs <- emf.residuals(dt.emf.m, dt.emf.calc, reac.nm)
+  
+  adj.r.squared <- emf.res.abs$adj.r.squared
   emf.res.rel <- emf.res.abs$emf.res.rel
   emf.res.abs <- emf.res.abs$emf.res.abs
   
@@ -248,7 +250,8 @@ emf.evaluation.runner <- function(mode = c("api", "script", "app")
          , "err.diff" = err.diff
          , "cnst.tune" = cnst.tune
          , "exec.time" = exec.time
-         , "lrate.fin" = lrate.fin)
+         , "lrate.fin" = lrate.fin
+         , "adj.r.squared" = adj.r.squared)
     
   } else {
     
@@ -280,7 +283,8 @@ emf.evaluation.runner <- function(mode = c("api", "script", "app")
          , "cor.m" = dt.cor.m
          , "err.diff" = err.diff
          , "cnst.tune" = cnst.tune
-         , "lrate.fin" = lrate.fin)
+         , "lrate.fin" = lrate.fin
+         , "adj.r.squared" = adj.r.squared)
     
   }
 
