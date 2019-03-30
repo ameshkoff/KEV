@@ -1008,7 +1008,7 @@ ui <- tagList(
 # ---------------------------------------
 
   )
-  , tags$footer(class = "kev-footer", HTML("Copyright 2018, 2019 &copy; G.Gamov, A.Meshkov | GNU GPL 3.0 | <a href='#contact'>Contact us</a>"))
+  , tags$footer(class = "kev-footer", HTML("Copyright 2018, 2019 &copy; G.Gamov, A.Meshkov | GNU GPL 3.0 | <a href='../#contact'>Contact us</a>"))
 
 )
 
