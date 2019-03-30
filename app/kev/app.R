@@ -47,6 +47,8 @@ if (Sys.info()["sysname"] %like% "indows") {
 options(shiny.sanitize.errors = TRUE)
 `%then%` <- shiny:::`%OR%`
 
+userguide.date <- "20190331"
+
 # load algorithm
 
 source("eq_runner.r", chdir = TRUE)
@@ -59,9 +61,20 @@ source("nm_runner.r", chdir = TRUE)
 
 # frontend ------------------------------------------------- #
 
-ui <- navbarPage("KEV",
-                 windowTitle = "KEV: Constant evaluator",
-                 
+ui <- tagList(
+  
+  tags$head(
+
+    tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:400,500,700")
+    , tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css?family=Muli:400,700")
+    # , includeCSS("styles.css")
+
+  ),
+  
+  navbarPage(title = "KEV",
+             windowTitle = "KEV: Constant Evaluator",
+             theme = "kev.css",
+
 # equilibrium concentrations -------------------------
 
                  tabPanel("Equilibrium concentrations"
@@ -69,23 +82,22 @@ ui <- navbarPage("KEV",
                           
                           , fluidPage(
                             
-                            includeCSS("styles.css")
-                            
-                            , fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
+                            fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
                             
                             , titlePanel("Equilibrium Concentrations")
                             
                             , fluidRow(column(
                               12
                               , wellPanel(
-                                fluidRow(column(6
+                                fluidRow(column(1, img(src = "eq-icon.png", class = "kev-icon"))
+                                        , column(3
                                                 , h4("Column delimiter of your data files")
                                                 , radioButtons("eq.sep", "", inline = TRUE
                                                                , c("," = "comma"
                                                                    , ";" = "semicolon"
                                                                    , "tab" = "tab"))
                                          )
-                                         , column(6
+                                         , column(8
                                                   , h4("Component to get fractions of")
                                                   , textInput("bs.name", "", "molecule1")
                                          ))
@@ -95,7 +107,7 @@ ui <- navbarPage("KEV",
                               12
                               , wellPanel(
                                 fluidRow(column(12
-                                                , h4("Bulk upload / download (optional)")))
+                                                , h3("Bulk upload / download (optional)")))
                                 
                                 , fluidRow(column(5
                                                   , h4("Upload all data")
@@ -131,7 +143,7 @@ ui <- navbarPage("KEV",
                               column(
                                 12
                                 , wellPanel(
-                                  h4("Upload or type input data")
+                                  h3("Upload or type input data")
                                   ,  fluidRow(
                                     column(5
                                            , h4("Stoichiometric coefficients")
@@ -200,7 +212,7 @@ ui <- navbarPage("KEV",
                               12
                               , wellPanel(
                                 fluidRow(column(12
-                                                , actionButton("eq.conc.exec.btn", "Evaluate")
+                                                , actionButton("eq.conc.exec.btn", "Evaluate", class = "kev-ev-button")
                                 ))
                               )))
                             
@@ -248,16 +260,15 @@ ui <- navbarPage("KEV",
                           
                           , fluidPage(
                             
-                            includeCSS("styles.css")
-                            
-                            , fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
+                            fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
                             
                             , titlePanel(HTML("Equilibrium Constants <i>via Spectrophotometry</i>"))
                             
                             , fluidRow(column(
                               12
                               , wellPanel(
-                                fluidRow(column(3
+                                fluidRow(column(1, img(src = "abs-icon.png", class = "kev-icon"))
+                                         , column(2
                                                 , h4("Column delimiter")
                                                 , radioButtons("ab.sep", "", inline = TRUE
                                                                , c("," = "comma"
@@ -280,7 +291,7 @@ ui <- navbarPage("KEV",
                               12
                               , wellPanel(
                                 fluidRow(column(12
-                                                , h4("Bulk upload / download (optional)")))
+                                                , h3("Bulk upload / download (optional)")))
                                 
                                 , fluidRow(column(5
                                                   , h4("Upload all data")
@@ -316,7 +327,7 @@ ui <- navbarPage("KEV",
                               column(
                                 12
                                 , wellPanel(
-                                  h4("Upload or type input data")
+                                  h3("Upload or type input data")
                                   ,  fluidRow(
                                     column(5
                                            , h4("Stoichiometric coefficients")
@@ -405,7 +416,7 @@ ui <- navbarPage("KEV",
                               12
                               , wellPanel(
                                 fluidRow(column(12
-                                                , actionButton("ab.conc.exec.btn", "Evaluate")
+                                                , actionButton("ab.conc.exec.btn", "Evaluate", class = "kev-ev-button")
                                 ))
                               )))
                             
@@ -480,16 +491,15 @@ ui <- navbarPage("KEV",
          
          , fluidPage(
            
-           includeCSS("styles.css")
-           
-           , fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
+           fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
            
            , titlePanel("Calculate Molar Extinction Coefficients")
            
            , fluidRow(column(
              12
              , wellPanel(
-               fluidRow(column(3
+               fluidRow(column(1, img(src = "abs-icon.png", class = "kev-icon"))
+                        , column(3
                                , h4("Column delimiter")
                                , radioButtons("sp.sep", "", inline = TRUE
                                               , c("," = "comma"
@@ -503,7 +513,7 @@ ui <- navbarPage("KEV",
              12
              , wellPanel(
                fluidRow(column(12
-                               , h4("Bulk upload")))
+                               , h3("Bulk upload")))
                
                , fluidRow(column(6
                                  , h4("Upload all data")
@@ -551,16 +561,15 @@ ui <- navbarPage("KEV",
          
          , fluidPage(
            
-           includeCSS("styles.css")
-           
-           , fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
+           fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
            
            , titlePanel(HTML("Equilibrium Constants <i>via E.M.F.</i>"))
            
            , fluidRow(column(
              12
              , wellPanel(
-               fluidRow(column(3
+               fluidRow(column(1, img(src = "emf-icon.png", class = "kev-icon"))
+                        , column(2
                                , h4("Column delimiter")
                                , radioButtons("emf.sep", "", inline = TRUE
                                               , c("," = "comma"
@@ -583,7 +592,7 @@ ui <- navbarPage("KEV",
              12
              , wellPanel(
                fluidRow(column(12
-                               , h4("Bulk upload / download (optional)")))
+                               , h3("Bulk upload / download (optional)")))
                
                , fluidRow(column(5
                                  , h4("Upload all data")
@@ -619,7 +628,7 @@ ui <- navbarPage("KEV",
              column(
                12
                , wellPanel(
-                 h4("Upload or type input data")
+                 h3("Upload or type input data")
                  ,  fluidRow(
                    column(5
                           , h4("Stoichiometric coefficients")
@@ -702,7 +711,7 @@ ui <- navbarPage("KEV",
              12
              , wellPanel(
                fluidRow(column(12
-                               , actionButton("emf.conc.exec.btn", "Evaluate")
+                               , actionButton("emf.conc.exec.btn", "Evaluate", class = "kev-ev-button")
                ))
              )))
            
@@ -764,23 +773,20 @@ ui <- navbarPage("KEV",
 # nmr (fast) ----------------------------------
 
   tabPanel(title = "NMR (Fast Exchange)"
-             # HTML(paste0("NMR (Fast Ex.)</a></li>"
-             #                   ,"<li><a href='https://gitlab.com/a.meshkov/KEV/raw/master/userguide/User_Guide_20190206.pdf?inline=false' target='_blank'>Help</a></li>"
-             #                   ,"<li><a href='https://k-ev.org' target='_blank'>Home"))
+
          , id = "page.nm"
          
          , fluidPage(
            
-           includeCSS("styles.css")
-           
-           , fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
+           fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
            
            , titlePanel(HTML("Equilibrium Constants <i>via NMR (Fast Exchange)</i>"))
            
            , fluidRow(column(
              12
              , wellPanel(
-               fluidRow(column(3
+               fluidRow(column(1, img(src = "nmr-icon.png", class = "kev-icon"))
+                        , column(2
                                , h4("Column delimiter")
                                , radioButtons("nm.sep", "", inline = TRUE
                                               , c("," = "comma"
@@ -803,7 +809,7 @@ ui <- navbarPage("KEV",
              12
              , wellPanel(
                fluidRow(column(12
-                               , h4("Bulk upload / download (optional)")))
+                               , h3("Bulk upload / download (optional)")))
                
                , fluidRow(column(5
                                  , h4("Upload all data")
@@ -839,7 +845,7 @@ ui <- navbarPage("KEV",
              column(
                12
                , wellPanel(
-                 h4("Upload or type input data")
+                 h3("Upload or type input data")
                  ,  fluidRow(
                    column(5
                           , h4("Stoichiometric coefficients")
@@ -923,7 +929,7 @@ ui <- navbarPage("KEV",
              12
              , wellPanel(
                fluidRow(column(12
-                               , actionButton("nm.conc.exec.btn", "Evaluate")
+                               , actionButton("nm.conc.exec.btn", "Evaluate", class = "kev-ev-button")
                ))
              )))
            
@@ -994,10 +1000,15 @@ ui <- navbarPage("KEV",
 
   , navbarMenu("More",
                tabPanel(HTML(paste0(
-                 "<li><a href='https://gitlab.com/a.meshkov/KEV/raw/master/userguide/User_Guide_20190206.pdf?inline=false' target='_blank'>Help</a></li>"
+                 "<li><a href='https://gitlab.com/a.meshkov/KEV/raw/master/userguide/User_Guide_"
+                 , userguide.date
+                 ,".pdf?inline=false' target='_blank'>Help</a></li>"
                  ,"<li><a href='https://k-ev.org' target='_blank'>Home"))
                ))
 # ---------------------------------------
+
+  )
+  , tags$footer(class = "kev-footer", HTML("Copyright 2018, 2019 &copy; G.Gamov, A.Meshkov | GNU GPL 3.0 | <a href='../#contact'>Contact us</a>"))
 
 )
 
