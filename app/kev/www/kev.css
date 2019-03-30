@@ -21,6 +21,14 @@ h4{
   line-height: 2.5rem;
 }
 
+.kev-icon{
+  width:100%;
+  max-width:15rem;
+  text-align:right;
+  border:.5rem solid #91bbe2;
+  border-radius:50%;
+}
+
 /* ------------------------------- common ------------------------------- */
 
 body{
