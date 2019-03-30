@@ -89,14 +89,15 @@ ui <- tagList(
                             , fluidRow(column(
                               12
                               , wellPanel(
-                                fluidRow(column(6
+                                fluidRow(column(1, img(src = "eq-icon.png", class = "kev-icon"))
+                                        , column(3
                                                 , h4("Column delimiter of your data files")
                                                 , radioButtons("eq.sep", "", inline = TRUE
                                                                , c("," = "comma"
                                                                    , ";" = "semicolon"
                                                                    , "tab" = "tab"))
                                          )
-                                         , column(6
+                                         , column(8
                                                   , h4("Component to get fractions of")
                                                   , textInput("bs.name", "", "molecule1")
                                          ))
@@ -266,7 +267,8 @@ ui <- tagList(
                             , fluidRow(column(
                               12
                               , wellPanel(
-                                fluidRow(column(3
+                                fluidRow(column(1, img(src = "abs-icon.png", class = "kev-icon"))
+                                         , column(2
                                                 , h4("Column delimiter")
                                                 , radioButtons("ab.sep", "", inline = TRUE
                                                                , c("," = "comma"
@@ -496,7 +498,8 @@ ui <- tagList(
            , fluidRow(column(
              12
              , wellPanel(
-               fluidRow(column(3
+               fluidRow(column(1, img(src = "abs-icon.png", class = "kev-icon"))
+                        , column(3
                                , h4("Column delimiter")
                                , radioButtons("sp.sep", "", inline = TRUE
                                               , c("," = "comma"
@@ -565,7 +568,8 @@ ui <- tagList(
            , fluidRow(column(
              12
              , wellPanel(
-               fluidRow(column(3
+               fluidRow(column(1, img(src = "emf-icon.png", class = "kev-icon"))
+                        , column(2
                                , h4("Column delimiter")
                                , radioButtons("emf.sep", "", inline = TRUE
                                               , c("," = "comma"
@@ -781,7 +785,8 @@ ui <- tagList(
            , fluidRow(column(
              12
              , wellPanel(
-               fluidRow(column(3
+               fluidRow(column(1, img(src = "nmr-icon.png", class = "kev-icon"))
+                        , column(2
                                , h4("Column delimiter")
                                , radioButtons("nm.sep", "", inline = TRUE
                                               , c("," = "comma"
