@@ -6,6 +6,7 @@
 /www/Caddyfile
 /tests
 /articles
+/design
 *kev.eq.data
 *kev.emf.data
 *kev.nm.data
