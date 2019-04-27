@@ -1,0 +1,10 @@
+﻿name;design;param;value
+;;type;spectroscopy
+;;left;200
+;;right;350
+left;gauss;area;100
+left;gauss;median;230
+left;gauss;hwhm;50
+2;gauss;area;100
+2;gauss;median;300
+2;gauss;hwhm;50
