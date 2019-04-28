@@ -26,7 +26,7 @@ library(stringr)
 # mode = c("api", "script", "app")
 mode <- "script"
 sep = ";"
-subdir = "curves/dsc.1/semicolon"
+subdir = "curves/dsc.1.no.assumptions/semicolon"
 # subdir = "curves/dsc.1"
 file = NULL
 save.res = TRUE
@@ -48,6 +48,7 @@ source(paste0(dir.start, "cur_preevaluator.r"), chdir = TRUE)
 # source(paste0(dir.start, "cur_save.r"), chdir = TRUE)
 
 
+
 # load data ---------------- #
 
 if (mode[1] == "script") {
@@ -61,6 +62,7 @@ if (mode[1] == "script") {
   
 }
 
+
 # preproc data --------------- #
 
 dt.ttl <- cur.preproc(dt.ttl)
@@ -70,6 +72,14 @@ cur.task <- dt.ttl[["cur.task"]]
 window.borders <- dt.ttl[["window.borders"]]
 dt.par <- dt.ttl[["dt.par"]]
 
+
+# define assumptions --------------- #
+
+dt.ttl <- cur.assumptions(dt.cur
+                          , cur.task
+                          , window.borders
+                          , dt.par
+                          , smooth.delimiter = 30)
 
 
 
