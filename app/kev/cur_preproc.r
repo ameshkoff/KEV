@@ -70,18 +70,16 @@ cur.preproc <- function(dt.ttl) {
   cur.task <- dt.par[name == "" & param == "task", value]
   if (length(cur.task) == 0) cur.task <- "spectrophotometry"
   
-  border.left <- dt.par[name == "" & param == "left", value] %>% as.numeric()
-  if (length(border.left) == 0) border.left <- NA
+  window.borders <- c(NA, NA)
   
-  border.right <- dt.par[name == "" & param == "right", value] %>% as.numeric()
-  if (length(border.right) == 0) border.right <- NA
-
+  if (length(dt.par[name == "" & param == "left", value]) > 0) window.borders[1] <- dt.par[name == "" & param == "left", value] %>% as.numeric()
+  if (length(dt.par[name == "" & param == "right", value]) > 0) window.borders[2] <- dt.par[name == "" & param == "right", value] %>% as.numeric()
+  
   dt.par <- dt.par[name != ""]
 
   list(dt.cur = dt.cur
        , cur.task = cur.task
-       , border.left = border.left
-       , border.right = border.right
+       , window.borders = window.borders
        , dt.par = dt.par)
   
 }
