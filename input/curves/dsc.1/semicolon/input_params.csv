@@ -1,5 +1,5 @@
 ﻿name;design;param;value
-;;type;spectroscopy
+;;task;spectrophotometry
 ;;left;200
 ;;right;350
 left;gauss;area;100
