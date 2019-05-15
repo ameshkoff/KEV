@@ -14,15 +14,63 @@ from copy import copy, deepcopy
 import pandas as pd
 from collections import Counter
 
-# 
+
+# basic input ------------------------------------------------
+
+def eq_scripts_load(sep = ';', subdir = r"", file = r"file.xlsx"):
+    
+    # if specific file selected it should be XLSX one
+    if file != "":
+        
+        if subdir != '':
+            subdir = '/' + subdir
+        subdir = '../../input' + subdir + '/'
+
+        file = subdir + file
+        
+        # read data
+        
+        st_coeff_data = pd.read_excel(file, sheet_name = 'input_stoich_coefficients', header = 1)
+        con_data = pd.read_excel(file, sheet_name = 'input_concentrations', header = 1)
+        component_name_for_yields = np.array(pd.excel(file, sheet_name = 'component_names', header = None))
+        
+
+    # use a bunch of plain text files instead
+    else:
+        raise FileNotFoundError('CSV input not yet implemented')
+
+    return st_coeff_data, con_data, component_name_for_yields
+
+# basic preprocessing ----------------------------------------
+    
+def eq_preproc(st_coeff_data, con_data, component_name_for_yields):
+    # add parameters if needed
+    
+    # something
+    
+    return # add returned values
 
 
-# input section
-# reading the file containing the input data
-excel_file = r" " # specify the path!
-st_coeff_data = pd.read_excel(excel_file, sheet_name = 'input_stoich_coefficients')
-con_data = pd.read_excel(excel_file, sheet_name = 'input_concentrations', header = 1, skiprows = 0)
-component_name_for_yields = np.array(pd.read_excel(excel_file, sheet_name = 'component_names', header = None, skiprows = 0))
+# run --------------------------------------------------------
+
+# define variables -----------
+
+_subdir = "concentrations/ds.5p"
+_sep = ";"
+_file = "data.input.xlsx"
+
+
+    
+# run loading function ------
+
+st_coeff_data, con_data, component_name_for_yields  = eq_scripts_load(sep = _sep, subdir = _subdir, file = _file)
+
+# run other functions
+
+
+###################################################################
+###################################################################
+
 
 #checking if there are several series
 if 'ser_num' in con_data.columns:
