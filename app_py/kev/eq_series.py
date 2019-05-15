@@ -1,9 +1,21 @@
-# importing the libraries required
-from copy import copy, deepcopy
+# ########################################################## #
+#                                                            #
+# Name: KEV:Constant Evaluator                               #
+# Author: GGamov                                             #
+# Date: 2019                                                 #
+#                                                            #
+# ########################################################## #
+
+# import libraries -------------------------------------------
+
 import math
 import numpy as np
+from copy import copy, deepcopy
 import pandas as pd
 from collections import Counter
+
+# 
+
 
 # input section
 # reading the file containing the input data
