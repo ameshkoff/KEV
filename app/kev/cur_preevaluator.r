@@ -50,17 +50,17 @@ cur.assumptions <- function(dt.cur, cur.task, window.borders, dt.par, smooth.del
     
     tmp[is.na(label.right), label.right := dt.cur[, max(label)]]
     
-    # median
+    # expected value
     
     dt.par <- data.table(name = as.character(tmp[, label.base])
-                         , design = "gauss"
-                         , param = "median"
+                         , design = "gaussian"
+                         , param = "expvalue"
                          , value = tmp[, label.base])
     
     # hwhm (half width at half maximum)
     
-    tmp[, label.left := label.base - (label.base - label.left) * .75]
-    tmp[, label.right := label.base + (label.right - label.base) * .75]
+    tmp[, label.left := label.base - (label.base - label.left) * .35]
+    tmp[, label.right := label.base + (label.right - label.base) * .35]
     
     tmp <- dt.cur[, .(label, label.left = label, value.left = value)][tmp, on = .(label == label.left), roll = Inf]
     tmp[, label := NULL]
@@ -69,7 +69,7 @@ cur.assumptions <- function(dt.cur, cur.task, window.borders, dt.par, smooth.del
     
     dt.par <- rbind(dt.par
                     , data.table(name = as.character(tmp[, label.base])
-                                 , design = "gauss"
+                                 , design = "gaussian"
                                  , param = "hwhm"
                                  , value = tmp[, label.right - label.left]))
     
@@ -77,7 +77,7 @@ cur.assumptions <- function(dt.cur, cur.task, window.borders, dt.par, smooth.del
     
     dt.par <- rbind(dt.par
                     , data.table(name = as.character(tmp[, label.base])
-                                 , design = "gauss"
+                                 , design = "gaussian"
                                  , param = "amplitude"
                                  , value = tmp[, value]))
 
