@@ -81,10 +81,67 @@ dt.ttl <- cur.assumptions(dt.cur
                           , dt.par
                           , smooth.delimiter = 30)
 
+dt.par <- dt.ttl[["dt.par"]]
 
 
+# curve functions
+
+kev.gaussian <- function(x, amplitude, expvalue, hwhm) { amplitude * exp(-log(2) * (x - expvalue) ^ 2 / hwhm ^ 2) }
+
+# create formula & initial values for the model
+
+cur.formula <- function(dt.par, dt.cur) {
+  
+  fnc.list <- dt.par[, .(design, name)] %>% unique()
+  
+  frm <- c()
+  start.values <- list()
+  
+  for (i in 1:nrow(fnc.list)) {
+    
+    if (fnc.list[i, design] == "gaussian") {
+      
+      frm <- c(frm, paste0("kev.gaussian(label, amplitude", i, ", expvalue", i, ", hwhm", i, ")"))
+      
+    } else if (fnc.list[i, design] == "lorentzian") {
+      
+      frm <- c(frm, paste0("kev.lorentzian(label, amplitude", i, ", expvalue", i, ", hwhm", i, ")"))
+      
+    } else {
+      
+      
+    }
+    
+    tmp <- dt.par[design == fnc.list[i, design] & name == fnc.list[i, name], .(param, value)]
+    
+    new.values <- as.list(tmp[, value])
+    names(new.values) <- paste0(tmp[, param], i)
+    
+    start.values <- c(start.values, new.values)
+    
+  }
+  
+  frm <- as.formula(paste("value ~ ", paste(frm, collapse = " + ")))
+  
+  list(formula = frm, start.values = start.values)
+  
+}
 
 
+# run modelling
 
+frm <- cur.formula(dt.par[as.numeric(name) > 200], dt.cur[label > 200])
+
+start.values <- frm[["start.values"]]
+frm <- frm[["formula"]]
+
+md <-
+  nls(frm
+    , dt.cur[label > 210]
+    , start = start.values)
+
+
+plot(dt.cur[label > 210], type = "l")
+lines(dt.cur[label > 210][, .(label, predict(md))], col = "red")
 
 

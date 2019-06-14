@@ -2,9 +2,9 @@
 ;;task;spectrophotometry
 ;;left;200
 ;;right;350
-left;gauss;amplitude;100
-left;gauss;median;230
-left;gauss;hwhm;50
-2;gauss;amplitude;100
-2;gauss;median;300
-2;gauss;hwhm;50
+left;gaussian;amplitude;100
+left;gaussian;median;230
+left;gaussian;hwhm;50
+2;gaussian;amplitude;100
+2;gaussian;median;300
+2;gaussian;hwhm;50
