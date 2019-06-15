@@ -59,7 +59,7 @@ cur.formula.execute <- function(dt, formula = NULL, terms = NULL, scalar.values.
   
   if (!is.null(formula)) {
     
-    rhs.expr <- paste(labels(terms(frm)), collapse = " + ")
+    rhs.expr <- paste(labels(terms(formula)), collapse = " + ")
     
   } else if (!is.null(terms)) {
     
@@ -92,7 +92,7 @@ cur.formula.execute <- function(dt, formula = NULL, terms = NULL, scalar.values.
 
 cur.formula.effects <- function(dt, formula, scalar.values.list) {
   
-  terms <- labels(terms(frm))
+  terms <- labels(terms(formula))
   
   dt <- dt[, .(label, observed = value)]
   

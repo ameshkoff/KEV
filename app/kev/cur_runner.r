@@ -22,11 +22,16 @@ library(Hmisc)
 library(stringi)
 library(stringr)
 
-# Curves status as an object ----------------------------------
+# curve status as an object ----------------------------------
+
+setOldClass("nls")
 
 setClassUnion("character.or.NULL", c("character", "NULL"))
 setClassUnion("numeric.or.NULL", c("numeric", "NULL"))
+setClassUnion("list.or.NULL", c("list", "NULL"))
 setClassUnion("data.table.or.NULL", c("data.table", "NULL"))
+setClassUnion("formula.or.NULL", c("formula", "NULL"))
+setClassUnion("nls.or.NULL", c("nls", "NULL"))
 
 setClass("kev.curve", slots = list(mode = "character" # c("api", "script", "app")
                                    , sep = "character"
@@ -36,24 +41,26 @@ setClass("kev.curve", slots = list(mode = "character" # c("api", "script", "app"
                                    , dt.init = "data.table.or.NULL"
                                    , dt.par = "data.table.or.NULL"
                                    , cur.task = "character.or.NULL"
-                                   , window.borders = "numeric.or.NULL"))
+                                   , window.borders = "numeric.or.NULL"
+                                   , formula.init = "formula.or.NULL"
+                                   , start.values = "list.or.NULL"
+                                   , model = "nls.or.NULL"))
 
 
 
-# load and cleanse initial data ------------------------------
+# load and preproccess initial data --------------------------
 
-cur.preproc.runner <- function(cur.params = kev.curve, dt.list = NULL) {
+cur.data.runner <- function(cur.status = kev.curve, dt.list = NULL) {
 
   # source code ------------- #
   
   dir.start <- ""
   
-  if (cur.params@mode[1] %in% c("script", "api"))
+  if (cur.status@mode[1] %in% c("script", "api"))
     dir.start <- "app/KEV/"
   
   source(paste0(dir.start, "cur_data.r"), chdir = TRUE)
   source(paste0(dir.start, "cur_preproc.r"), chdir = TRUE)
-  source(paste0(dir.start, "cur_preevaluator.r"), chdir = TRUE)
   source(paste0(dir.start, "cur_evaluator.r"), chdir = TRUE)
   source(paste0(dir.start, "cur_postproc.r"), chdir = TRUE)
   # source(paste0(dir.start, "cur_save.r"), chdir = TRUE)
@@ -61,11 +68,11 @@ cur.preproc.runner <- function(cur.params = kev.curve, dt.list = NULL) {
   
   # load data ---------------- #
   
-  if (cur.params@mode[1] == "script") {
+  if (cur.status@mode[1] == "script") {
     
-    dt.ttl <- cur.scripts.load(cur.params@sep, cur.params@subdir, cur.params@file)
+    dt.ttl <- cur.scripts.load(cur.status@sep, cur.status@subdir, cur.status@file)
   
-  } else if (cur.params@mode[1] %in% c("app", "api")) {
+  } else if (cur.status@mode[1] %in% c("app", "api")) {
     
     dt.ttl <- dt.list
     
@@ -90,19 +97,60 @@ cur.preproc.runner <- function(cur.params = kev.curve, dt.list = NULL) {
                               , cur.task
                               , window.borders
                               , dt.par
-                              , smooth.delimiter = 30)$dt.par
+                              , smooth.delimiter = 30)
   }
   
-  cur.params@dt.init <- dt.cur
-  cur.params@dt.par <- dt.par
-  cur.params@cur.task <- cur.task
-  cur.params@window.borders <- window.borders
+  # get initial values and formula --- #
   
-  cur.params
+  frm <- cur.formula.create(dt.par, dt.cur)
+  
+  start.values <- frm[["start.values"]]
+  frm <- frm[["formula"]]
+  
+  # return  
+  
+  cur.status@dt.init <- dt.cur
+  cur.status@dt.par <- dt.par
+  cur.status@cur.task <- cur.task
+  cur.status@window.borders <- window.borders
+  cur.status@formula.init <- frm
+  cur.status@start.values <- start.values
+  
+  cur.status
 
 }
 
-# run loading & preprocessing -----------------------------
+# modelling --------------------------------------------------
+
+cur.model <- function(cur.status = kev.curve) {
+
+  # prepare
+    
+  dt.par <- cur.status@dt.par[as.numeric(name) >= cur.status@window.borders[1] & as.numeric(name) <= cur.status@window.borders[2]]
+  dt <- cur.status@dt.init[label >= cur.status@window.borders[1] & label <= cur.status@window.borders[2]]
+  
+  frm <- cur.formula.create(dt.par, dt)
+  
+  start.values <- frm[["start.values"]]
+  frm <- frm[["formula"]]
+  
+  # run
+  
+  md <-
+    nls(frm
+        , dt
+        , start = start.values)
+  
+  cur.status@model <- md
+  
+  # return
+  
+  cur.status
+  
+}
+
+
+# run loading & preprocessing --------------------------------
 
 cur.status <- new("kev.curve"
                   , mode = "script"
@@ -113,29 +161,27 @@ cur.status <- new("kev.curve"
                   , dt.init = NULL
                   , dt.par = NULL
                   , cur.task = NULL
-                  , window.borders = NULL)
+                  , window.borders = NULL
+                  , formula.init = NULL
+                  , start.values = NULL
+                  , model = NULL)
 
-cur.status <- cur.preproc.runner(cur.status)
+cur.status <- cur.data.runner(cur.status)
 
 
-# run modelling
+# run modelling ----------------------------------------------
 
-frm <- cur.formula.create(dt.par[as.numeric(name) > 200], dt.cur[label > 200])
+cur.status@window.borders[1] <- 200
 
-start.values <- frm[["start.values"]]
-frm <- frm[["formula"]]
+cur.status <- cur.model(cur.status)
 
-cur.plot.initial(list(dt.init = dt.cur[label > 210]
-                      , formula.init = frm
-                      , start.values = start.values))
 
-md <-
-  nls(frm
-    , dt.cur[label > 200]
-    , start = start.values)
 
-cur.plot.model(list(dt.init = dt.cur[label > 200]
-                    , model = md))
+
+
+cur.plot.initial(cur.status)
+
+cur.plot.model(cur.status)
 
 
 
