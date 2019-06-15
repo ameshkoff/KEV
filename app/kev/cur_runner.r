@@ -43,7 +43,7 @@ if (mode[1] %in% c("script", "api"))
 source(paste0(dir.start, "cur_data.r"), chdir = TRUE)
 source(paste0(dir.start, "cur_preproc.r"), chdir = TRUE)
 source(paste0(dir.start, "cur_preevaluator.r"), chdir = TRUE)
-# source(paste0(dir.start, "cur_evaluator.r"), chdir = TRUE)
+source(paste0(dir.start, "cur_evaluator.r"), chdir = TRUE)
 # source(paste0(dir.start, "cur_postproc.r"), chdir = TRUE)
 # source(paste0(dir.start, "cur_save.r"), chdir = TRUE)
 
@@ -84,64 +84,52 @@ dt.ttl <- cur.assumptions(dt.cur
 dt.par <- dt.ttl[["dt.par"]]
 
 
-# curve functions
-
-kev.gaussian <- function(x, amplitude, expvalue, hwhm) { amplitude * exp(-log(2) * (x - expvalue) ^ 2 / hwhm ^ 2) }
-
-# create formula & initial values for the model
-
-cur.formula <- function(dt.par, dt.cur) {
-  
-  fnc.list <- dt.par[, .(design, name)] %>% unique()
-  
-  frm <- c()
-  start.values <- list()
-  
-  for (i in 1:nrow(fnc.list)) {
-    
-    if (fnc.list[i, design] == "gaussian") {
-      
-      frm <- c(frm, paste0("kev.gaussian(label, amplitude", i, ", expvalue", i, ", hwhm", i, ")"))
-      
-    } else if (fnc.list[i, design] == "lorentzian") {
-      
-      frm <- c(frm, paste0("kev.lorentzian(label, amplitude", i, ", expvalue", i, ", hwhm", i, ")"))
-      
-    } else {
-      
-      
-    }
-    
-    tmp <- dt.par[design == fnc.list[i, design] & name == fnc.list[i, name], .(param, value)]
-    
-    new.values <- as.list(tmp[, value])
-    names(new.values) <- paste0(tmp[, param], i)
-    
-    start.values <- c(start.values, new.values)
-    
-  }
-  
-  frm <- as.formula(paste("value ~ ", paste(frm, collapse = " + ")))
-  
-  list(formula = frm, start.values = start.values)
-  
-}
-
 
 # run modelling
 
-frm <- cur.formula(dt.par[as.numeric(name) > 200], dt.cur[label > 200])
+frm <- cur.formula.create(dt.par[as.numeric(name) > 200], dt.cur[label > 200])
 
 start.values <- frm[["start.values"]]
 frm <- frm[["formula"]]
+
+init.pred <- cur.formula.execute(dt.cur[label > 210], formula = frm, scalar.values.list = start.values)
+init.effects <- cur.formula.effects(dt.cur[label > 210], formula = frm, scalar.values.list = start.values)
+
+cln <- colnames(init.effects)
+cln <- cln[cln %like% "^(curve[0-9]+|label)$"]
+
+ggplot(data = melt(init.effects[, cln, with = FALSE], id.vars = "label", variable.name = "Curves")) +
+  geom_line(data = init.effects, aes(x = label, y = observed, group = 1), color = "darkgrey", size = 1) +
+  geom_line(data = init.effects, aes(x = label, y = predicted, group = 1), color = "darkblue", size = 1, linetype = 2) +
+  geom_line(aes(x = label, y = value, group = Curves, color = Curves))
+
 
 md <-
   nls(frm
     , dt.cur[label > 210]
     , start = start.values)
 
+md.pred <- cur.model.predict(dt.cur[label > 210], md)
+md.effects <- cur.model.effects(dt.cur[label > 210], md)
+
+cln <- colnames(md.effects)
+cln <- cln[cln %like% "^(curve[0-9]+|label)$"]
+
+ggplot(data = melt(md.effects[, cln, with = FALSE], id.vars = "label", variable.name = "Curves")) +
+  geom_line(data = md.effects, aes(x = label, y = observed, group = 1), color = "darkgrey", size = 1) +
+  geom_line(data = md.effects, aes(x = label, y = predicted, group = 1), color = "darkblue", size = 1, linetype = 2) +
+  geom_line(aes(x = label, y = value, group = Curves, color = Curves))
+
+
 
 plot(dt.cur[label > 210], type = "l")
+lines(dt.cur[label > 210][, .(label, pred.init)], col = "blue")
 lines(dt.cur[label > 210][, .(label, predict(md))], col = "red")
+
+
+
+
+
+
 
 
