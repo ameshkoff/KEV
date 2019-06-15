@@ -7,7 +7,7 @@
 # ########################################################## #
 
 
-# plots ---------------------------------------------------- #
+# plots ------------------------------------------------------
 
 cur.plot.initial <- function(cur.status = kev.curve) {
   
@@ -57,4 +57,27 @@ cur.plot.model <- function(cur.status = cur.status) {
   g
     
 }
+
+
+# metrics and residuals --------------------------------------
+
+cur.model.metrics <- function(dt, model) {
+  
+  pred <- cur.model.predict(dt, model)
+  obs <- dt[, value]
+  
+  residuals.abs <- pred - obs
+  residuals.rel <- residuals.abs / obs
+
+  residuals.abs <- dt[, .(label, residuals.abs = residuals.abs)]
+  residuals.rel <- dt[, .(label, residuals.rel = residuals.rel)]
+  
+  r.squared <- 1 - (sum((obs - pred) ^ 2) / length(obs)) / var(obs)
+
+  list(residuals.abs = residuals.abs, residuals.rel = residuals.rel, r.squared = r.squared)
+  
+}
+
+
+
 
