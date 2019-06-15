@@ -147,7 +147,7 @@ cur.status <- cur.data.runner(cur.status)
 cur.status@window.borders[1] <- 210
 # cur.status@window.borders[2] <- 440
 
-cur.status <- cur.remove.curves(cur.status, min.label = 200)
+cur.status <- cur.remove.curves(cur.status, min.expvalue = 200)
 
 cur.status <- cur.model(cur.status)
 
@@ -164,7 +164,7 @@ cur.status@metrics$r.squared
 
 ## TO DO
 # 1. NLS errors
-# 2. names vs. position in dt.par
+# 2. names vs. position in dt.par : the main issue is how to extract identificators from the formula terms
 
 
 

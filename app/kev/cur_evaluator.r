@@ -27,11 +27,11 @@ cur.formula.create <- function(dt.par, dt.cur) {
     
     if (fnc.list[i, design] == "gaussian") {
       
-      frm <- c(frm, paste0("kev.gaussian(label, amplitude", i, ", expvalue", i, ", hwhm", i, ")"))
+      frm <- c(frm, paste0("kev.gaussian(label, `amplitude", fnc.list[i, name], "`, `expvalue", fnc.list[i, name], "`, `hwhm", fnc.list[i, name], "`)"))
       
     } else if (fnc.list[i, design] == "lorentzian") {
       
-      frm <- c(frm, paste0("kev.lorentzian(label, amplitude", i, ", expvalue", i, ", hwhm", i, ")"))
+      frm <- c(frm, paste0("kev.lorentzian(label, `amplitude", fnc.list[i, name], "`, `expvalue", fnc.list[i, name], "`, `hwhm", fnc.list[i, name], "`)"))
       
     } else {
       
@@ -41,7 +41,7 @@ cur.formula.create <- function(dt.par, dt.cur) {
     tmp <- dt.par[design == fnc.list[i, design] & name == fnc.list[i, name], .(param, value)]
     
     new.values <- as.list(tmp[, value])
-    names(new.values) <- paste0(tmp[, param], i)
+    names(new.values) <- paste0(tmp[, param], fnc.list[i, name])
     
     start.values <- c(start.values, new.values)
     
@@ -135,15 +135,23 @@ cur.model.effects <- function(dt, model) {
 
 # modelling --------------------------------------------------
 
-cur.remove.curves <- function(cur.status = kev.curve, min.label = NULL, max.label = NULL) {
+cur.remove.curves <- function(cur.status = kev.curve, min.expvalue = NULL, max.expvalue = NULL) {
   
   dt.par <- cur.status@dt.par
   
-  if (!is.null(min.label))
-    dt.par <- dt.par[as.numeric(name) >= min.label]
+  tmp <- dt.par[param == "expvalue", .(name, value)]
   
-  if (!is.null(max.label))
-    dt.par <- dt.par[as.numeric(name) <= max.label]
+  if (!is.null(min.expvalue)) {
+    
+    dt.par <- dt.par[!(name %in% tmp[value < min.expvalue, name])]
+    
+  }
+
+  if (!is.null(max.expvalue)) {
+    
+    dt.par <- dt.par[!(name %in% tmp[value > max.expvalue, name])]
+    
+  }
   
   cur.status@dt.par <- dt.par
   
