@@ -133,4 +133,54 @@ cur.model.effects <- function(dt, model) {
 }
 
 
+# modelling --------------------------------------------------
+
+cur.remove.curves <- function(cur.status = kev.curve, min.label = NULL, max.label = NULL) {
+  
+  dt.par <- cur.status@dt.par
+  
+  if (!is.null(min.label))
+    dt.par <- dt.par[as.numeric(name) >= min.label]
+  
+  if (!is.null(max.label))
+    dt.par <- dt.par[as.numeric(name) <= max.label]
+  
+  cur.status@dt.par <- dt.par
+  
+  cur.status
+  
+}
+
+cur.model <- function(cur.status = kev.curve) {
+  
+  # prepare
+  
+  dt <- cur.status@dt.init[label >= cur.status@window.borders[1] & label <= cur.status@window.borders[2]]
+  dt.par <- cur.status@dt.par
+  
+  frm <- cur.formula.create(dt.par, dt)
+  
+  start.values <- frm[["start.values"]]
+  frm <- frm[["formula"]]
+  
+  # run
+  
+  md <-
+    nls(frm
+        , dt
+        , start = start.values)
+  
+  cur.status@model <- md
+  
+  # metrics
+  
+  mtr <- cur.model.metrics(dt, md)
+  cur.status@metrics <- mtr
+  
+  # return
+  
+  cur.status
+  
+}
+
 

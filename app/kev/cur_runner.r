@@ -44,7 +44,8 @@ setClass("kev.curve", slots = list(mode = "character" # c("api", "script", "app"
                                    , window.borders = "numeric.or.NULL"
                                    , formula.init = "formula.or.NULL"
                                    , start.values = "list.or.NULL"
-                                   , model = "nls.or.NULL"))
+                                   , model = "nls.or.NULL"
+                                   , metrics = "list.or.NULL"))
 
 
 
@@ -120,35 +121,6 @@ cur.data.runner <- function(cur.status = kev.curve, dt.list = NULL) {
 
 }
 
-# modelling --------------------------------------------------
-
-cur.model <- function(cur.status = kev.curve) {
-
-  # prepare
-    
-  dt.par <- cur.status@dt.par[as.numeric(name) >= cur.status@window.borders[1] & as.numeric(name) <= cur.status@window.borders[2]]
-  dt <- cur.status@dt.init[label >= cur.status@window.borders[1] & label <= cur.status@window.borders[2]]
-  
-  frm <- cur.formula.create(dt.par, dt)
-  
-  start.values <- frm[["start.values"]]
-  frm <- frm[["formula"]]
-  
-  # run
-  
-  md <-
-    nls(frm
-        , dt
-        , start = start.values)
-  
-  cur.status@model <- md
-  
-  # return
-  
-  cur.status
-  
-}
-
 
 # run loading & preprocessing --------------------------------
 
@@ -164,14 +136,18 @@ cur.status <- new("kev.curve"
                   , window.borders = NULL
                   , formula.init = NULL
                   , start.values = NULL
-                  , model = NULL)
+                  , model = NULL
+                  , metrics = NULL)
 
 cur.status <- cur.data.runner(cur.status)
 
 
 # run modelling ----------------------------------------------
 
-cur.status@window.borders[1] <- 200
+cur.status@window.borders[1] <- 210
+# cur.status@window.borders[2] <- 440
+
+cur.status <- cur.remove.curves(cur.status, min.label = 200)
 
 cur.status <- cur.model(cur.status)
 
@@ -183,8 +159,12 @@ cur.plot.initial(cur.status)
 
 cur.plot.model(cur.status)
 
+cur.status@metrics$r.squared
 
 
+## TO DO
+# 1. NLS errors
+# 2. names vs. position in dt.par
 
 
 
