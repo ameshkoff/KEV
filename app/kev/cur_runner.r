@@ -13,6 +13,7 @@
 # I/O
 # data structure
 library(data.table)
+library(ggplot2)
 # computation
 library(MASS)
 library(Matrix)
@@ -21,68 +22,100 @@ library(Hmisc)
 library(stringi)
 library(stringr)
 
-# variables (convert to function args later)
+# Curves status as an object ----------------------------------
 
-# mode = c("api", "script", "app")
-mode <- "script"
-sep = ";"
-subdir = "curves/dsc.1.no.assumptions/semicolon"
-# subdir = "curves/dsc.1"
-file = NULL
-save.res = TRUE
-dt.list = NULL
+setClassUnion("character.or.NULL", c("character", "NULL"))
+setClassUnion("numeric.or.NULL", c("numeric", "NULL"))
+setClassUnion("data.table.or.NULL", c("data.table", "NULL"))
 
-
-# source code ------------- #
-
-dir.start <- ""
-
-if (mode[1] %in% c("script", "api"))
-  dir.start <- "app/KEV/"
-
-source(paste0(dir.start, "cur_data.r"), chdir = TRUE)
-source(paste0(dir.start, "cur_preproc.r"), chdir = TRUE)
-source(paste0(dir.start, "cur_preevaluator.r"), chdir = TRUE)
-source(paste0(dir.start, "cur_evaluator.r"), chdir = TRUE)
-# source(paste0(dir.start, "cur_postproc.r"), chdir = TRUE)
-# source(paste0(dir.start, "cur_save.r"), chdir = TRUE)
+setClass("kev.curve", slots = list(mode = "character" # c("api", "script", "app")
+                                   , sep = "character"
+                                   , subdir = "character"
+                                   , file = "character.or.NULL"
+                                   , save.res = "logical"
+                                   , dt.init = "data.table.or.NULL"
+                                   , dt.par = "data.table.or.NULL"
+                                   , cur.task = "character.or.NULL"
+                                   , window.borders = "numeric.or.NULL"))
 
 
 
-# load data ---------------- #
+# load and cleanse initial data ------------------------------
 
-if (mode[1] == "script") {
+cur.preproc.runner <- function(cur.params = kev.curve, dt.list = NULL) {
+
+  # source code ------------- #
   
-  dt.ttl <- cur.scripts.load(sep, subdir, file)
-  #dt.ttl <-  cur.scripts.load(sep, subdir, "data.xlsx")
+  dir.start <- ""
   
-} else if (mode[1] %in% c("app", "api")) {
+  if (cur.params@mode[1] %in% c("script", "api"))
+    dir.start <- "app/KEV/"
   
-  dt.ttl <- dt.list
+  source(paste0(dir.start, "cur_data.r"), chdir = TRUE)
+  source(paste0(dir.start, "cur_preproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "cur_preevaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "cur_evaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "cur_postproc.r"), chdir = TRUE)
+  # source(paste0(dir.start, "cur_save.r"), chdir = TRUE)
   
+  
+  # load data ---------------- #
+  
+  if (cur.params@mode[1] == "script") {
+    
+    dt.ttl <- cur.scripts.load(cur.params@sep, cur.params@subdir, cur.params@file)
+  
+  } else if (cur.params@mode[1] %in% c("app", "api")) {
+    
+    dt.ttl <- dt.list
+    
+  }
+  
+  
+  # preproc data --------------- #
+  
+  dt.ttl <- cur.preproc(dt.ttl)
+  
+  dt.cur <- dt.ttl[["dt.cur"]]
+  cur.task <- dt.ttl[["cur.task"]]
+  window.borders <- dt.ttl[["window.borders"]]
+  dt.par <- dt.ttl[["dt.par"]]
+  
+  
+  # define assumptions --------------- #
+  
+  if (is.null(dt.par) || nrow(dt.par) == 0) {
+    
+    dt.par <- cur.assumptions(dt.cur
+                              , cur.task
+                              , window.borders
+                              , dt.par
+                              , smooth.delimiter = 30)$dt.par
+  }
+  
+  cur.params@dt.init <- dt.cur
+  cur.params@dt.par <- dt.par
+  cur.params@cur.task <- cur.task
+  cur.params@window.borders <- window.borders
+  
+  cur.params
+
 }
 
+# run loading & preprocessing -----------------------------
 
-# preproc data --------------- #
+cur.status <- new("kev.curve"
+                  , mode = "script"
+                  , sep = ";"
+                  , subdir = "curves/dsc.1.no.assumptions/semicolon"
+                  , file = NULL
+                  , save.res = TRUE
+                  , dt.init = NULL
+                  , dt.par = NULL
+                  , cur.task = NULL
+                  , window.borders = NULL)
 
-dt.ttl <- cur.preproc(dt.ttl)
-
-dt.cur <- dt.ttl[["dt.cur"]]
-cur.task <- dt.ttl[["cur.task"]]
-window.borders <- dt.ttl[["window.borders"]]
-dt.par <- dt.ttl[["dt.par"]]
-
-
-# define assumptions --------------- #
-
-dt.ttl <- cur.assumptions(dt.cur
-                          , cur.task
-                          , window.borders
-                          , dt.par
-                          , smooth.delimiter = 30)
-
-dt.par <- dt.ttl[["dt.par"]]
-
+cur.status <- cur.preproc.runner(cur.status)
 
 
 # run modelling
@@ -92,39 +125,19 @@ frm <- cur.formula.create(dt.par[as.numeric(name) > 200], dt.cur[label > 200])
 start.values <- frm[["start.values"]]
 frm <- frm[["formula"]]
 
-init.pred <- cur.formula.execute(dt.cur[label > 210], formula = frm, scalar.values.list = start.values)
-init.effects <- cur.formula.effects(dt.cur[label > 210], formula = frm, scalar.values.list = start.values)
-
-cln <- colnames(init.effects)
-cln <- cln[cln %like% "^(curve[0-9]+|label)$"]
-
-ggplot(data = melt(init.effects[, cln, with = FALSE], id.vars = "label", variable.name = "Curves")) +
-  geom_line(data = init.effects, aes(x = label, y = observed, group = 1), color = "darkgrey", size = 1) +
-  geom_line(data = init.effects, aes(x = label, y = predicted, group = 1), color = "darkblue", size = 1, linetype = 2) +
-  geom_line(aes(x = label, y = value, group = Curves, color = Curves))
-
+cur.plot.initial(list(dt.init = dt.cur[label > 210]
+                      , formula.init = frm
+                      , start.values = start.values))
 
 md <-
   nls(frm
-    , dt.cur[label > 210]
+    , dt.cur[label > 200]
     , start = start.values)
 
-md.pred <- cur.model.predict(dt.cur[label > 210], md)
-md.effects <- cur.model.effects(dt.cur[label > 210], md)
-
-cln <- colnames(md.effects)
-cln <- cln[cln %like% "^(curve[0-9]+|label)$"]
-
-ggplot(data = melt(md.effects[, cln, with = FALSE], id.vars = "label", variable.name = "Curves")) +
-  geom_line(data = md.effects, aes(x = label, y = observed, group = 1), color = "darkgrey", size = 1) +
-  geom_line(data = md.effects, aes(x = label, y = predicted, group = 1), color = "darkblue", size = 1, linetype = 2) +
-  geom_line(aes(x = label, y = value, group = Curves, color = Curves))
+cur.plot.model(list(dt.init = dt.cur[label > 200]
+                    , model = md))
 
 
-
-plot(dt.cur[label > 210], type = "l")
-lines(dt.cur[label > 210][, .(label, pred.init)], col = "blue")
-lines(dt.cur[label > 210][, .(label, predict(md))], col = "red")
 
 
 
