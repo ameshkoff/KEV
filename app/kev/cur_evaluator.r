@@ -181,21 +181,34 @@ cur.model <- function(cur.status = kev.curve) {
   # run
   
   md <-
-    nls(frm
-        , dt
-        , start = start.values)
+    try(  
+      nls(frm
+          , dt
+          , start = start.values)
+      , silent = TRUE
+      )
   
-  cur.status@model <- md
-  
-  # metrics
-  
-  mtr <- cur.model.metrics(dt, md)
-  cur.status@metrics <- mtr
-  
+  if (is(md, "nls")) {
+    
+    cur.status@model <- md
+    cur.status@model.status <- "OK"
+    cur.status@metrics <- cur.model.metrics(dt, md)
+    
+  } else if (is(md, "try-error")) {
+    
+    cur.status@model.status <- "Error: Convergence failed: Rolled back to the stable model"
+    warning(paste("Error: Convergence failed:", attr(md, "condition")$message))
+    
+  }
+
   # return
   
   cur.status
   
 }
+
+
+
+
 
 

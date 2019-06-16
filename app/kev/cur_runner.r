@@ -45,7 +45,8 @@ setClass("kev.curve", slots = list(mode = "character" # c("api", "script", "app"
                                    , formula.init = "formula.or.NULL"
                                    , start.values = "list.or.NULL"
                                    , model = "nls.or.NULL"
-                                   , metrics = "list.or.NULL"))
+                                   , metrics = "list.or.NULL"
+                                   , model.status = "character"))
 
 
 
@@ -137,7 +138,8 @@ cur.status <- new("kev.curve"
                   , formula.init = NULL
                   , start.values = NULL
                   , model = NULL
-                  , metrics = NULL)
+                  , metrics = NULL
+                  , model.status = "Warning: Not Runned")
 
 cur.status <- cur.data.runner(cur.status)
 
