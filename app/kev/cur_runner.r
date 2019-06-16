@@ -164,7 +164,6 @@ cur.status@metrics$r.squared
 
 ## TO DO
 # 1. NLS errors
-# 2. names vs. position in dt.par : the main issue is how to extract identificators from the formula terms
 
 
 
