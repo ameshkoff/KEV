@@ -33,7 +33,7 @@ setClassUnion("data.table.or.NULL", c("data.table", "NULL"))
 setClassUnion("formula.or.NULL", c("formula", "NULL"))
 setClassUnion("nls.or.NULL", c("nls", "NULL"))
 
-setClass("kev.curve", slots = list(mode = "character" # c("api", "script", "app")
+setClass("kev.curve", slots = list(mode = "character"
                                    , sep = "character"
                                    , subdir = "character"
                                    , file = "character.or.NULL"
@@ -49,10 +49,30 @@ setClass("kev.curve", slots = list(mode = "character" # c("api", "script", "app"
                                    , model.status = "character"))
 
 
-
 # load and preproccess initial data --------------------------
 
-cur.data.runner <- function(cur.status = kev.curve, dt.list = NULL) {
+cur.data.runner <- function(mode = c("api", "script", "app")
+                            , sep = ","
+                            , subdir = ""
+                            , file = NULL
+                            , save.res = TRUE
+                            , dt.list = NULL) {
+
+  cur.status <- new("kev.curve"
+                    , mode = mode
+                    , sep = sep
+                    , subdir = subdir
+                    , file = file
+                    , save.res = save.res
+                    , dt.init = NULL
+                    , dt.par = NULL
+                    , cur.task = NULL
+                    , window.borders = NULL
+                    , formula.init = NULL
+                    , start.values = NULL
+                    , model = NULL
+                    , metrics = NULL
+                    , model.status = "Warning: Not Runned")
 
   # source code ------------- #
   
@@ -121,51 +141,6 @@ cur.data.runner <- function(cur.status = kev.curve, dt.list = NULL) {
   cur.status
 
 }
-
-
-# run loading & preprocessing --------------------------------
-
-cur.status <- new("kev.curve"
-                  , mode = "script"
-                  , sep = ";"
-                  , subdir = "curves/dsc.1.no.assumptions/semicolon"
-                  , file = NULL
-                  , save.res = TRUE
-                  , dt.init = NULL
-                  , dt.par = NULL
-                  , cur.task = NULL
-                  , window.borders = NULL
-                  , formula.init = NULL
-                  , start.values = NULL
-                  , model = NULL
-                  , metrics = NULL
-                  , model.status = "Warning: Not Runned")
-
-cur.status <- cur.data.runner(cur.status)
-
-
-# run modelling ----------------------------------------------
-
-cur.status@window.borders[1] <- 210
-# cur.status@window.borders[2] <- 440
-
-cur.status <- cur.remove.curves(cur.status, min.expvalue = 200)
-
-cur.status <- cur.model(cur.status)
-
-
-
-
-
-cur.plot.initial(cur.status)
-
-cur.plot.model(cur.status)
-
-cur.status@metrics$r.squared
-
-
-
-
 
 
 
