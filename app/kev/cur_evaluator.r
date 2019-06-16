@@ -193,6 +193,7 @@ cur.model <- function(cur.status = kev.curve) {
     cur.status@model <- md
     cur.status@model.status <- "OK"
     cur.status@metrics <- cur.model.metrics(dt, md)
+    cur.status@dt.par <- cur.parameters.update(dt.par, md)
     
   } else if (is(md, "try-error")) {
     
@@ -206,6 +207,25 @@ cur.model <- function(cur.status = kev.curve) {
   cur.status
   
 }
+
+cur.parameters.update <- function(dt.par, md){
+  
+  dt.par <- copy(dt.par)
+  coefs <- md %>% coefficients
+  
+  params <- str_extract(names(coefs), "^.*\\^\\^\\^") %>% str_replace_all("\\^\\^\\^", "")
+  names <- str_extract(names(coefs), "\\^\\^\\^.*$") %>% str_replace_all("\\^\\^\\^", "")
+  
+  for (i in 1:length(coefs)) {
+    
+    dt.par[name == names[i] & param == params[i], value := coefs[i]]
+    
+  }
+
+  dt.par
+  
+}
+
 
 
 

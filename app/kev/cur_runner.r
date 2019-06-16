@@ -164,8 +164,6 @@ cur.plot.model(cur.status)
 cur.status@metrics$r.squared
 
 
-## TO DO
-# 1. NLS errors
 
 
 
