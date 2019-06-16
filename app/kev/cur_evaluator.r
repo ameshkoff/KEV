@@ -27,11 +27,13 @@ cur.formula.create <- function(dt.par, dt.cur) {
     
     if (fnc.list[i, design] == "gaussian") {
       
-      frm <- c(frm, paste0("kev.gaussian(label, `amplitude", fnc.list[i, name], "`, `expvalue", fnc.list[i, name], "`, `hwhm", fnc.list[i, name], "`)"))
+      frm <- c(frm, paste0("kev.gaussian(label, `amplitude^^^", fnc.list[i, name]
+                           , "`, `expvalue^^^", fnc.list[i, name], "`, `hwhm^^^", fnc.list[i, name], "`)"))
       
     } else if (fnc.list[i, design] == "lorentzian") {
       
-      frm <- c(frm, paste0("kev.lorentzian(label, `amplitude", fnc.list[i, name], "`, `expvalue", fnc.list[i, name], "`, `hwhm", fnc.list[i, name], "`)"))
+      frm <- c(frm, paste0("kev.lorentzian(label, `amplitude^^^", fnc.list[i, name]
+                           , "`, `expvalue^^^", fnc.list[i, name], "`, `hwhm^^^", fnc.list[i, name], "`)"))
       
     } else {
       
@@ -41,7 +43,7 @@ cur.formula.create <- function(dt.par, dt.cur) {
     tmp <- dt.par[design == fnc.list[i, design] & name == fnc.list[i, name], .(param, value)]
     
     new.values <- as.list(tmp[, value])
-    names(new.values) <- paste0(tmp[, param], fnc.list[i, name])
+    names(new.values) <- paste0(tmp[, param], "^^^", fnc.list[i, name])
     
     start.values <- c(start.values, new.values)
     
@@ -74,8 +76,10 @@ cur.formula.execute <- function(dt, formula = NULL, terms = NULL, scalar.values.
   
   for (nm in names(scalar.values.list)) {
     
-    rhs.expr <- str_replace(rhs.expr, nm, paste0("scalar.values.list[['", nm, "']]"))
-    
+    rhs.expr <- str_replace(rhs.expr
+                            , fixed(paste0("`", nm, "`"))
+                            , paste0("scalar.values.list[['", nm, "']]"))
+
   }
   
   # create final expression
@@ -99,14 +103,17 @@ cur.formula.effects <- function(dt, formula, scalar.values.list) {
   for (trm in terms) {
     
     pred <- cur.formula.execute(dt, terms = trm, scalar.values.list = scalar.values.list)
-    
     dt[, new := pred]
-    setnames(dt, "new", paste0("curve", str_extract(trm, "[0-9]+")))
+    
+    cl <- str_split(trm, "`") %>% unlist()
+    cl <- cl[cl %like% "\\^\\^\\^"][1] %>% str_replace("^.*\\^\\^\\^", "")
+    
+    setnames(dt, "new", paste0("Curve ", cl))
     
   }
   
   cln <- colnames(dt)
-  cln <- cln[cln %like% "^curve[0-9]+$"]
+  cln <- cln[cln %like% "^Curve "]
   
   dt[, predicted := rowSums(dt[, cln, with = FALSE])]
   

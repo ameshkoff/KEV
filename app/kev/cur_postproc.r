@@ -19,7 +19,7 @@ cur.plot.initial <- function(cur.status = kev.curve) {
   init.effects <- cur.formula.effects(dt, formula = frm, scalar.values.list = start.values)
   
   cln <- colnames(init.effects)
-  cln <- cln[cln %like% "^(curve[0-9]+|label)$"]
+  cln <- cln[cln %like% "^(Curve .*|label)$"]
   
   g <-
     ggplot() +
@@ -43,7 +43,7 @@ cur.plot.model <- function(cur.status = cur.status) {
   md.effects <- cur.model.effects(dt, md)
   
   cln <- colnames(md.effects)
-  cln <- cln[cln %like% "^(curve[0-9]+|label)$"]
+  cln <- cln[cln %like% "^(Curve .*|label)$"]
   
   g <-
     ggplot() +
