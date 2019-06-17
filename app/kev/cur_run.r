@@ -39,3 +39,8 @@ cur.plot.initial(cur.status)
 cur.plot.model(cur.status)
 
 cur.status@metrics$r.squared
+
+
+# TO DO: save
+
+

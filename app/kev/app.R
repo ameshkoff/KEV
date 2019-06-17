@@ -996,6 +996,109 @@ ui <- tagList(
     )
   )
 
+# curve fitting -------------------------
+
+  , tabPanel("Curve Fitting"
+         , id = "page.cur"
+         
+         , fluidPage(
+           
+           fluidRow(column(12, p(HTML("KEV: Chemistry Constant Evaluator<br/>"))))
+           
+           , titlePanel("Curve Fitting")
+           
+           , fluidRow(column(
+             12
+             , wellPanel(
+               fluidRow(column(1, img(src = "cur-icon.png", class = "kev-icon"))
+                        , column(3
+                                 , h4("Column delimiter of your data files")
+                                 , radioButtons("cur.sep", "", inline = TRUE
+                                                , c("," = "comma"
+                                                    , ";" = "semicolon"
+                                                    , "tab" = "tab"))
+                        )
+                        , column(8
+                                 , h4("Task")
+                                 , selectInput("cur.task"
+                                               , ""
+                                               , list("Spectrophotometry", "Other")
+                                               , selected = "Spectrophotometry")
+                        ))
+             )))
+           
+           , fluidRow(column(
+             12
+             , wellPanel(
+               fluidRow(column(12
+                               , h3("Bulk upload / download")))
+               
+               , fluidRow(column(5
+                                 , h4("Upload all data")
+                                 , fileInput("file.cur.bulk.input", "Choose CSV files or XLSX file with multiple sheets",
+                                             accept = c(
+                                               "text/csv"
+                                               , "text/comma-separated-values,text/plain"
+                                               , ".csv"
+                                               , ".xlsx")
+                                             , multiple = TRUE))
+                          
+                          , column(3
+                                   , h4("Download all data")
+                                   , fluidRow(class = "download-row"
+                                              , downloadButton("kev.cur.data.zip", "zip")
+                                              , downloadButton("kev.cur.data.xlsx", "xlsx")))
+                          
+                          , column(4
+                                   , h4("Example data")
+                                   , p("Learn how to prepare data via example datasets")
+                                   , fluidRow(
+                                     column(12
+                                            , actionButton(inputId = "cur.example.data"
+                                                           , label = HTML("&nbsp;Check examples")
+                                                           , icon = icon("database")
+                                                           , onclick = paste0("window.open('https://gitlab.com/"
+                                                                              , "a.meshkov/KEV/tree/"
+                                                                              , "master/input/curves', '_blank')")))))
+               )
+             )))
+           
+           , fluidRow(column(
+             12
+             , wellPanel(
+               fluidRow(column(4
+                               , fluidRow(column(12
+                                                 , selectInput("cur.add.curve.select"
+                                                               , "Add Curve"
+                                                               , list("Gaussian", "Lorentzian")
+                                                               , selected = "Gaussian")))
+                               , fluidRow(id = "cur_new_curves_place", column(12, p("")))
+                               , fluidRow(column(12, actionButton("cur.conc.exec.btn", "Evaluate", class = "kev-ev-button")))
+                               )
+                        
+                        , column(8
+                                 , h4("")
+                                 
+                                 , tabsetPanel(type = "tabs"
+                                               , tabPanel("Plot"
+                                                          , plotlyOutput("plot.cur"))
+                                               , tabPanel("Data"
+                                                          , h4("Input Data")
+                                                          , rHandsontableOutput("cur.dt.init")
+                                                          , h4("Fitted Curves")
+                                                          , rHandsontableOutput("cur.model.effects"))
+                                               )
+                                 
+                                 , fluidRow(class = "download-row"
+                                            , downloadButton("cur.model.effects.csv", "csv")
+                                            , downloadButton("cur.model.effects.xlsx", "xlsx"))))
+               
+             ))
+             
+           )
+           
+        ))
+
 # info ---------------------------------------
 
   , navbarMenu("More",
@@ -6704,6 +6807,34 @@ server <- function(input, output, session) {
   })
   
 
+  
+  # curve fitting -------------------------------------
+  
+  
+  # technical
+  
+  cur.sep <- reactive({
+    
+    switch(input$cur.sep,
+           comma = ",",
+           semicolon = ";",
+           tab = "tab")
+    
+  })
+  
+  observeEvent(input$cur.add.curve.select, {
+    
+    id <- input$cur.add.curve.select
+    
+    insertUI(selector = "#cur_new_curves_place"
+             , where = "beforeBegin"
+             , ui = fluidRow(column(12, paste("Row ", id)), id = id)
+             )
+    }
+    , ignoreInit = TRUE
+    
+    )
+  
   
   
   # end of main server part ----------------------------
