@@ -139,7 +139,14 @@ cur.model.effects <- function(dt, model) {
     
 }
 
+cur.object.effects <- function(cur.status) {
+  
+  frm <- cur.formula.create(cur.status@dt.par, cur.status@dt.init)
+  cur.formula.effects(cur.status@dt.init, frm$formula, frm$start.values)
+  
+}
 
+  
 # modelling --------------------------------------------------
 
 cur.remove.curves <- function(cur.status = kev.curve, min.expvalue = NULL, max.expvalue = NULL) {

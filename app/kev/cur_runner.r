@@ -84,7 +84,6 @@ cur.data.runner <- function(mode = c("api", "script", "app")
   source(paste0(dir.start, "cur_data.r"), chdir = TRUE)
   source(paste0(dir.start, "cur_preproc.r"), chdir = TRUE)
   source(paste0(dir.start, "cur_evaluator.r"), chdir = TRUE)
-  source(paste0(dir.start, "cur_postproc.r"), chdir = TRUE)
   # source(paste0(dir.start, "cur_save.r"), chdir = TRUE)
   
   
@@ -111,11 +110,11 @@ cur.data.runner <- function(mode = c("api", "script", "app")
   dt.par <- dt.ttl[["dt.par"]]
   
   
-  # define assumptions --------------- #
+  # initial guess --------------- #
   
   if (is.null(dt.par) || nrow(dt.par) == 0) {
     
-    dt.par <- cur.assumptions(dt.cur
+    dt.par <- cur.initial.guess(dt.cur
                               , cur.task
                               , window.borders
                               , dt.par
@@ -140,6 +139,52 @@ cur.data.runner <- function(mode = c("api", "script", "app")
   
   cur.status
 
+}
+
+
+# plots ------------------------------------------------------
+
+cur.plot.effects <- function(cur.status = kev.curve) {
+  
+  dt <- cur.status@dt.init
+  frm <- cur.formula.create(cur.status@dt.par, dt)
+  
+  extr.effects <- cur.formula.effects(dt, frm$formula, frm$start.values)
+  
+  cln <- colnames(extr.effects)
+  cln <- cln[cln %like% "^(Curve .*|label)$"]
+  
+  g <-
+    ggplot() +
+    geom_area(data = extr.effects, aes(x = label, y = observed, group = 1), color = "darkgrey", size = 1, fill = "grey") +
+    geom_line(data = extr.effects, aes(x = label, y = predicted, group = 1), color = "darkblue", size = 1, linetype = 2) +
+    geom_line(data = melt(extr.effects[, cln, with = FALSE], id.vars = "label", variable.name = "Curves")
+              , aes(x = label, y = value, group = Curves, color = Curves)) +
+    geom_rect(aes(xmin = -Inf, xmax = cur.status@window.borders[1], ymin = 0, ymax = Inf), alpha = .1) +
+    geom_rect(aes(xmin = cur.status@window.borders[2], xmax = Inf, ymin = 0, ymax = Inf), alpha = .1)
+  
+  g
+  
+}
+
+
+# metrics and residuals --------------------------------------
+
+cur.model.metrics <- function(dt, model) {
+  
+  pred <- cur.model.predict(dt, model)
+  obs <- dt[, value]
+  
+  residuals.abs <- pred - obs
+  residuals.rel <- residuals.abs / obs
+  
+  residuals.abs <- dt[, .(label, residuals.abs = residuals.abs)]
+  residuals.rel <- dt[, .(label, residuals.rel = residuals.rel)]
+  
+  r.squared <- 1 - (sum((obs - pred) ^ 2) / length(obs)) / var(obs)
+  
+  list(residuals.abs = residuals.abs, residuals.rel = residuals.rel, r.squared = r.squared)
+  
 }
 
 

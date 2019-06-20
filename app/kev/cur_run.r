@@ -20,6 +20,8 @@ cur.status <- cur.data.runner(mode = "script"
                               , save.res = TRUE
                               , dt.list = NULL)
 
+cur.plot.effects(cur.status)
+
 
 # run modelling ----------------------------------------------
 
@@ -32,13 +34,16 @@ cur.status <- cur.model(cur.status)
 
 
 
-
-
-cur.plot.initial(cur.status)
-
-cur.plot.model(cur.status)
+cur.plot.effects(cur.status)
 
 cur.status@metrics$r.squared
+
+
+# universal data extraction (independent from step)
+
+cur.object.effects(cur.status)
+
+
 
 
 # TO DO: save
