@@ -2378,7 +2378,7 @@ server <- function(input, output, session) {
         dt.coef <- as.data.table(matrix(rep(1, 16), 4))
         setnames(dt.coef, paste0("molecule", 1:4))
         
-        dt.coef <- as.data.table(dt.coef)
+        # dt.coef <- as.data.table(dt.coef)
         dt.coef <- cbind(dt.coef, name = paste0("product", 1:4))
         
       } else {
@@ -4192,7 +4192,7 @@ server <- function(input, output, session) {
         dt.coef <- as.data.table(matrix(rep(1, 16), 4))
         setnames(dt.coef, paste0("molecule", 1:4))
         
-        dt.coef <- as.data.table(dt.coef)
+        # dt.coef <- as.data.table(dt.coef)
         dt.coef <- cbind(dt.coef, name = paste0("product", 1:4))
         
       } else {
@@ -5532,7 +5532,7 @@ server <- function(input, output, session) {
         dt.coef <- as.data.table(matrix(rep(1, 16), 4))
         setnames(dt.coef, paste0("molecule", 1:4))
         
-        dt.coef <- as.data.table(dt.coef)
+        # dt.coef <- as.data.table(dt.coef)
         dt.coef <- cbind(dt.coef, name = paste0("product", 1:4))
         
       } else {
@@ -6828,6 +6828,13 @@ server <- function(input, output, session) {
     
   })
   
+  cur.curves.list <- reactiveValues()
+  cur.curves.dyn <- reactiveValues()
+  
+  
+  
+  # controls ----------------- #
+  
   observeEvent(input$cur.add.curve.select, {
     
       id <- input$cur.add.curve.select
@@ -6901,7 +6908,7 @@ server <- function(input, output, session) {
         }
         
         input.source$cur.curves.iterator <- input.source$cur.curves.iterator + as.integer(1)
-        
+
         insertUI(selector = "#cur_new_curves_place"
                  , where = "beforeBegin"
                  , ui = cur.curve.ui
@@ -6915,8 +6922,127 @@ server <- function(input, output, session) {
     
     }
     , ignoreInit = TRUE
-    
     )
+  
+  # data --------------------- #
+  
+  # input data
+  
+  cur.dt.init.data <- reactive({
+    
+    if (!is.null(input$cur.dt.init)) {
+      
+      dt.init <- hot_to_r(input$cur.dt.init)
+      
+    } else {
+      
+      if (is.null(values[["cur.dt.init"]])) {
+        
+        dt.init <- data.table(label = 1:100, value = rnorm(1:100))
+
+      } else {
+        
+        dt.init <- values[["cur.dt.init"]]
+        
+      }
+    }
+    
+    dt.init <- as.data.table(dt.init)
+    
+    values[["cur.dt.init"]] <- dt.init
+    
+    dt.init
+    
+  })
+  
+  
+  # rendering ---------------- #
+  
+  output$cur.dt.init <- renderRHandsontable({
+    
+    in.file.bulk <- input$file.cur.bulk.input
+    in.file.xlsx <- NULL
+    in.file <- NULL
+    
+    # bulk input
+
+    if (!is.null(in.file.bulk)) {
+      
+      in.file <- as.data.table(in.file.bulk)[name %like% "^(input\\_)*data(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(in.file.bulk)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        in.file <- NULL
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+    }
+    
+    # choose source
+    
+    if (!is.null(in.file)) {
+      
+      if (cur.sep() == ";") {
+        dt.init <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
+      } else if (cur.sep() == ",") {
+        dt.init <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
+      } else if (cur.sep() == "tab") {
+        dt.init <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
+      }
+      
+      setDT(dt.init)
+      
+      cln <- colnames(dt.init)
+      setnames(dt.init, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "^(input_|output_)*data"]
+      shts <- sort(shts)
+      
+      dt.init <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
+      
+    } else {
+      
+      dt.init <- cur.dt.init.data()
+      
+    }
+    
+    validate(
+      
+      need(is.data.frame(dt.init), "Your file doesn't look like a data file (table-like)") %then%
+        need(ncol(dt.init) == 2
+             , paste("The data file for curve fitting should contain exactly 1 column `label` for labels"
+                     , "and 1 column `value` for observed values"))
+      
+    )
+    
+    if (!is.null(dt.init)) {
+      
+      if (nrow(dt.init) > 25) {
+        
+        rhandsontable(dt.init, stretchH = "all", useTypes = FALSE, height = 600) %>%
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        
+      } else {
+        
+        rhandsontable(dt.init, stretchH = "all", useTypes = FALSE, height = NULL) %>%
+          hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        
+      }
+      
+    }
+
+  })
   
   
   
