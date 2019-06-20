@@ -11,14 +11,6 @@
 import math
 import numpy as np
 from copy import copy, deepcopy
-import pandas as pd
-from collections import Counter
-from openpyxl import load_workbook
-import re
-import io
-import os
-
-max_iter, eps = 1000, 0.0000001
 
 def eq_calc(max_iter, eps, component_name_for_yields, ser_num, st_coeff_matrix, type_con, lg_k,
             con_matrix, ign_indices, ser_counts, ser_info): # ser_num, ser_counts, ser_info not further used yet!
@@ -30,14 +22,14 @@ def eq_calc(max_iter, eps, component_name_for_yields, ser_num, st_coeff_matrix, 
         reag_eq_con_matrix = deepcopy(con_matrix[k]) # initial estimation of equilibrium concentrations of reagents
         init_conc = deepcopy(con_matrix[k]) # value for residual calculation in inner function
         
-        prod_eq_con_matrix, g_res = inner_eq_calc(reag_eq_con_matrix, max_iter, lg_k, st_coeff_matrix, init_conc, ign_indices)   
+        prod_eq_con_matrix, g_res = inner_eq_calc(reag_eq_con_matrix, max_iter, lg_k, st_coeff_matrix, init_conc, ign_indices, eps)   
                     
         c_res_out[k] += prod_eq_con_matrix[0]
         g_res_out[k] += g_res[0]
 
     return c_res_out, g_res_out
 
-def inner_eq_calc(reag_eq_con_matrix, max_iter, lg_k, st_coeff_matrix, init_conc, ign_indices): 
+def inner_eq_calc(reag_eq_con_matrix, max_iter, lg_k, st_coeff_matrix, init_conc, ign_indices, eps): 
     
     lg_k, st_coeff_matrix, con_matrix = deepcopy(lg_k), deepcopy(st_coeff_matrix), deepcopy(init_conc)
     

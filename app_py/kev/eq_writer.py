@@ -8,15 +8,7 @@
 
 # import libraries -------------------------------------------
 
-import math
-import numpy as np
-from copy import copy, deepcopy
 import pandas as pd
-from collections import Counter
-from openpyxl import load_workbook
-import re
-import io
-import os
 
 def eq_output(sep_out, subdir_out, file_out, results_stoich_coeff, lg_k_data, c_inp_out, c_res_out, 
               c_yie_out, component_name_for_yields, g_res_out, comp_name_res):

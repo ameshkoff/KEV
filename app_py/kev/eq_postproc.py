@@ -10,13 +10,7 @@
 
 import math
 import numpy as np
-from copy import copy, deepcopy
 import pandas as pd
-from collections import Counter
-from openpyxl import load_workbook
-import re
-import io
-import os
 
 def eq_postproc(st_coeff_matrix, con_matrix, idx, c_res_out, g_res_out, ser_num, ser_info, ser_counts, con_data, 
                 st_coeff_data, prod_names, prod_names_con, component_name_for_yields, type_con, ign_indices): 
