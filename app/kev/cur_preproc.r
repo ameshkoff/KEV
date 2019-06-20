@@ -85,7 +85,7 @@ cur.preproc <- function(dt.ttl) {
   
 }
 
-cur.assumptions <- function(dt.cur, cur.task, window.borders, dt.par, smooth.delimiter = 30) {
+cur.initial.guess <- function(dt.cur, cur.task, window.borders, dt.par, smooth.delimiter = 30) {
   
   # smooth observations
   
