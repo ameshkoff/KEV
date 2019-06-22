@@ -6828,11 +6828,6 @@ server <- function(input, output, session) {
     
   })
   
-  cur.curves.list <- reactiveValues()
-  cur.curves.dyn <- reactiveValues()
-  
-  
-  
   # controls ----------------- #
   
   observeEvent(input$cur.add.curve.select, {
@@ -6841,6 +6836,8 @@ server <- function(input, output, session) {
       
       if (id %in% unlist(cur.curves.list) & id != "Add Curve") {
         
+        btn.id <- paste0(id, input.source$cur.curves.iterator, "_remove.btn")
+          
         if (id == "Gaussian") {
           
           cur.curve.ui <- fluidRow(column(2
@@ -6867,7 +6864,7 @@ server <- function(input, output, session) {
                                                         , value = 0)
                                             , class = "kev-densed-input-row")
                                    , column(2
-                                            , actionButton(paste0(id, input.source$cur.curves.iterator, "_remove.btn")
+                                            , actionButton(btn.id
                                                            , ""
                                                            , icon = icon("trash")
                                                            , style = "margin-top: 25px;"))
@@ -6899,7 +6896,7 @@ server <- function(input, output, session) {
                                                         , value = 0)
                                             , class = "kev-densed-input-row")
                                    , column(2
-                                            , actionButton(paste0(id, input.source$cur.curves.iterator, "_remove.btn")
+                                            , actionButton(btn.id
                                                            , ""
                                                            , icon = icon("trash")
                                                            , style = "margin-top: 25px;"))
@@ -6914,6 +6911,15 @@ server <- function(input, output, session) {
                  , ui = cur.curve.ui
         )
         
+        observeEvent(input[[btn.id]], {
+          
+          removeUI(
+            
+            selector = paste0("#", str_replace(btn.id, "_remove.btn", ""))
+            
+          )
+        })
+        
         updateSelectInput(session, "cur.add.curve.select",
                           selected = "Add Curve"
         )
@@ -6924,6 +6930,7 @@ server <- function(input, output, session) {
     , ignoreInit = TRUE
     )
   
+
   # data --------------------- #
   
   # input data
