@@ -77,6 +77,7 @@ cur.preproc <- function(dt.ttl) {
   if (length(dt.par[name == "" & param == "right", value]) > 0) window.borders[2] <- dt.par[name == "" & param == "right", value] %>% as.numeric()
   
   dt.par <- dt.par[name != ""]
+  dt.par[, value := as.numeric(value)]
 
   list(dt.cur = dt.cur
        , cur.task = cur.task

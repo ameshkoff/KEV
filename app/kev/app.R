@@ -1077,7 +1077,7 @@ ui <- tagList(
                                                                , cur.curves.list
                                                                , selected = "Add Curve")))
                                , fluidRow(id = "cur_new_curves_place", column(12, p("")))
-                               , fluidRow(column(12, actionButton("cur.conc.exec.btn", "Evaluate", class = "kev-ev-button")))
+                               , fluidRow(column(12, actionButton("cur.exec.btn", "Evaluate", class = "kev-ev-button")))
                                )
                         
                         , column(8
@@ -1152,8 +1152,6 @@ server <- function(input, output, session) {
     , nm.cnst.bulk = FALSE
     , dt.nm.bulk = FALSE
     , nm.dt.ind.bulk = FALSE
-    
-    , cur.curves.iterator = as.integer(1)
     
   )
 
@@ -6828,6 +6826,11 @@ server <- function(input, output, session) {
     
   })
   
+  cur.curves.iterator <- reactiveVal(as.integer(1))
+  
+  cur.formula.values <- reactiveValues()
+  
+  
   # controls ----------------- #
   
   observeEvent(input$cur.add.curve.select, {
@@ -6836,7 +6839,8 @@ server <- function(input, output, session) {
       
       if (id %in% unlist(cur.curves.list) & id != "Add Curve") {
         
-        btn.id <- paste0(id, input.source$cur.curves.iterator, "_remove.btn")
+        cur.id <- paste0(id, cur.curves.iterator())
+        btn.id <- paste0(id, cur.curves.iterator(), "_remove.btn")
           
         if (id == "Gaussian") {
           
@@ -6844,22 +6848,22 @@ server <- function(input, output, session) {
                                           , h4("Gaussian")
                                           , class = "kev-densed-input-row")
                                    , column(2
-                                            , textInput(inputId = paste0(id, input.source$cur.curves.iterator, "_name")
+                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_name")
                                                         , label = "Name"
-                                                        , value = paste("Curve", input.source$cur.curves.iterator))
+                                                        , value = paste("Curve", cur.curves.iterator()))
                                             , class = "kev-densed-input-row")
                                    , column(2
-                                            , textInput(inputId = paste0(id, input.source$cur.curves.iterator, "_amplitude")
+                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_amplitude")
                                                         , label = "Amplitude"
                                                         , value = 0)
                                             , class = "kev-densed-input-row")
                                    , column(2
-                                            , textInput(inputId = paste0(id, input.source$cur.curves.iterator, "_expvalue")
+                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_expvalue")
                                                         , label = "Exp.value"
                                                         , value = 0)
                                             , class = "kev-densed-input-row")
                                    , column(2
-                                            , textInput(inputId = paste0(id, input.source$cur.curves.iterator, "_hwhm")
+                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_hwhm")
                                                         , label = "HWHM"
                                                         , value = 0)
                                             , class = "kev-densed-input-row")
@@ -6868,7 +6872,7 @@ server <- function(input, output, session) {
                                                            , ""
                                                            , icon = icon("trash")
                                                            , style = "margin-top: 25px;"))
-                                   , id = paste0(id, input.source$cur.curves.iterator))
+                                   , id = cur.id)
 
         } else if (id == "Lorentzian") {
           
@@ -6876,22 +6880,22 @@ server <- function(input, output, session) {
                                           , h4("Lorentzian")
                                           , class = "kev-densed-input-row")
                                    , column(2
-                                            , textInput(inputId = paste0(id, input.source$cur.curves.iterator, "_name")
+                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_name")
                                                         , label = "Name"
-                                                        , value = paste("Curve", input.source$cur.curves.iterator))
+                                                        , value = paste("Curve", cur.curves.iterator()))
                                             , class = "kev-densed-input-row")
                                    , column(2
-                                            , textInput(inputId = paste0(id, input.source$cur.curves.iterator, "_amplitude")
+                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_amplitude")
                                                         , label = "Amplitude"
                                                         , value = 0)
                                             , class = "kev-densed-input-row")
                                    , column(2
-                                            , textInput(inputId = paste0(id, input.source$cur.curves.iterator, "_expvalue")
+                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_expvalue")
                                                         , label = "Exp.value"
                                                         , value = 0)
                                             , class = "kev-densed-input-row")
                                    , column(2
-                                            , textInput(inputId = paste0(id, input.source$cur.curves.iterator, "_hwhm")
+                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_hwhm")
                                                         , label = "HWHM"
                                                         , value = 0)
                                             , class = "kev-densed-input-row")
@@ -6900,11 +6904,11 @@ server <- function(input, output, session) {
                                                            , ""
                                                            , icon = icon("trash")
                                                            , style = "margin-top: 25px;"))
-                                   , id = paste0(id, input.source$cur.curves.iterator))
+                                   , id = cur.id)
           
         }
         
-        input.source$cur.curves.iterator <- input.source$cur.curves.iterator + as.integer(1)
+        cur.curves.iterator(cur.curves.iterator() + as.integer(1))
 
         insertUI(selector = "#cur_new_curves_place"
                  , where = "beforeBegin"
@@ -6920,6 +6924,13 @@ server <- function(input, output, session) {
           )
         })
         
+        # observeEvent(input[[cur.id]], {
+        #   
+        #   browser()
+        #   
+        # })
+        
+        
         updateSelectInput(session, "cur.add.curve.select",
                           selected = "Add Curve"
         )
@@ -6927,52 +6938,32 @@ server <- function(input, output, session) {
       }
     
     }
-    , ignoreInit = TRUE
-    )
+    , ignoreInit = TRUE)
   
-
+  
   # data --------------------- #
   
   # input data
   
   cur.dt.init.data <- reactive({
     
-    if (!is.null(input$cur.dt.init)) {
-      
-      dt.init <- hot_to_r(input$cur.dt.init)
-      
-    } else {
-      
-      if (is.null(values[["cur.dt.init"]])) {
-        
-        dt.init <- data.table(label = 1:100, value = rnorm(1:100))
+    if (is.null(values[["cur.dt.init"]]))
+      values[["cur.dt.init"]] <- data.table(label = 1:100, value = rnorm(1:100))
 
-      } else {
-        
-        dt.init <- values[["cur.dt.init"]]
-        
-      }
-    }
-    
-    dt.init <- as.data.table(dt.init)
-    
-    values[["cur.dt.init"]] <- dt.init
-    
-    dt.init
+    values[["cur.dt.init"]]
     
   })
+
+  observeEvent(input$file.cur.bulk.input, {
   
-  
-  # rendering ---------------- #
-  
-  output$cur.dt.init <- renderRHandsontable({
+    # load data ------ #
     
     in.file.bulk <- input$file.cur.bulk.input
     in.file.xlsx <- NULL
     in.file <- NULL
     
     # bulk input
-
+    
     if (!is.null(in.file.bulk)) {
       
       in.file <- as.data.table(in.file.bulk)[name %like% "^(input\\_)*data(\\.csv|\\.txt)*"][1]
@@ -7004,10 +6995,12 @@ server <- function(input, output, session) {
         dt.init <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
       }
       
-      setDT(dt.init)
-      
-      cln <- colnames(dt.init)
-      setnames(dt.init, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
+      if (is.data.frame(dt.init)) {
+        
+        cln <- colnames(dt.init)
+        colnames(dt.init) <- str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), "")
+        
+      }
       
     } else if (!is.null(in.file.xlsx)) {
       
@@ -7017,10 +7010,6 @@ server <- function(input, output, session) {
       shts <- sort(shts)
       
       dt.init <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
-      
-    } else {
-      
-      dt.init <- cur.dt.init.data()
       
     }
     
@@ -7033,6 +7022,122 @@ server <- function(input, output, session) {
       
     )
     
+    if (!is.null(dt.init)) {
+      
+      setDT(dt.init)
+      values[["cur.dt.init"]] <- dt.init
+      
+    }
+      
+    
+    # load params ----- #
+    
+    in.file.bulk <- input$file.cur.bulk.input
+    in.file.xlsx <- NULL
+    in.file <- NULL
+    
+    # bulk input
+    
+    if (!is.null(in.file.bulk)) {
+      
+      in.file <- as.data.table(in.file.bulk)[name %like% "^(input\\_)*params(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(in.file.bulk)[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        in.file <- NULL
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+    }
+    
+    # choose source
+    
+    if (!is.null(in.file)) {
+      
+      if (cur.sep() == ";") {
+        dt.par <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
+      } else if (cur.sep() == ",") {
+        dt.par <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
+      } else if (cur.sep() == "tab") {
+        dt.par <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", check.names = FALSE), silent = TRUE)
+      }
+      
+      if (is.data.frame(dt.par)) {
+        
+        cln <- colnames(dt.par)
+        colnames(dt.par) <- str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), "")
+        
+      }
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "^(input_|output_)*params*"]
+      shts <- sort(shts)
+      
+      dt.par <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
+      
+    } else {
+      
+      dt.par <- NULL
+      
+    }
+    
+    validate(
+      
+      need(is.null(dt.par) | is.data.frame(dt.par), paste("Params file exists but is not properly formatted"
+                                                          , "Check examples via `Check Examples` button")) %then%
+        need(is.null(dt.par) | ncol(dt.par) > 1, paste("Params file should contain > 1 columns. Check column delimiter"))
+    )
+    
+    if (!is.null(dt.par)) {
+      
+      setDT(dt.par)
+      values[["cur.dt.par"]] <- dt.par
+      
+    }
+    
+  }
+  , ignoreInit = TRUE)
+  
+
+  # calculating -------------- #
+  
+  observeEvent(values$cur.dt.par, {
+    
+    values$cur.status <- cur.data.runner(mode = "app"
+                                        , sep = cur.sep()
+                                        , subdir = ""
+                                        , file = NULL
+                                        , save.res = FALSE
+                                        , dt.list = list(dt.cur = values$cur.dt.init
+                                                         , dt.par = values$cur.dt.par))
+
+    
+    
+  })
+  
+  observeEvent(input$cur.exec.btn, {
+    
+    values$cur.status <- cur.model(values$cur.status)
+    
+  })
+  
+  
+  # rendering ---------------- #
+  
+  output$cur.dt.init <- renderRHandsontable({
+    
+    dt.init <- cur.dt.init.data()
+
     if (!is.null(dt.init)) {
       
       if (nrow(dt.init) > 25) {
@@ -7051,6 +7156,38 @@ server <- function(input, output, session) {
 
   })
   
+  output$plot.cur <- renderPlotly({
+    
+    dt <- values$cur.status@dt.init
+    frm <- cur.formula.create(values$cur.status@dt.par, dt)
+    
+    extr.effects <- cur.formula.effects(dt, frm$formula, frm$start.values)
+    
+    cln <- colnames(extr.effects)
+    cln <- cln[cln %like% "^(Curve .*|label)$"]
+    
+    lbl.perc <- (dt[, max(label)] - dt[, min(label)]) / 100
+    
+    g <-
+      ggplot() +
+      geom_area(data = extr.effects, aes(x = label, y = observed, group = 1), color = "darkgrey", size = 1, fill = "grey") +
+      geom_line(data = extr.effects, aes(x = label, y = predicted, group = 1), color = "darkblue", size = 1, linetype = 2) +
+      geom_line(data = melt(extr.effects[, cln, with = FALSE], id.vars = "label", variable.name = "Curves")
+                , aes(x = label, y = value, group = Curves, color = Curves)) +
+      geom_rect(aes(xmin = dt[, min(label)] - 2 * lbl.perc, xmax = values$cur.status@window.borders[1]
+                    , ymin = 0, ymax = dt[, max(value) * 1.1]), alpha = .1) +
+      geom_rect(aes(xmin = values$cur.status@window.borders[2], xmax = dt[, max(label)] + 2 * lbl.perc
+                    , ymin = 0, ymax = dt[, max(value) * 1.1]), alpha = .1) +
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      theme(legend.title = element_blank()) +
+      labs(x = "Labels", y = "Values")
+    
+    g <- ggplotly(g)
+
+    g
+    
+  })
   
   
   # end of main server part ----------------------------
