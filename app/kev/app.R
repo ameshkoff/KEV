@@ -6833,103 +6833,135 @@ server <- function(input, output, session) {
   
   # controls ----------------- #
   
+  cur.curve.gaussian <- function(id, btn.id, cur.id, cur.itr, cur.params = NULL) {
+    
+    if (is.null(cur.params))
+      cur.params <- list(name = cur.itr
+                         , amplitude = 0
+                         , expvalue = 0
+                         , hwhm = 0)
+    
+    cur.curve.ui <- fluidRow(column(2
+                                    , h4("Gaussian")
+                                    , class = "kev-densed-input-row")
+                             , column(2
+                                      , textInput(inputId = paste0(id, cur.itr, "_name")
+                                                  , label = "Name"
+                                                  , value = paste("Curve", cur.params$name))
+                                      , class = "kev-densed-input-row")
+                             , column(2
+                                      , textInput(inputId = paste0(id, cur.itr, "_amplitude")
+                                                  , label = "Amplitude"
+                                                  , value = cur.params$amplitude)
+                                      , class = "kev-densed-input-row")
+                             , column(2
+                                      , textInput(inputId = paste0(id, cur.itr, "_expvalue")
+                                                  , label = "Exp.value"
+                                                  , value = cur.params$expvalue)
+                                      , class = "kev-densed-input-row")
+                             , column(2
+                                      , textInput(inputId = paste0(id, cur.itr, "_hwhm")
+                                                  , label = "HWHM"
+                                                  , value = cur.params$hwhm)
+                                      , class = "kev-densed-input-row")
+                             , column(2
+                                      , actionButton(btn.id
+                                                     , ""
+                                                     , icon = icon("trash")
+                                                     , style = "margin-top: 25px;"))
+                             , id = cur.id)
+    
+    cur.curve.ui
+    
+  }
+
+  cur.curve.lorentzian <- function(id, btn.id, cur.id, cur.itr, cur.params = NULL) {
+    
+    if (is.null(cur.params))
+      cur.params <- list(name = cur.itr
+                         , amplitude = 0
+                         , expvalue = 0
+                         , hwhm = 0)
+    
+    cur.curve.ui <- fluidRow(column(2
+                                    , h4("Lorentzian")
+                                    , class = "kev-densed-input-row")
+                             , column(2
+                                      , textInput(inputId = paste0(id, cur.itr, "_name")
+                                                  , label = "Name"
+                                                  , value = paste("Curve", cur.params$name))
+                                      , class = "kev-densed-input-row")
+                             , column(2
+                                      , textInput(inputId = paste0(id, cur.itr, "_amplitude")
+                                                  , label = "Amplitude"
+                                                  , value = cur.params$amplitude)
+                                      , class = "kev-densed-input-row")
+                             , column(2
+                                      , textInput(inputId = paste0(id, cur.itr, "_expvalue")
+                                                  , label = "Exp.value"
+                                                  , value = cur.params$expvalue)
+                                      , class = "kev-densed-input-row")
+                             , column(2
+                                      , textInput(inputId = paste0(id, cur.itr, "_hwhm")
+                                                  , label = "HWHM"
+                                                  , value = cur.params$hwhm)
+                                      , class = "kev-densed-input-row")
+                             , column(2
+                                      , actionButton(btn.id
+                                                     , ""
+                                                     , icon = icon("trash")
+                                                     , style = "margin-top: 25px;"))
+                             , id = cur.id)
+    
+    cur.curve.ui
+    
+  }
+  
+
+  cur.curve.insert <- function(id, cur.params = NULL) {
+    
+    cur.itr <- cur.curves.iterator() 
+    cur.id <- paste0(id, cur.itr)
+    btn.id <- paste0(id, cur.itr, "_remove.btn")
+    
+    if (id == "Gaussian") {
+      
+      cur.curve.ui <- cur.curve.gaussian(id, btn.id, cur.id, cur.itr, cur.params)
+      
+    } else if (id == "Lorentzian") {
+      
+      cur.curve.ui <- cur.curve.lorentzian(id, btn.id, cur.id, cur.itr, cur.params)
+      
+    }
+    
+    cur.curves.iterator(cur.itr + as.integer(1))
+    
+    insertUI(selector = "#cur_new_curves_place"
+             , where = "beforeBegin"
+             , ui = cur.curve.ui
+    )
+    
+    observeEvent(input[[btn.id]], {
+      
+      removeUI(
+        
+        selector = paste0("#", str_replace(btn.id, "_remove.btn", ""))
+        
+      )
+    })
+      
+  }
+  
+  
+  #
+  
   observeEvent(input$cur.add.curve.select, {
     
       id <- input$cur.add.curve.select
       
       if (id %in% unlist(cur.curves.list) & id != "Add Curve") {
         
-        cur.id <- paste0(id, cur.curves.iterator())
-        btn.id <- paste0(id, cur.curves.iterator(), "_remove.btn")
-          
-        if (id == "Gaussian") {
-          
-          cur.curve.ui <- fluidRow(column(2
-                                          , h4("Gaussian")
-                                          , class = "kev-densed-input-row")
-                                   , column(2
-                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_name")
-                                                        , label = "Name"
-                                                        , value = paste("Curve", cur.curves.iterator()))
-                                            , class = "kev-densed-input-row")
-                                   , column(2
-                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_amplitude")
-                                                        , label = "Amplitude"
-                                                        , value = 0)
-                                            , class = "kev-densed-input-row")
-                                   , column(2
-                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_expvalue")
-                                                        , label = "Exp.value"
-                                                        , value = 0)
-                                            , class = "kev-densed-input-row")
-                                   , column(2
-                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_hwhm")
-                                                        , label = "HWHM"
-                                                        , value = 0)
-                                            , class = "kev-densed-input-row")
-                                   , column(2
-                                            , actionButton(btn.id
-                                                           , ""
-                                                           , icon = icon("trash")
-                                                           , style = "margin-top: 25px;"))
-                                   , id = cur.id)
-
-        } else if (id == "Lorentzian") {
-          
-          cur.curve.ui <- fluidRow(column(2
-                                          , h4("Lorentzian")
-                                          , class = "kev-densed-input-row")
-                                   , column(2
-                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_name")
-                                                        , label = "Name"
-                                                        , value = paste("Curve", cur.curves.iterator()))
-                                            , class = "kev-densed-input-row")
-                                   , column(2
-                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_amplitude")
-                                                        , label = "Amplitude"
-                                                        , value = 0)
-                                            , class = "kev-densed-input-row")
-                                   , column(2
-                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_expvalue")
-                                                        , label = "Exp.value"
-                                                        , value = 0)
-                                            , class = "kev-densed-input-row")
-                                   , column(2
-                                            , textInput(inputId = paste0(id, cur.curves.iterator(), "_hwhm")
-                                                        , label = "HWHM"
-                                                        , value = 0)
-                                            , class = "kev-densed-input-row")
-                                   , column(2
-                                            , actionButton(btn.id
-                                                           , ""
-                                                           , icon = icon("trash")
-                                                           , style = "margin-top: 25px;"))
-                                   , id = cur.id)
-          
-        }
-        
-        cur.curves.iterator(cur.curves.iterator() + as.integer(1))
-
-        insertUI(selector = "#cur_new_curves_place"
-                 , where = "beforeBegin"
-                 , ui = cur.curve.ui
-        )
-        
-        observeEvent(input[[btn.id]], {
-          
-          removeUI(
-            
-            selector = paste0("#", str_replace(btn.id, "_remove.btn", ""))
-            
-          )
-        })
-        
-        # observeEvent(input[[cur.id]], {
-        #   
-        #   browser()
-        #   
-        # })
-        
+        cur.curve.insert(id)
         
         updateSelectInput(session, "cur.add.curve.select",
                           selected = "Add Curve"
@@ -6949,8 +6981,10 @@ server <- function(input, output, session) {
     
     if (is.null(values$cur.dt.init)){
       
+      set.seed(1)
+      
       values$cur.dt.init <- data.table(label = 1:121, value = dnorm(seq(-3, 3, .05)) * (1 + rnorm(121, sd = 1e-2)))
-      values$cur.dt.par <- data.table(name = "", design = "", param = "task", value = input$cur.task)
+      cur.dt.par.data()
       
     }
 
@@ -6958,6 +6992,15 @@ server <- function(input, output, session) {
     
   })
 
+  cur.dt.par.data <- reactive({
+    
+    if (is.null(values$cur.dt.par))
+      values$cur.dt.par <- data.table(name = "", design = "", param = "task", value = input$cur.task)
+
+    values$cur.dt.par
+    
+  })
+  
   observeEvent({
     input$file.cur.bulk.input 
     input$cur.sep
@@ -7128,6 +7171,20 @@ server <- function(input, output, session) {
                                         , dt.list = list(dt.cur = cur.dt.init.data()
                                                          , dt.par = values$cur.dt.par))
 
+    browser()
+    dt.tmp <- values$cur.status$cur.dt.par[!is.na(design) & design != ""]
+    
+    if (nrow(dt.tmp) > 0) {
+      
+      for (i in dt.tmp[, unique(name)]) {
+        
+        cur.curve.insert(values$cur.dt.par[name == i, design][i]
+                         , as.list(values$cur.dt.par[name == i, param]))
+        
+      }
+      
+    }
+    
     
     
   }, ignoreNULL = FALSE)
