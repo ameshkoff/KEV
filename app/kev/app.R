@@ -6947,14 +6947,21 @@ server <- function(input, output, session) {
   
   cur.dt.init.data <- reactive({
     
-    if (is.null(values[["cur.dt.init"]]))
-      values[["cur.dt.init"]] <- data.table(label = 1:100, value = rnorm(1:100))
+    if (is.null(values$cur.dt.init)){
+      
+      values$cur.dt.init <- data.table(label = 1:121, value = dnorm(seq(-3, 3, .05)) * (1 + rnorm(121, sd = 1e-2)))
+      values$cur.dt.par <- data.table(name = "", design = "", param = "task", value = input$cur.task)
+      
+    }
 
-    values[["cur.dt.init"]]
+    values$cur.dt.init
     
   })
 
-  observeEvent(input$file.cur.bulk.input, {
+  observeEvent({
+    input$file.cur.bulk.input 
+    input$cur.sep
+    }, {
   
     # load data ------ #
     
@@ -7118,12 +7125,12 @@ server <- function(input, output, session) {
                                         , subdir = ""
                                         , file = NULL
                                         , save.res = FALSE
-                                        , dt.list = list(dt.cur = values$cur.dt.init
+                                        , dt.list = list(dt.cur = cur.dt.init.data()
                                                          , dt.par = values$cur.dt.par))
 
     
     
-  })
+  }, ignoreNULL = FALSE)
   
   observeEvent(input$cur.exec.btn, {
     
@@ -7157,6 +7164,12 @@ server <- function(input, output, session) {
   })
   
   output$plot.cur <- renderPlotly({
+    
+    validate(
+      
+      need(!is.null(values$cur.status), "Error loading or creating curves parameters")
+      
+    ) 
     
     dt <- values$cur.status@dt.init
     frm <- cur.formula.create(values$cur.status@dt.par, dt)
