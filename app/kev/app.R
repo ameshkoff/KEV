@@ -6828,12 +6828,14 @@ server <- function(input, output, session) {
   
   cur.curves.iterator <- reactiveVal(as.integer(1))
   
-  cur.formula.values <- reactiveValues()
+  cur.curve.rows <- reactiveValues()
+  
+  # cur.formula.values <- reactiveValues()
   
   
   # controls ----------------- #
   
-  cur.curve.gaussian <- function(id, btn.id, cur.id, cur.itr, cur.params = NULL) {
+  cur.curve.gaussian <- function(fn.type.id, btn.id, cur.id, fn.id, cur.params = NULL) {
     
     if (is.null(cur.params))
       cur.params <- list(name = cur.itr
@@ -6845,22 +6847,22 @@ server <- function(input, output, session) {
                                     , h4("Gaussian")
                                     , class = "kev-densed-input-row")
                              , column(2
-                                      , textInput(inputId = paste0(id, cur.itr, "_name")
+                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_name")
                                                   , label = "Name"
-                                                  , value = paste("Curve", cur.params$name))
+                                                  , value = paste("Curve", fn.id))
                                       , class = "kev-densed-input-row")
                              , column(2
-                                      , textInput(inputId = paste0(id, cur.itr, "_amplitude")
+                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_amplitude")
                                                   , label = "Amplitude"
                                                   , value = cur.params$amplitude)
                                       , class = "kev-densed-input-row")
                              , column(2
-                                      , textInput(inputId = paste0(id, cur.itr, "_expvalue")
+                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_expvalue")
                                                   , label = "Exp.value"
                                                   , value = cur.params$expvalue)
                                       , class = "kev-densed-input-row")
                              , column(2
-                                      , textInput(inputId = paste0(id, cur.itr, "_hwhm")
+                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_hwhm")
                                                   , label = "HWHM"
                                                   , value = cur.params$hwhm)
                                       , class = "kev-densed-input-row")
@@ -6875,7 +6877,7 @@ server <- function(input, output, session) {
     
   }
 
-  cur.curve.lorentzian <- function(id, btn.id, cur.id, cur.itr, cur.params = NULL) {
+  cur.curve.lorentzian <- function(fn.type.id, btn.id, cur.id, fn.id, cur.params = NULL) {
     
     if (is.null(cur.params))
       cur.params <- list(name = cur.itr
@@ -6887,22 +6889,22 @@ server <- function(input, output, session) {
                                     , h4("Lorentzian")
                                     , class = "kev-densed-input-row")
                              , column(2
-                                      , textInput(inputId = paste0(id, cur.itr, "_name")
+                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_name")
                                                   , label = "Name"
-                                                  , value = paste("Curve", cur.params$name))
+                                                  , value = paste("Curve", fn.id))
                                       , class = "kev-densed-input-row")
                              , column(2
-                                      , textInput(inputId = paste0(id, cur.itr, "_amplitude")
+                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_amplitude")
                                                   , label = "Amplitude"
                                                   , value = cur.params$amplitude)
                                       , class = "kev-densed-input-row")
                              , column(2
-                                      , textInput(inputId = paste0(id, cur.itr, "_expvalue")
+                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_expvalue")
                                                   , label = "Exp.value"
                                                   , value = cur.params$expvalue)
                                       , class = "kev-densed-input-row")
                              , column(2
-                                      , textInput(inputId = paste0(id, cur.itr, "_hwhm")
+                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_hwhm")
                                                   , label = "HWHM"
                                                   , value = cur.params$hwhm)
                                       , class = "kev-densed-input-row")
@@ -6918,23 +6920,26 @@ server <- function(input, output, session) {
   }
   
 
-  cur.curve.insert <- function(id, cur.params = NULL) {
+  cur.curve.insert <- function(fn.type.id, cur.params = NULL, fn.id = NULL) {
     
-    cur.itr <- cur.curves.iterator() 
-    cur.id <- paste0(id, cur.itr)
-    btn.id <- paste0(id, cur.itr, "_remove.btn")
+    cur.itr <- cur.curves.iterator()
+    if (is.null(fn.id)) fn.id <- cur.itr
     
-    if (id == "Gaussian") {
+    cur.id <- paste0(fn.type.id, fn.id, "_curve.row")
+    btn.id <- paste0(fn.type.id, fn.id, "_remove.btn")
+    
+    if (str_to_lower(fn.type.id) == "gaussian") {
       
-      cur.curve.ui <- cur.curve.gaussian(id, btn.id, cur.id, cur.itr, cur.params)
+      cur.curve.ui <- cur.curve.gaussian(fn.type.id, btn.id, cur.id, fn.id, cur.params)
       
-    } else if (id == "Lorentzian") {
+    } else if (str_to_lower(fn.type.id) == "lorentzian") {
       
-      cur.curve.ui <- cur.curve.lorentzian(id, btn.id, cur.id, cur.itr, cur.params)
+      cur.curve.ui <- cur.curve.lorentzian(fn.type.id, btn.id, cur.id, fn.id, cur.params)
       
     }
     
     cur.curves.iterator(cur.itr + as.integer(1))
+    cur.curve.rows[[cur.id]] <- cur.id
     
     insertUI(selector = "#cur_new_curves_place"
              , where = "beforeBegin"
@@ -6943,11 +6948,8 @@ server <- function(input, output, session) {
     
     observeEvent(input[[btn.id]], {
       
-      removeUI(
-        
-        selector = paste0("#", str_replace(btn.id, "_remove.btn", ""))
-        
-      )
+      removeUI(paste0("#", escapeRegex(str_replace(btn.id, "\\_remove\\.btn", "_curve.row"))))
+      
     })
       
   }
@@ -7171,15 +7173,32 @@ server <- function(input, output, session) {
                                         , dt.list = list(dt.cur = cur.dt.init.data()
                                                          , dt.par = values$cur.dt.par))
 
-    browser()
-    dt.tmp <- values$cur.status$cur.dt.par[!is.na(design) & design != ""]
     
-    if (nrow(dt.tmp) > 0) {
+    names <- values$cur.status@dt.par[!is.na(design) & design != "", name] %>% unique()
+    
+    if (length(names) > 0) {
       
-      for (i in dt.tmp[, unique(name)]) {
+      browser()
+      ### here : remove reactive values
+      
+      if (length(reactiveValuesToList(cur.curve.rows)) > 0) {
         
-        cur.curve.insert(values$cur.dt.par[name == i, design][i]
-                         , as.list(values$cur.dt.par[name == i, param]))
+        for (cr in reactiveValuesToList(cur.curve.rows)) {
+          
+          removeUI(paste0("#", escapeRegex(cr)))
+          cur.curve.rows[[cr]] <- NULL
+          
+        }
+      }
+      
+      for (nm in names) {
+
+        params <- as.list(values$cur.status@dt.par[name == nm, value])
+        names(params) <- values$cur.status@dt.par[name == nm, param]
+        
+        cur.curve.insert(values$cur.status@dt.par[name == nm, design][1]
+                         , params
+                         , fn.id = nm)
         
       }
       
