@@ -6828,7 +6828,7 @@ server <- function(input, output, session) {
   
   cur.curves.iterator <- reactiveVal(as.integer(1))
   
-  cur.curve.rows <- reactiveValues()
+  cur.curve.rows <- reactiveValues(values = character())
   
   # cur.formula.values <- reactiveValues()
   
@@ -6838,8 +6838,7 @@ server <- function(input, output, session) {
   cur.curve.gaussian <- function(fn.type.id, btn.id, cur.id, fn.id, cur.params = NULL) {
     
     if (is.null(cur.params))
-      cur.params <- list(name = cur.itr
-                         , amplitude = 0
+      cur.params <- list(amplitude = 0
                          , expvalue = 0
                          , hwhm = 0)
     
@@ -6874,14 +6873,14 @@ server <- function(input, output, session) {
                              , id = cur.id)
     
     cur.curve.ui
-    
+
   }
+  
 
   cur.curve.lorentzian <- function(fn.type.id, btn.id, cur.id, fn.id, cur.params = NULL) {
     
     if (is.null(cur.params))
-      cur.params <- list(name = cur.itr
-                         , amplitude = 0
+      cur.params <- list(amplitude = 0
                          , expvalue = 0
                          , hwhm = 0)
     
@@ -6939,7 +6938,7 @@ server <- function(input, output, session) {
     }
     
     cur.curves.iterator(cur.itr + as.integer(1))
-    cur.curve.rows[[cur.id]] <- cur.id
+    cur.curve.rows$values <- c(cur.curve.rows$values, cur.id)
     
     insertUI(selector = "#cur_new_curves_place"
              , where = "beforeBegin"
@@ -7178,15 +7177,12 @@ server <- function(input, output, session) {
     
     if (length(names) > 0) {
       
-      browser()
-      ### here : remove reactive values
-      
-      if (length(reactiveValuesToList(cur.curve.rows)) > 0) {
+      if (length(cur.curve.rows$values) > 0) {
         
-        for (cr in reactiveValuesToList(cur.curve.rows)) {
+        for (cr in cur.curve.rows$values) {
           
           removeUI(paste0("#", escapeRegex(cr)))
-          cur.curve.rows[[cr]] <- NULL
+          cur.curve.rows$values <- setdiff(cur.curve.rows$values, cr)
           
         }
       }
