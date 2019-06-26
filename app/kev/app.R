@@ -6835,6 +6835,16 @@ server <- function(input, output, session) {
   
   # controls ----------------- #
   
+  cur.curve.input <- function(input.id, label, value, size = 2) {
+    
+    column(size
+           , textInput(inputId = input.id
+                       , label = label
+                       , value = value)
+           , class = "kev-densed-input-row")
+    
+  }
+  
   cur.curve.gaussian <- function(fn.type.id, btn.id, cur.id, fn.id, cur.params = NULL) {
     
     if (is.null(cur.params))
@@ -6842,29 +6852,22 @@ server <- function(input, output, session) {
                          , expvalue = 0
                          , hwhm = 0)
     
+    cur.params <- data.table(param = names(cur.params), value = unlist(cur.params))
+    cur.params <- cur.params[order(param)]
+    cur.params[, label := c("Amplitude", "Exp.value", "HWHM")]
+      
     cur.curve.ui <- fluidRow(column(2
                                     , h4("Gaussian")
                                     , class = "kev-densed-input-row")
-                             , column(2
-                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_name")
-                                                  , label = "Name"
-                                                  , value = paste("Curve", fn.id))
-                                      , class = "kev-densed-input-row")
-                             , column(2
-                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_amplitude")
-                                                  , label = "Amplitude"
-                                                  , value = cur.params$amplitude)
-                                      , class = "kev-densed-input-row")
-                             , column(2
-                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_expvalue")
-                                                  , label = "Exp.value"
-                                                  , value = cur.params$expvalue)
-                                      , class = "kev-densed-input-row")
-                             , column(2
-                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_hwhm")
-                                                  , label = "HWHM"
-                                                  , value = cur.params$hwhm)
-                                      , class = "kev-densed-input-row")
+                             
+                             , cur.curve.input(paste0(fn.type.id, fn.id, "_name"), "Name", paste("Curve", fn.id), 2)
+                             
+                             , mapply(function(p, l, v) {
+                               
+                               cur.curve.input(paste0(fn.type.id, fn.id, "_", p), l, v, 2)
+                               
+                               }, cur.params[, param], cur.params[, label], cur.params[, value], SIMPLIFY = FALSE)
+                             
                              , column(2
                                       , actionButton(btn.id
                                                      , ""
