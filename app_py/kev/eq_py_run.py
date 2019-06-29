@@ -35,10 +35,18 @@ _file = "" #"big_ser_test.xlsx"
 #_sep = ";"
 #_file = "big_ser_test.xlsx" #"data.xlsx" 
 
-# input for ountput file
+# in order to write into csv files, comment the following 3 code lines and uncomment 3 subsequent lines 
+# in order to write into xlsx file, uncomment the following 3 code lines and comment 3 subsequent lines
+
+# input for output xlsx file
 subdir_out = "concentrations/ds.3p.2eq"
 sep_out = ";"
-file_out = "data_res.xlsx" #"big_ser_test_res.xlsx" 
+file_out = "data_res.xlsx" #"big_ser_test_res.xlsx"
+
+# input for bunch of csv files
+#subdir_out = "concentrations/ds.3p.2eq"
+#sep_out = ";"
+#file_out = "" 
 
 max_iter, eps = 1000, 0.0000001
 
