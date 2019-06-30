@@ -6830,37 +6830,51 @@ server <- function(input, output, session) {
   
   cur.curve.rows <- reactiveValues(values = character())
   
-  # cur.formula.values <- reactiveValues()
+  cur.formula.values <- reactiveValues()
   
   
   # controls ----------------- #
   
-  cur.curve.input <- function(input.id, label, value, size = 2) {
+  cur.curve.input <- function(input.id, label, value, size = 2, type = "numeric") {
     
-    column(size
-           , textInput(inputId = input.id
-                       , label = label
-                       , value = value)
-           , class = "kev-densed-input-row")
-    
+    if (type == "numeric") {
+      
+      column(size
+             , numericInput(inputId = input.id
+                            , label = label
+                            , value = value)
+             , class = "kev-densed-input-row")
+      
+    } else if (type == "character") {
+      
+      column(size
+             , textInput(inputId = input.id
+                            , label = label
+                            , value = value)
+             , class = "kev-densed-input-row")
+      
+    }
+
   }
   
   cur.curve.gaussian <- function(fn.type.id, btn.id, cur.id, fn.id, cur.params = NULL) {
     
     if (is.null(cur.params))
-      cur.params <- list(amplitude = 0
-                         , expvalue = 0
-                         , hwhm = 0)
+      cur.params <- list(amplitude = cur.dt.init.data()[, max(value)]
+                         , expvalue = cur.dt.init.data()[, mean(label)]
+                         , hwhm = cur.dt.init.data()[, max(label)] / 4)
     
     cur.params <- data.table(param = names(cur.params), value = unlist(cur.params))
     cur.params <- cur.params[order(param)]
     cur.params[, label := c("Amplitude", "Exp.value", "HWHM")]
-      
+    
+    # ui
+    
     cur.curve.ui <- fluidRow(column(2
                                     , h4("Gaussian")
                                     , class = "kev-densed-input-row")
                              
-                             , cur.curve.input(paste0(fn.type.id, fn.id, "_name"), "Name", paste("Curve", fn.id), 2)
+                             , cur.curve.input(paste0(fn.type.id, fn.id, "_name"), "Name", paste("Curve", fn.id), 2, type = "character")
                              
                              , mapply(function(p, l, v) {
                                
@@ -6875,11 +6889,35 @@ server <- function(input, output, session) {
                                                      , style = "margin-top: 25px;"))
                              , id = cur.id)
     
-    cur.curve.ui
+    # event observer
+
+    cur.curve.observer(cur.params[, paste0(fn.type.id, fn.id, "_", param)])
+    
+    # update cur.dt.par :  here - to insert the whole curve at once
+    #   and avoid event issues if only some parameters of the curve are already defined
+    
+    dt.par <- copy(values$cur.dt.par)
+    
+    for (i in 1:nrow(cur.params)) {
+      
+      dt.ins <- data.table(name = as.character(fn.id)
+                           , design = "gaussian"
+                           , param = cur.params[i, param]
+                           , value = cur.params[i, value])
+      
+      if (nrow(merge(dt.par, dt.ins, by = c("name", "design", "param"))) == 0)
+        dt.par <- rbind(dt.par, dt.ins)
+    }
+    
+    if (nrow(values$cur.dt.par) != nrow(dt.par))
+      values$cur.dt.par <- dt.par
+
+    # return
+    
+    list(ui = cur.curve.ui)
 
   }
   
-
   cur.curve.lorentzian <- function(fn.type.id, btn.id, cur.id, fn.id, cur.params = NULL) {
     
     if (is.null(cur.params))
@@ -6917,11 +6955,11 @@ server <- function(input, output, session) {
                                                      , style = "margin-top: 25px;"))
                              , id = cur.id)
     
-    cur.curve.ui
+    list(ui = cur.curve.ui)
     
   }
   
-
+  
   cur.curve.insert <- function(fn.type.id, cur.params = NULL, fn.id = NULL) {
     
     cur.itr <- cur.curves.iterator()
@@ -6932,11 +6970,11 @@ server <- function(input, output, session) {
     
     if (str_to_lower(fn.type.id) == "gaussian") {
       
-      cur.curve.ui <- cur.curve.gaussian(fn.type.id, btn.id, cur.id, fn.id, cur.params)
+      cur.curve.ui <- cur.curve.gaussian(str_to_lower(fn.type.id), btn.id, cur.id, fn.id, cur.params)$ui
       
     } else if (str_to_lower(fn.type.id) == "lorentzian") {
       
-      cur.curve.ui <- cur.curve.lorentzian(fn.type.id, btn.id, cur.id, fn.id, cur.params)
+      cur.curve.ui <- cur.curve.lorentzian(str_to_lower(fn.type.id), btn.id, cur.id, fn.id, cur.params)$ui
       
     }
     
@@ -6953,9 +6991,50 @@ server <- function(input, output, session) {
       removeUI(paste0("#", escapeRegex(str_replace(btn.id, "\\_remove\\.btn", "_curve.row"))))
       
     })
-      
+    
   }
   
+  cur.curve.observer <- function(input.id) {
+    
+    mapply(function(input.id) {
+      
+      cur.formula.values[[input.id]] <- reactive(input[[input.id]]) %>% debounce(2000)
+      
+      observeEvent(cur.formula.values[[input.id]]()
+                   , {
+                     
+                     param.id <- str_extract(input.id, "\\_[a-z0-9\\.]+$")
+                     param.id <- str_replace(param.id, "\\_", "")
+                     
+                     cur.id <- str_replace(input.id, "^(gaussian|lorentzian)", "")
+                     cur.id <- str_extract(cur.id, ".*\\_")
+                     cur.id <- str_replace(cur.id, "\\_", "")
+                     
+                     vl <- as.numeric(cur.formula.values[[input.id]]())
+                     
+                     if (!is.null(values$cur.dt.par)) {
+                       
+                       if (nrow(values$cur.dt.par[name == cur.id & param == param.id]) > 0 && !is.na(vl)) {
+                         
+                         if (round(values$cur.dt.par[name == cur.id & param == param.id, value], 5) !=
+                             round(vl, 5)) {
+                           
+                           dt.par <- copy(values$cur.dt.par)
+                           dt.par[name == cur.id & param == param.id, value := vl]
+                           
+                           values$cur.dt.par <- dt.par
+                           
+                         }
+                         # print(values$cur.dt.par[name == cur.id & param == param.id, value])
+                       } 
+                       
+                     }
+                     
+                   })
+      
+    }, input.id, SIMPLIFY = FALSE)
+
+  }
   
   #
   
@@ -7173,9 +7252,8 @@ server <- function(input, output, session) {
                                         , file = NULL
                                         , save.res = FALSE
                                         , dt.list = list(dt.cur = cur.dt.init.data()
-                                                         , dt.par = values$cur.dt.par))
+                                                         , dt.par = copy(values$cur.dt.par)))
 
-    
     names <- values$cur.status@dt.par[!is.na(design) & design != "", name] %>% unique()
     
     if (length(names) > 0) {
@@ -7203,6 +7281,8 @@ server <- function(input, output, session) {
       
     }
     
+    if (!is.logical(all.equal(values$cur.dt.par, values$cur.status@dt.par, check.attributes = FALSE)))
+      values$cur.dt.par <- values$cur.status@dt.par
     
     
   }, ignoreNULL = FALSE)
