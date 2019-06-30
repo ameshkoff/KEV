@@ -6931,39 +6931,59 @@ server <- function(input, output, session) {
   cur.curve.lorentzian <- function(fn.type.id, btn.id, cur.id, fn.id, cur.params = NULL) {
     
     if (is.null(cur.params))
-      cur.params <- list(amplitude = 0
-                         , expvalue = 0
-                         , hwhm = 0)
+      cur.params <- list(amplitude = cur.dt.init.data()[, max(value)]
+                         , expvalue = cur.dt.init.data()[, mean(label)]
+                         , hwhm = cur.dt.init.data()[, max(label)] / 4)
+    
+    cur.params <- data.table(param = names(cur.params), value = unlist(cur.params))
+    cur.params <- cur.params[order(param)]
+    cur.params[, label := c("Amplitude", "Exp.value", "HWHM")]
+    
+    # ui
     
     cur.curve.ui <- fluidRow(column(2
                                     , h4("Lorentzian")
                                     , class = "kev-densed-input-row")
-                             , column(2
-                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_name")
-                                                  , label = "Name"
-                                                  , value = paste("Curve", fn.id))
-                                      , class = "kev-densed-input-row")
-                             , column(2
-                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_amplitude")
-                                                  , label = "Amplitude"
-                                                  , value = cur.params$amplitude)
-                                      , class = "kev-densed-input-row")
-                             , column(2
-                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_expvalue")
-                                                  , label = "Exp.value"
-                                                  , value = cur.params$expvalue)
-                                      , class = "kev-densed-input-row")
-                             , column(2
-                                      , textInput(inputId = paste0(fn.type.id, fn.id, "_hwhm")
-                                                  , label = "HWHM"
-                                                  , value = cur.params$hwhm)
-                                      , class = "kev-densed-input-row")
+                             
+                             , cur.curve.input(paste0(fn.type.id, fn.id, "_name"), "Name", paste("Curve", fn.id), 2, type = "character")
+                             
+                             , mapply(function(p, l, v) {
+                               
+                               cur.curve.input(paste0(fn.type.id, fn.id, "_", p), l, v, 2)
+                               
+                             }, cur.params[, param], cur.params[, label], cur.params[, value], SIMPLIFY = FALSE)
+                             
                              , column(2
                                       , actionButton(btn.id
                                                      , ""
                                                      , icon = icon("trash")
                                                      , style = "margin-top: 25px;"))
                              , id = cur.id)
+    
+    # event observer
+    
+    cur.curve.observer(cur.params[, paste0(fn.type.id, fn.id, "_", param)])
+    
+    # update cur.dt.par :  here - to insert the whole curve at once
+    #   and avoid event issues if only some parameters of the curve are already defined
+    
+    dt.par <- copy(values$cur.dt.par)
+    
+    for (i in 1:nrow(cur.params)) {
+      
+      dt.ins <- data.table(name = as.character(fn.id)
+                           , design = "lorentzian"
+                           , param = cur.params[i, param]
+                           , value = cur.params[i, value])
+      
+      if (nrow(merge(dt.par, dt.ins, by = c("name", "design", "param"))) == 0)
+        dt.par <- rbind(dt.par, dt.ins)
+    }
+    
+    if (nrow(values$cur.dt.par) != nrow(dt.par))
+      values$cur.dt.par <- dt.par
+    
+    # return
     
     list(ui = cur.curve.ui)
     
