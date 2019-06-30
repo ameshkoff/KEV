@@ -1071,6 +1071,14 @@ ui <- tagList(
              12
              , wellPanel(
                fluidRow(column(4
+                               , fluidRow(column(6
+                                                 , numericInput("cur.window.left"
+                                                                , "Left Bound"
+                                                                , 0))
+                                          , column(6
+                                                   , numericInput("cur.window.right"
+                                                                  , "Right Bound"
+                                                                  , 0)))
                                , fluidRow(column(12
                                                  , selectInput("cur.add.curve.select"
                                                                , NULL
@@ -6857,6 +6865,8 @@ server <- function(input, output, session) {
 
   }
   
+  # curve specific
+  
   cur.curve.gaussian <- function(fn.type.id, btn.id, cur.id, fn.id, cur.params = NULL) {
     
     if (is.null(cur.params))
@@ -6959,6 +6969,7 @@ server <- function(input, output, session) {
     
   }
   
+  # curve basic
   
   cur.curve.insert <- function(fn.type.id, cur.params = NULL, fn.id = NULL) {
     
@@ -7053,7 +7064,7 @@ server <- function(input, output, session) {
 
   }
   
-  #
+  # restore selectInput default value
   
   observeEvent(input$cur.add.curve.select, {
     
@@ -7071,6 +7082,28 @@ server <- function(input, output, session) {
     
     }
     , ignoreInit = TRUE)
+  
+  # boundaries
+  
+  observeEvent(input$cur.window.left, {
+    
+    if (!is.null(values$cur.status)) {
+      
+      values$cur.status@window.borders[1] <- input$cur.window.left
+      
+    }
+    
+  })
+
+  observeEvent(input$cur.window.right, {
+    
+    if (!is.null(values$cur.status)) {
+      
+      values$cur.status@window.borders[2] <- input$cur.window.right
+      
+    }
+    
+  })
   
   
   # data --------------------- #
@@ -7100,6 +7133,8 @@ server <- function(input, output, session) {
     values$cur.dt.par
     
   })
+  
+  # load data from file
   
   observeEvent({
     input$file.cur.bulk.input 
@@ -7261,6 +7296,8 @@ server <- function(input, output, session) {
 
   # calculating -------------- #
   
+  # refresh status
+  
   observeEvent(values$cur.dt.par, {
     
     values$cur.status <- cur.data.runner(mode = "app"
@@ -7272,6 +7309,9 @@ server <- function(input, output, session) {
                                                          , dt.par = copy(values$cur.dt.par)))
 
     names <- values$cur.status@dt.par[!is.na(design) & design != "", name] %>% unique()
+    
+    updateNumericInput(session, "cur.window.left", value = values$cur.status@window.borders[1])
+    updateNumericInput(session, "cur.window.right", value = values$cur.status@window.borders[2])
     
     if (!is.logical(all.equal(values$cur.dt.init, values$cur.status@dt.init, check.attributes = FALSE)))
       values$cur.dt.init <- values$cur.status@dt.init
