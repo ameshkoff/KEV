@@ -1093,6 +1093,7 @@ ui <- tagList(
                                  
                                  , tabsetPanel(type = "tabs"
                                                , tabPanel("Plot"
+                                                          , htmlOutput("cur.title")
                                                           , plotlyOutput("plot.cur"))
                                                , tabPanel("Data"
                                                           , h4("Input Data")
@@ -7434,6 +7435,27 @@ server <- function(input, output, session) {
     g <- ggplotly(g)
 
     g
+    
+  })
+  
+  output$cur.title <- renderUI({
+    
+    mod.st <- values$cur.status@model.status
+    
+    if (mod.st == "OK") {
+      
+      mod.st <- paste0("<h4>Status: ", mod.st
+                       , ". R<sup>2</sup>: ", round(values$cur.status@metrics$r.squared, 4)
+                       , ". RMSE: ", signif(values$cur.status@metrics$rmse, 4)
+                       , ". MAE: ", signif(values$cur.status@metrics$mae, 4)
+                       , "</h4>")
+    } else {
+      
+      mod.st <- paste0("<h4>Status: ", mod.st)
+      
+    }
+
+    HTML(mod.st)
     
   })
   

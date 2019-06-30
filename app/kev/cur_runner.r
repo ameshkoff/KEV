@@ -72,7 +72,7 @@ cur.data.runner <- function(mode = c("api", "script", "app")
                     , start.values = NULL
                     , model = NULL
                     , metrics = NULL
-                    , model.status = "Warning: Not Runned")
+                    , model.status = "Not Runned")
 
   # source code ------------- #
   
@@ -181,9 +181,12 @@ cur.model.metrics <- function(dt, model) {
   residuals.abs <- dt[, .(label, residuals.abs = residuals.abs)]
   residuals.rel <- dt[, .(label, residuals.rel = residuals.rel)]
   
+  rmse <- mean((obs - pred) ^ 2) ^ .5
   r.squared <- 1 - (sum((obs - pred) ^ 2) / length(obs)) / var(obs)
+  mae <- mean(abs(obs - pred))
   
-  list(residuals.abs = residuals.abs, residuals.rel = residuals.rel, r.squared = r.squared)
+  list(residuals.abs = residuals.abs, residuals.rel = residuals.rel
+       , r.squared = r.squared, rmse = rmse, mae = mae)
   
 }
 
