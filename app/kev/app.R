@@ -6988,8 +6988,25 @@ server <- function(input, output, session) {
     
     observeEvent(input[[btn.id]], {
       
-      removeUI(paste0("#", escapeRegex(str_replace(btn.id, "\\_remove\\.btn", "_curve.row"))))
-      
+      if (length(values$cur.dt.par[, unique(name)]) > 1) {
+        
+        removeUI(paste0("#", escapeRegex(str_replace(btn.id, "\\_remove\\.btn", "_curve.row"))))
+        
+        cur.id <- str_replace(btn.id, "^(gaussian|lorentzian)", "")
+        cur.id <- str_extract(cur.id, ".*\\_")
+        cur.id <- str_replace(cur.id, "\\_", "")
+        
+        dt.par <- values$cur.dt.par
+        dt.par <- dt.par[!(name %in% cur.id)]
+        
+        if (nrow(dt.par) != nrow(values$cur.dt.par)) {
+
+          values$cur.dt.par <- dt.par
+          
+        }
+        
+      }
+
     })
     
   }
@@ -7256,6 +7273,9 @@ server <- function(input, output, session) {
 
     names <- values$cur.status@dt.par[!is.na(design) & design != "", name] %>% unique()
     
+    if (!is.logical(all.equal(values$cur.dt.init, values$cur.status@dt.init, check.attributes = FALSE)))
+      values$cur.dt.init <- values$cur.status@dt.init
+
     if (length(names) > 0) {
       
       if (length(cur.curve.rows$values) > 0) {
