@@ -43,6 +43,7 @@ cur.status@metrics$r.squared
 
 cur.object.effects(cur.status)
 
+cur.auc(cur.status)
 
 
 

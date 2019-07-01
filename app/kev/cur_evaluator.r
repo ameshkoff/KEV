@@ -13,6 +13,13 @@ kev.gaussian <- function(x, amplitude, expvalue, hwhm) { amplitude * exp(-log(2)
 
 kev.lorentzian <- function(x, amplitude, expvalue, hwhm) { amplitude / (1 + (x - expvalue) ^ 2 / hwhm ^ 2) }
 
+# curve AUC functions -------------------------------------- #
+
+kev.auc.gaussian <- function(x, amplitude, expvalue, hwhm) {  (amplitude * hwhm) / sqrt(log(2) / pi) }
+
+kev.auc.lorentzian <- function(x, amplitude, expvalue, hwhm) { amplitude * hwhm * pi }
+
+
 
 # formula & initial values for the NLS model --------------- #
 
@@ -78,7 +85,7 @@ cur.formula.execute <- function(dt, formula = NULL, terms = NULL, scalar.values.
     
     rhs.expr <- str_replace(rhs.expr
                             , fixed(paste0("`", nm, "`"))
-                            , paste0("scalar.values.list[['", nm, "']]"))
+                            , scalar.values.list[[nm]])
 
   }
   
@@ -121,6 +128,37 @@ cur.formula.effects <- function(dt, formula, scalar.values.list) {
   
 }
 
+cur.auc <- function(cur.status = kev.curve) {
+
+  frm <- cur.formula.create(cur.status@dt.par, cur.status@dt.init)
+  scalar.values.list <- frm$start.values
+
+  terms <- labels(terms(frm$formula))
+  terms <- terms[terms %like% "^kev\\."]
+  
+  dt <- data.table(term = terms)
+  dt[, term := str_replace(term, "^kev\\.", "kev.auc.")]
+
+  dt[, name := mapply(function(x) {
+    cl <- str_split(x, "`") %>% unlist()
+    cl <- cl[cl %like% "\\^\\^\\^"][1] %>% str_replace("^.*\\^\\^\\^", "")
+  }, term)]
+    
+  for (nm in names(scalar.values.list)) {
+    
+    dt[, term := str_replace(term
+                            , fixed(paste0("`", nm, "`"))
+                            , scalar.values.list[[nm]])]
+    
+  }
+  
+  dt[, area := mapply(function(x) {eval(parse(text = x))}, term, SIMPLIFY = TRUE)]
+  
+  dt
+
+}
+
+
 
 # NLS model predicting and analysis ------------------------ #
 
@@ -139,7 +177,7 @@ cur.model.effects <- function(dt, model) {
     
 }
 
-cur.object.effects <- function(cur.status) {
+cur.object.effects <- function(cur.status = kev.curve) {
   
   frm <- cur.formula.create(cur.status@dt.par, cur.status@dt.init)
   cur.formula.effects(cur.status@dt.init, frm$formula, frm$start.values)
