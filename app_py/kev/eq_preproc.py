@@ -14,17 +14,6 @@ import re
 # basic preprocessing ----------------------------------------
     
 def eq_preproc(st_coeff_data, con_data, type_con, lg_k_data, component_name_for_yields):
-    
-    # checking if there are several series
-    
-    if 'series' not in con_data.columns:        
-        con_data['series'], type_con[np.shape(st_coeff_data)[1]] = '', ''
-
-    # series variables
-    
-    ser_info = con_data['series'].to_numpy()
-    ser_unique = np.unique(ser_info)
-    ser_num = np.shape(np.unique(ser_info))[0]
 
     # matrix of stoich coeff with formal reactions added
     st_coeff_matrix = st_coeff_data.to_numpy()
@@ -46,7 +35,7 @@ def eq_preproc(st_coeff_data, con_data, type_con, lg_k_data, component_name_for_
         
     # product names lists : full and base components only
     
-    prod_names_con = list(con_data.drop('series', axis = 1))
+    prod_names_con = list(con_data.columns)
     prod_names = prod_names_con + st_coeff_data['prod_names'].tolist()
     
     # creating the vector of equilibrium constants including the formal reactions
@@ -56,14 +45,10 @@ def eq_preproc(st_coeff_data, con_data, type_con, lg_k_data, component_name_for_
     if prod_names_con != list(st_coeff_data.drop('prod_names', axis = 1)):
         print('Check the consistency of reagent names!')
     
-    # split concentrations matrix
-    con_matrix = [g for _, g in con_data.groupby(['series'])]
-        
-    for cnm_index, cnm in enumerate(con_matrix):
-        con_matrix[cnm_index] = cnm.drop('series', axis = 1).to_numpy().astype(float)
+    # concentrations matrix
     
-    ser_counts = con_data.groupby(['series']).size().tolist();
-    
+    con_matrix = con_data.to_numpy()    
+    print(con_matrix)    
     # creating vector of indices of components with predetermined concentrations
     ign_indices = np.array(type_con.index[type_con == 'eq'])
     
@@ -72,5 +57,4 @@ def eq_preproc(st_coeff_data, con_data, type_con, lg_k_data, component_name_for_
         
     idx, = np.where(component_name_for_yields == np.array(prod_names_con))
     
-    return ser_num, st_coeff_matrix, prod_names, lg_k, prod_names_con, con_matrix, ign_indices, idx, ser_counts, ser_info, type_con 
-    # ser_num, ser_counts, ser_info not further used yet! 
+    return st_coeff_matrix, prod_names, lg_k, prod_names_con, con_matrix, ign_indices, idx, type_con  

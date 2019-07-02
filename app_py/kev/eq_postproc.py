@@ -12,9 +12,8 @@ import math
 import numpy as np
 import pandas as pd
 
-def eq_postproc(st_coeff_matrix, con_matrix, idx, c_res_out, g_res_out, ser_num, ser_info, ser_counts, con_data, 
+def eq_postproc(st_coeff_matrix, con_matrix, idx, c_res_out, g_res_out, con_data, 
                 st_coeff_data, prod_names, prod_names_con, component_name_for_yields, type_con, ign_indices): 
-    # ser_num, ser_info, ser_counts not used yet!
 
     c_yie_out = c_res_out * st_coeff_matrix[:, idx[0]] * 100 / con_matrix[:, idx[0]].reshape((len(con_matrix[:, idx[0]]), 1))
     
@@ -30,15 +29,6 @@ def eq_postproc(st_coeff_matrix, con_matrix, idx, c_res_out, g_res_out, ser_num,
         g_res_out_tmp[:, ~np.isin(np.arange(g_res_out_tmp.shape[1]), ign_indices)] = np.array(g_res_out)
         g_res_out = g_res_out_tmp
     
-    if 'series' in con_data.columns:
-        
-        c_res_out = np.hstack((c_res_out, ser_info.reshape((len(ser_info), 1))))
-        c_yie_out = np.hstack((c_yie_out, ser_info.reshape((len(ser_info), 1))))
-        g_res_out = np.hstack((g_res_out, ser_info.reshape((len(ser_info), 1))))
-        
-        prod_names = prod_names + ['series']
-        prod_names_con = prod_names_con + ['series']
-
     y_prod_names = ['p(' + component_name_for_yields + ')'] + prod_names
     y_indexes = [str('S_' + str(i+1)) for i in range(np.shape(con_data)[0])]
 

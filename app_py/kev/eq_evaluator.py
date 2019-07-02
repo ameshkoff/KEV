@@ -12,8 +12,8 @@ import math
 import numpy as np
 from copy import copy, deepcopy
 
-def eq_calc(max_iter, eps, component_name_for_yields, ser_num, st_coeff_matrix, type_con, lg_k,
-            con_matrix, ign_indices, ser_counts, ser_info): # ser_num, ser_counts, ser_info not further used yet!
+def eq_calc(max_iter, eps, component_name_for_yields, st_coeff_matrix, type_con, lg_k,
+            con_matrix, ign_indices):
     
     c_res_out, c_yie_out, g_res_out = [0] * len(con_matrix), [0] * len(con_matrix), [0] * len(con_matrix)
     
@@ -52,6 +52,7 @@ def inner_eq_calc(reag_eq_con_matrix, max_iter, lg_k, st_coeff_matrix, init_conc
     for it in range(max_iter):
 
         # caclulating the equilibrium concentrations of products
+        
         prod_eq_con_matrix = np.exp(np.transpose(np.array(math.log(10) * np.array(lg_k))) +
                                     np.dot(st_coeff_matrix, np.log(reag_eq_con_matrix)))
             
