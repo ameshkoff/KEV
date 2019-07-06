@@ -50,6 +50,8 @@ options(shiny.sanitize.errors = TRUE)
 userguide.date <- "20190331"
 
 cur.curves.list <- list("Add Curve", "Gaussian", "Lorentzian")
+cur.algorithms <- data.table(value = c("gaussnewton", "neldermead")
+                             , label = c("Gauss-Newton", "Nelder-Mead"))
 
 
 # load algorithm
@@ -1022,12 +1024,18 @@ ui <- tagList(
                                                     , ";" = "semicolon"
                                                     , "tab" = "tab"))
                         )
-                        , column(8
+                        , column(4
                                  , h4("Task")
                                  , selectInput("cur.task"
                                                , ""
                                                , list("Spectrophotometry", "Other")
                                                , selected = "Spectrophotometry")
+                        ), column(4
+                                  , h4("Algorithm")
+                                  , selectInput("cur.algorithm"
+                                                , ""
+                                                , cur.algorithms[, label]
+                                                , selected = "Gauss-Newton")
                         ))
              )))
            
@@ -7387,9 +7395,11 @@ server <- function(input, output, session) {
     
   }, ignoreNULL = FALSE)
   
+  # calculate
+  
   observeEvent(input$cur.exec.btn, {
     
-    values$cur.status <- cur.model(values$cur.status)
+    values$cur.status <- cur.model(values$cur.status, algorithm = cur.algorithms[label == input$cur.algorithm, value])
     
   })
   
