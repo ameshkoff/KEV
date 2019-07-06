@@ -1104,10 +1104,16 @@ ui <- tagList(
                                                           , htmlOutput("cur.title")
                                                           , plotlyOutput("plot.cur"))
                                                , tabPanel("Data"
-                                                          , h4("Input Data")
-                                                          , rHandsontableOutput("cur.dt.init")
-                                                          , h4("Fitted Curves")
-                                                          , rHandsontableOutput("cur.model.effects"))
+                                                          , fluidRow(column(6
+                                                                            , h4("Input Data")
+                                                                            , rHandsontableOutput("cur.dt.init"))
+                                                                     , column(6
+                                                                              , h4("Curve Areas")
+                                                                              , rHandsontableOutput("cur.auc")
+                                                                              , h4("Fitted Curves")
+                                                                              , rHandsontableOutput("cur.model.effects"))
+                                                                     )
+                                                          )
                                                )
                                  
                                  , fluidRow(class = "download-row"
@@ -2497,7 +2503,7 @@ server <- function(input, output, session) {
     cnst <- as.data.table(cnst)
     
     values[["ab.cnst"]] <- cnst
-    # browser()
+    
     cnst
     
   })
@@ -4311,7 +4317,7 @@ server <- function(input, output, session) {
     cnst <- as.data.table(cnst)
     
     values[["emf.cnst"]] <- cnst
-    # browser()
+    
     cnst
     
   })
@@ -5651,7 +5657,7 @@ server <- function(input, output, session) {
     cnst <- as.data.table(cnst)
     
     values[["nm.cnst"]] <- cnst
-    # browser()
+    
     cnst
     
   })
@@ -6843,9 +6849,13 @@ server <- function(input, output, session) {
     
   })
   
-  cur.curves.iterator <- reactiveVal(as.integer(1))
+  cur.curves.iterator <- reactiveVal(1L)
+  
+  cur.update.status <- reactiveVal(1L)
   
   cur.curve.rows <- reactiveValues(values = character())
+  
+  cur.formula.observers <- reactiveValues(values = list())
   
   cur.formula.values <- reactiveValues()
   
@@ -6855,7 +6865,7 @@ server <- function(input, output, session) {
   cur.curve.input <- function(input.id, label, value, size = 2, type = "numeric") {
     
     if (type == "numeric") {
-      
+    
       column(size
              , numericInput(inputId = input.id
                             , label = label
@@ -7008,6 +7018,8 @@ server <- function(input, output, session) {
     cur.id <- paste0(fn.type.id, fn.id, "_curve.row")
     btn.id <- paste0(fn.type.id, fn.id, "_remove.btn")
     
+    # get ui
+    
     if (str_to_lower(fn.type.id) == "gaussian") {
       
       cur.curve.ui <- cur.curve.gaussian(str_to_lower(fn.type.id), btn.id, cur.id, fn.id, cur.params)$ui
@@ -7025,6 +7037,8 @@ server <- function(input, output, session) {
              , where = "beforeBegin"
              , ui = cur.curve.ui
     )
+    
+    # remove button event handler
     
     observeEvent(input[[btn.id]], {
       
@@ -7057,37 +7071,43 @@ server <- function(input, output, session) {
       
       cur.formula.values[[input.id]] <- reactive(input[[input.id]]) %>% debounce(2000)
       
-      observeEvent(cur.formula.values[[input.id]]()
-                   , {
-                     
-                     param.id <- str_extract(input.id, "\\_[a-z0-9\\.]+$")
-                     param.id <- str_replace(param.id, "\\_", "")
-                     
-                     cur.id <- str_replace(input.id, "^(gaussian|lorentzian)", "")
-                     cur.id <- str_extract(cur.id, ".*\\_")
-                     cur.id <- str_replace(cur.id, "\\_", "")
-                     
-                     vl <- as.numeric(cur.formula.values[[input.id]]())
-                     
-                     if (!is.null(values$cur.dt.par)) {
+      cur.formula.observers$values[[input.id]] <-
+        observeEvent(cur.formula.values[[input.id]]()
+                     , {
                        
-                       if (nrow(values$cur.dt.par[name == cur.id & param == param.id]) > 0 && !is.na(vl)) {
+                       if (cur.update.status() == 1L) {
                          
-                         if (round(values$cur.dt.par[name == cur.id & param == param.id, value], 5) !=
-                             round(vl, 5)) {
+                         param.id <- str_extract(input.id, "\\_[a-z0-9\\.]+$")
+                         param.id <- str_replace(param.id, "\\_", "")
+                         
+                         cur.id <- str_replace(input.id, "^(gaussian|lorentzian)", "")
+                         cur.id <- str_extract(cur.id, ".*\\_")
+                         cur.id <- str_replace(cur.id, "\\_", "")
+                         
+                         vl <- as.numeric(cur.formula.values[[input.id]]())
+                         
+                         if (!is.null(values$cur.dt.par)) {
                            
-                           dt.par <- copy(values$cur.dt.par)
-                           dt.par[name == cur.id & param == param.id, value := vl]
-                           
-                           values$cur.dt.par <- cur.dt.par.sanitize(dt.par)
+                           if (nrow(values$cur.dt.par[name == cur.id & param == param.id]) > 0 && !is.na(vl)) {
+                             
+                             if (round(values$cur.dt.par[name == cur.id & param == param.id, value], 5) !=
+                                 round(vl, 5)) {
+                               
+                               dt.par <- copy(values$cur.dt.par)
+                               dt.par[name == cur.id & param == param.id, value := vl]
+                               
+                               values$cur.dt.par <- cur.dt.par.sanitize(dt.par)
+                               # print(values$cur.dt.par[name == cur.id & param == param.id, value])
+                               # print(vl)
+                             }
+                             
+                           } 
                            
                          }
-                         # print(values$cur.dt.par[name == cur.id & param == param.id, value])
-                       } 
+                         
+                       }
                        
-                     }
-                     
-                   })
+                     }, ignoreNULL = TRUE, priority = 10, suspended = FALSE)
       
     }, input.id, SIMPLIFY = FALSE)
 
@@ -7342,12 +7362,12 @@ server <- function(input, output, session) {
   , ignoreInit = TRUE)
   
 
-  # calculating -------------- #
+  # calculating & output data #
   
   # refresh status
   
   observeEvent(values$cur.dt.par, {
-    
+
     values$cur.status <- cur.data.runner(mode = "app"
                                         , sep = cur.sep()
                                         , subdir = ""
@@ -7363,24 +7383,35 @@ server <- function(input, output, session) {
     
     if (!is.logical(all.equal(values$cur.dt.init, values$cur.status@dt.init, check.attributes = FALSE)))
       values$cur.dt.init <- values$cur.status@dt.init
-
+    
     if (length(names) > 0) {
+    
+      dt.par <- copy(values$cur.status@dt.par)
+      dt.par[, input.id := paste0(design, name, "_", param)]
       
+      for (i in 1:nrow(dt.par)) {
+
+      if (!is.null(cur.formula.observers$values[[dt.par[i, input.id]]])) {
+          cur.formula.observers$values[[dt.par[i, input.id]]]$destroy()
+          
+        }
+      }
+      
+      cur.update.status(0L)
       if (length(cur.curve.rows$values) > 0) {
         
         for (cr in cur.curve.rows$values) {
           
-          removeUI(paste0("#", escapeRegex(cr)))
+          removeUI(paste0("#", escapeRegex(cr)), multiple = TRUE, immediate = FALSE)
           cur.curve.rows$values <- setdiff(cur.curve.rows$values, cr)
           
         }
       }
       
       for (nm in names) {
-
+        
         params <- as.list(values$cur.status@dt.par[name == nm, value])
         names(params) <- values$cur.status@dt.par[name == nm, param]
-        
         cur.curve.insert(values$cur.status@dt.par[name == nm, design][1]
                          , params
                          , fn.id = nm)
@@ -7389,11 +7420,10 @@ server <- function(input, output, session) {
       
     }
     
-    if (!is.logical(all.equal(values$cur.dt.par, values$cur.status@dt.par, check.attributes = FALSE)))
+    if (!is.logical(all.equal(values$cur.dt.par, values$cur.status@dt.par, check.attributes = FALSE, ignore.row.order = TRUE)))
       values$cur.dt.par <- cur.dt.par.sanitize(values$cur.status@dt.par)
     
-    
-  }, ignoreNULL = FALSE)
+  }, ignoreNULL = FALSE, priority = 1000)
   
   # calculate
   
@@ -7401,6 +7431,28 @@ server <- function(input, output, session) {
     
     values$cur.status <- cur.model(values$cur.status, algorithm = cur.algorithms[label == input$cur.algorithm, value])
     
+    if (!is.logical(all.equal(values$cur.dt.par, values$cur.status@dt.par, check.attributes = FALSE))) {
+      
+      values$cur.dt.par <- cur.dt.par.sanitize(values$cur.status@dt.par)
+      
+    }
+    
+  })
+  
+  cur.auc.data <- reactive({
+    # cur.update.status(1L)
+    if (!is.null(values$cur.status) && !is.null(values$cur.status@dt.par)) {
+      
+      dt <- cur.auc(values$cur.status)
+      
+      dt[, .(curve = paste("Curve", name), area)]
+      
+    } else {
+      
+      NULL
+      
+    }
+
   })
   
   
@@ -7412,7 +7464,7 @@ server <- function(input, output, session) {
 
     if (!is.null(dt.init)) {
       
-      if (nrow(dt.init) > 25) {
+      if (nrow(dt.init) > 20) {
         
         rhandsontable(dt.init, stretchH = "all", useTypes = FALSE, height = 600) %>%
           hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
@@ -7429,6 +7481,9 @@ server <- function(input, output, session) {
   })
   
   output$plot.cur <- renderPlotly({
+    
+    # temporary sync solution 
+    cur.update.status(1L)
     
     validate(
       
@@ -7487,7 +7542,30 @@ server <- function(input, output, session) {
     HTML(mod.st)
     
   })
-  
+
+  output$cur.auc <- renderRHandsontable({
+    
+    dt <- cur.auc.data()
+    
+    if (!is.null(dt)) {
+      
+      if (nrow(dt) > 20) {
+        
+        rhandsontable(dt, stretchH = "all", useTypes = TRUE, height = 600) %>%
+          hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+        
+      } else {
+        
+        rhandsontable(dt, stretchH = "all", useTypes = TRUE, height = NULL) %>%
+          hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+        
+      }
+      
+    }
+    
+    
+  })
+    
   
   # end of main server part ----------------------------
   
