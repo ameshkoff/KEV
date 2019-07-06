@@ -1176,6 +1176,8 @@ server <- function(input, output, session) {
     , dt.nm.bulk = FALSE
     , nm.dt.ind.bulk = FALSE
     
+    , cur.is.file.loaded = TRUE
+    
   )
 
   
@@ -7136,9 +7138,13 @@ server <- function(input, output, session) {
   
   observeEvent(input$cur.window.left, {
     
-    if (!is.null(values$cur.status)) {
+    if (!is.null(values$cur.status) && !input.source$cur.is.file.loaded) {
       
       values$cur.status@window.borders[1] <- input$cur.window.left
+      
+    } else if (input.source$cur.is.file.loaded) {
+      
+      input.source$cur.is.file.loaded <- FALSE
       
     }
     
@@ -7146,9 +7152,13 @@ server <- function(input, output, session) {
 
   observeEvent(input$cur.window.right, {
     
-    if (!is.null(values$cur.status)) {
+    if (!is.null(values$cur.status) && !input.source$cur.is.file.loaded) {
       
       values$cur.status@window.borders[2] <- input$cur.window.right
+      
+    } else if (input.source$cur.is.file.loaded) {
+      
+      input.source$cur.is.file.loaded <- FALSE
       
     }
     
@@ -7195,7 +7205,7 @@ server <- function(input, output, session) {
     )
     
     for (cl in cln)
-      dt.par[, eval(cl) := str_replace_all(eval(as.name(cl)), "[^[:alnum:]|[ ,.]]", ".")]
+      dt.par[, eval(cl) := str_replace_all(eval(as.name(cl)), "[^[:alnum:]|[ ,.-]]", ".")]
 
     dt.par
     
@@ -7279,6 +7289,7 @@ server <- function(input, output, session) {
       
       setDT(dt.init)
       values[["cur.dt.init"]] <- dt.init
+      input.source$cur.is.file.loaded <- TRUE
       
     }
       
@@ -7378,26 +7389,29 @@ server <- function(input, output, session) {
 
     names <- values$cur.status@dt.par[!is.na(design) & design != "", name] %>% unique()
     
-    updateNumericInput(session, "cur.window.left", value = values$cur.status@window.borders[1])
-    updateNumericInput(session, "cur.window.right", value = values$cur.status@window.borders[2])
+    if (input.source$cur.is.file.loaded) {
+      
+      updateNumericInput(session, "cur.window.left", value = values$cur.status@window.borders[1])
+      updateNumericInput(session, "cur.window.right", value = values$cur.status@window.borders[2])
+      
+    } else {
+      
+      values$cur.status@window.borders[1] <- input$cur.window.left
+      values$cur.status@window.borders[2] <- input$cur.window.right
+      
+    }
     
     if (!is.logical(all.equal(values$cur.dt.init, values$cur.status@dt.init, check.attributes = FALSE)))
       values$cur.dt.init <- values$cur.status@dt.init
     
     if (length(names) > 0) {
     
+      # stop events to prevent overwriting with older data
+      cur.update.status(0L)
+      
       dt.par <- copy(values$cur.status@dt.par)
       dt.par[, input.id := paste0(design, name, "_", param)]
       
-      for (i in 1:nrow(dt.par)) {
-
-      if (!is.null(cur.formula.observers$values[[dt.par[i, input.id]]])) {
-          cur.formula.observers$values[[dt.par[i, input.id]]]$destroy()
-          
-        }
-      }
-      
-      cur.update.status(0L)
       if (length(cur.curve.rows$values) > 0) {
         
         for (cr in cur.curve.rows$values) {
@@ -7429,13 +7443,24 @@ server <- function(input, output, session) {
   
   observeEvent(input$cur.exec.btn, {
     
-    values$cur.status <- cur.model(values$cur.status, algorithm = cur.algorithms[label == input$cur.algorithm, value])
+    withProgress(message = "Computation... It may take some time", value = 0, {
+      
+      incProgress(.3)
+      
+      values$cur.status <- cur.model(values$cur.status, algorithm = cur.algorithms[label == input$cur.algorithm, value])
+      
+      incProgress(.5)
+      
+      if (!is.logical(all.equal(values$cur.dt.par, values$cur.status@dt.par, check.attributes = FALSE))) {
+        
+        values$cur.dt.par <- cur.dt.par.sanitize(values$cur.status@dt.par)
+        
+      }
+      
+      incProgress(.2)
+      
+    })
     
-    if (!is.logical(all.equal(values$cur.dt.par, values$cur.status@dt.par, check.attributes = FALSE))) {
-      
-      values$cur.dt.par <- cur.dt.par.sanitize(values$cur.status@dt.par)
-      
-    }
     
   })
   
