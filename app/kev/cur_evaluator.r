@@ -159,6 +159,19 @@ cur.auc <- function(cur.status = kev.curve) {
 }
 
 
+# objective function --------------------------------------- #
+
+cur.objective.rmse <- function(scalar.values.vector, dt, formula, obs) {
+  
+  scalar.values.list <- as.list(scalar.values.vector)
+  
+  pred <- cur.formula.execute(dt, formula = formula, scalar.values.list = scalar.values.list)
+  
+  mean((obs - pred) ^ 2) ^ .5
+
+}
+
+
 
 # NLS model predicting and analysis ------------------------ #
 
@@ -185,7 +198,7 @@ cur.object.effects <- function(cur.status = kev.curve) {
 }
 
   
-# modelling --------------------------------------------------
+# processing ----------------------------------------------- #
 
 cur.remove.curves <- function(cur.status = kev.curve, min.expvalue = NULL, max.expvalue = NULL) {
   
@@ -211,7 +224,44 @@ cur.remove.curves <- function(cur.status = kev.curve, min.expvalue = NULL, max.e
   
 }
 
-cur.model <- function(cur.status = kev.curve) {
+cur.model.coefs <- function(md) {
+  
+  if (is(md, "nls")) {
+    
+    coefs <- md %>% coefficients
+    
+  } else if (is.list(md) && !is.null(md$par)) {
+    
+    coefs <- md$par
+    
+  }
+  
+  coefs
+  
+}
+
+cur.parameters.update <- function(dt.par, md){
+  
+  dt.par <- copy(dt.par)
+  coefs <- cur.model.coefs(md)
+  
+  params <- str_extract(names(coefs), "^.*\\^\\^\\^") %>% str_replace_all("\\^\\^\\^", "")
+  names <- str_extract(names(coefs), "\\^\\^\\^.*$") %>% str_replace_all("\\^\\^\\^", "")
+  
+  for (i in 1:length(coefs)) {
+    
+    dt.par[name == names[i] & param == params[i], value := coefs[i]]
+    
+  }
+
+  dt.par
+  
+}
+
+
+# modelling ------------------------------------------------ #
+
+cur.model.gaussnewton <- function(cur.status = kev.curve) {
   
   # prepare
   
@@ -231,13 +281,13 @@ cur.model <- function(cur.status = kev.curve) {
           , dt
           , start = start.values)
       , silent = TRUE
-      )
+    )
   
   if (is(md, "nls")) {
     
     cur.status@model <- md
     cur.status@model.status <- "OK"
-    cur.status@metrics <- cur.model.metrics(dt, md)
+    cur.status@metrics <- cur.model.metrics(dt, cur.model.predict(dt, md))
     cur.status@dt.par <- cur.parameters.update(dt.par, md)
     
   } else if (is(md, "try-error")) {
@@ -246,31 +296,71 @@ cur.model <- function(cur.status = kev.curve) {
     warning(paste("Error: Convergence failed:", attr(md, "condition")$message))
     
   }
-
+  
   # return
   
   cur.status
   
 }
 
-cur.parameters.update <- function(dt.par, md){
+cur.model.neldermead <- function(cur.status = kev.curve) {
   
-  dt.par <- copy(dt.par)
-  coefs <- md %>% coefficients
+  # prepare
   
-  params <- str_extract(names(coefs), "^.*\\^\\^\\^") %>% str_replace_all("\\^\\^\\^", "")
-  names <- str_extract(names(coefs), "\\^\\^\\^.*$") %>% str_replace_all("\\^\\^\\^", "")
+  dt <- cur.status@dt.init[label >= cur.status@window.borders[1] & label <= cur.status@window.borders[2]]
+  dt.par <- cur.status@dt.par
   
-  for (i in 1:length(coefs)) {
+  frm <- cur.formula.create(dt.par, dt)
+  
+  start.values <- frm[["start.values"]]
+  frm <- frm[["formula"]]
+  
+  # run
+  
+  md <- optim(unlist(start.values), cur.objective.rmse, dt = dt, formula = frm, obs = dt[, value]
+              , method = "Nelder-Mead", control = list(maxit = 1e+4, reltol = 1e-7))
+  
+  if (is.list(md) && md$convergence < 10) {
     
-    dt.par[name == names[i] & param == params[i], value := coefs[i]]
+    cur.status@model <- md
+    cur.status@model.status <- "OK"
+    cur.status@metrics <- cur.model.metrics(dt, cur.formula.execute(dt, formula = frm, scalar.values.list = as.list(md$par)))
+    cur.status@dt.par <- cur.parameters.update(dt.par, md)
+    
+  } else if (md$convergence >= 10) {
+    
+    cur.status@model.status <- "Error: Convergence failed: Rolled back to the stable model"
+    warning(paste("Error: Convergence failed:", md$message))
     
   }
-
-  dt.par
+  
+  # return
+  
+  cur.status
   
 }
 
+
+
+
+cur.model <- function(cur.status = kev.curve, algorithm = "gaussnewton") {
+  
+  if (algorithm == "gaussnewton") {
+    
+    cur.status <- cur.model.gaussnewton(cur.status)
+    
+  } else if (algorithm == "neldermead") {
+    
+    cur.status <- cur.model.neldermead(cur.status)
+    
+  }
+  
+  
+  # return
+  
+  cur.status
+  
+}
 
 
 

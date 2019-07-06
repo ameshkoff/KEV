@@ -30,7 +30,8 @@ cur.status@window.borders[1] <- 210
 
 cur.status <- cur.remove.curves(cur.status, min.expvalue = 200)
 
-cur.status <- cur.model(cur.status)
+cur.status <- cur.model(cur.status, algorithm = "gaussnewton")
+cur.status <- cur.model(cur.status, algorithm = "neldermead")
 
 
 

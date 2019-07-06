@@ -31,7 +31,7 @@ setClassUnion("numeric.or.NULL", c("numeric", "NULL"))
 setClassUnion("list.or.NULL", c("list", "NULL"))
 setClassUnion("data.table.or.NULL", c("data.table", "NULL"))
 setClassUnion("formula.or.NULL", c("formula", "NULL"))
-setClassUnion("nls.or.NULL", c("nls", "NULL"))
+setClassUnion("cur.model", c("nls", "list", "NULL"))
 
 setClass("kev.curve", slots = list(mode = "character"
                                    , sep = "character"
@@ -44,7 +44,7 @@ setClass("kev.curve", slots = list(mode = "character"
                                    , window.borders = "numeric.or.NULL"
                                    , formula.init = "formula.or.NULL"
                                    , start.values = "list.or.NULL"
-                                   , model = "nls.or.NULL"
+                                   , model = "cur.model"
                                    , metrics = "list.or.NULL"
                                    , model.status = "character"))
 
@@ -170,9 +170,9 @@ cur.plot.effects <- function(cur.status = kev.curve) {
 
 # metrics and residuals --------------------------------------
 
-cur.model.metrics <- function(dt, model) {
+cur.model.metrics <- function(dt, pred) {
   
-  pred <- cur.model.predict(dt, model)
+  # pred <- cur.model.predict(dt, model)
   obs <- dt[, value]
   
   residuals.abs <- pred - obs
