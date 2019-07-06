@@ -6921,7 +6921,7 @@ server <- function(input, output, session) {
     }
     
     if (nrow(values$cur.dt.par) != nrow(dt.par))
-      values$cur.dt.par <- dt.par
+      values$cur.dt.par <- cur.dt.par.sanitize(dt.par)
 
     # return
     
@@ -6982,7 +6982,7 @@ server <- function(input, output, session) {
     }
     
     if (nrow(values$cur.dt.par) != nrow(dt.par))
-      values$cur.dt.par <- dt.par
+      values$cur.dt.par <- cur.dt.par.sanitize(dt.par)
     
     # return
     
@@ -7033,7 +7033,7 @@ server <- function(input, output, session) {
         
         if (nrow(dt.par) != nrow(values$cur.dt.par)) {
 
-          values$cur.dt.par <- dt.par
+          values$cur.dt.par <- cur.dt.par.sanitize(dt.par)
           
         }
         
@@ -7071,7 +7071,7 @@ server <- function(input, output, session) {
                            dt.par <- copy(values$cur.dt.par)
                            dt.par[name == cur.id & param == param.id, value := vl]
                            
-                           values$cur.dt.par <- dt.par
+                           values$cur.dt.par <- cur.dt.par.sanitize(dt.par)
                            
                          }
                          # print(values$cur.dt.par[name == cur.id & param == param.id, value])
@@ -7154,6 +7154,25 @@ server <- function(input, output, session) {
     values$cur.dt.par
     
   })
+  
+  cur.dt.par.sanitize <- function(dt.par) {
+    
+    cln <- colnames(dt.par)
+    cln <- cln[cln %in% c("name", "design", "param")]
+    
+    validate(
+      need(length(cln) == 3
+          , paste("Parameters data does not contain one or more of the mandatory columns:"
+                  , "`name`, `design`, `param`"))
+    )
+    
+    for (cl in cln)
+      dt.par[, eval(cl) := str_replace_all(eval(as.name(cl)), "[^[:alnum:]|[ ,.]]", ".")]
+
+    dt.par
+    
+  }
+  
   
   # load data from file
   
@@ -7363,7 +7382,7 @@ server <- function(input, output, session) {
     }
     
     if (!is.logical(all.equal(values$cur.dt.par, values$cur.status@dt.par, check.attributes = FALSE)))
-      values$cur.dt.par <- values$cur.status@dt.par
+      values$cur.dt.par <- cur.dt.par.sanitize(values$cur.status@dt.par)
     
     
   }, ignoreNULL = FALSE)
