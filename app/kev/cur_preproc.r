@@ -63,6 +63,7 @@ cur.preproc <- function(dt.ttl) {
     
     dt.par[, eval(cl) := as.character(eval(as.name(cl)))]
     dt.par[is.na(eval(as.name(cl))), eval(cl) := ""]
+    dt.par[, eval(cl) := str_replace_all(eval(as.name(cl)), "[^[:alnum:]|[ ,.]]", ".")]
     
   }
   
