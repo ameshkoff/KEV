@@ -17,7 +17,6 @@ cur.status <- cur.data.runner(mode = "script"
                               , sep = ";"
                               , subdir = "curves/dsc.1.no.assumptions/semicolon"
                               , file = NULL
-                              , save.res = TRUE
                               , dt.list = NULL)
 
 cur.plot.effects(cur.status)
@@ -34,20 +33,20 @@ cur.status <- cur.model(cur.status, algorithm = "gaussnewton")
 cur.status <- cur.model(cur.status, algorithm = "neldermead")
 
 
-
-cur.plot.effects(cur.status)
+# universal data extraction (independent from step)
 
 cur.status@metrics$r.squared
 
-
-# universal data extraction (independent from step)
-
 cur.object.effects(cur.status)
-
 cur.auc(cur.status)
 
+cur.plot.effects(cur.status)
 
+# save
 
-# TO DO: save
+cur.save(cur.status, file = NULL)
+cur.save(cur.status, file = "output.xlsx")
+cur.save(cur.status, file = "output.zip")
+
 
 

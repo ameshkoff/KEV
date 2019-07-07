@@ -7384,7 +7384,6 @@ server <- function(input, output, session) {
                                         , sep = cur.sep()
                                         , subdir = ""
                                         , file = NULL
-                                        , save.res = FALSE
                                         , dt.list = list(dt.cur = cur.dt.init.data()
                                                          , dt.par = copy(values$cur.dt.par)))
 
