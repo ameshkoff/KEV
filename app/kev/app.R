@@ -9846,7 +9846,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "kev.constants.data.zip"
+      "kev.nmr.constants.data.zip"
       
     },
     
@@ -9954,7 +9954,7 @@ server <- function(input, output, session) {
     # ----
     filename = function() {
       
-      "kev.constants.data.xlsx"
+      "kev.nmr.constants.data.xlsx"
       
     },
     
@@ -10005,6 +10005,33 @@ server <- function(input, output, session) {
       }
       
       write.xlsx(dt.list, file)
+      
+    }
+    
+  )
+  # ----
+
+  output$kev.cur.data.zip <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "kev.curves.fitting.zip"
+      
+    },
+    
+    content = function(file) {
+      
+
+      # temporary directory to avoid permission issues
+      
+      curdir <- getwd()
+      tmpdir <- tempdir()
+      setwd(tmpdir)
+      print(tempdir())
+      
+      cur.save(values$cur.status, file)
+
+      setwd(curdir)
       
     }
     

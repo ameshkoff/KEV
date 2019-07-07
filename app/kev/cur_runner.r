@@ -227,14 +227,25 @@ cur.save <- function(cur.status = kev.curve
                                        , value = cur.status@cur.task), use.names = TRUE, fill = TRUE)
   
   
-  dt.auc <- cur.auc(cur.status)
+  dt.auc <- cur.auc(cur.status)[, !c("term"), with = FALSE]
   dt.object.effects <- cur.object.effects(cur.status)
-  dt.residuals <- cbind(cur.status@metrics$residuals.abs, cur.status@metrics$residuals.rel[, residuals.rel])
   
-  nm <- names(cur.status@metrics)
-  nm <- nm[!(nm %like% "residual")]
-  
-  dt.metrics <- as.data.table(cur.status@metrics[nm])
+  if (!is.null(cur.status@model)) {
+    
+    dt.residuals <- cbind(cur.status@metrics$residuals.abs, cur.status@metrics$residuals.rel[, residuals.rel])
+    
+    nm <- names(cur.status@metrics)
+    nm <- nm[!(nm %like% "residual")]
+    
+    dt.metrics <- as.data.table(cur.status@metrics[nm])
+    
+  } else {
+    
+    dt.residuals <- data.table(not.runned = "not.runned")
+    dt.metrics <- data.table(not.runned = "not.runned")
+    
+  }
+    
   
   # combine in a list to perform loop / vector operation
   
