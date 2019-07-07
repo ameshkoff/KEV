@@ -7380,12 +7380,16 @@ server <- function(input, output, session) {
   
   observeEvent(values$cur.dt.par, {
 
-    values$cur.status <- cur.data.runner(mode = "app"
-                                        , sep = cur.sep()
-                                        , subdir = ""
-                                        , file = NULL
-                                        , dt.list = list(dt.cur = cur.dt.init.data()
-                                                         , dt.par = copy(values$cur.dt.par)))
+    if (is.null(values$cur.status) || is.null(values$cur.dt.par) ||
+        !is.logical(all.equal(values$cur.dt.par, values$cur.status@dt.par, check.attributes = FALSE, ignore.row.order = TRUE))) {
+      
+      values$cur.status <- cur.data.runner(mode = "app"
+                                           , sep = cur.sep()
+                                           , subdir = ""
+                                           , file = NULL
+                                           , dt.list = list(dt.cur = cur.dt.init.data()
+                                                            , dt.par = copy(values$cur.dt.par)))
+    }
 
     names <- values$cur.status@dt.par[!is.na(design) & design != "", name] %>% unique()
     
