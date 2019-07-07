@@ -279,7 +279,8 @@ cur.model.gaussnewton <- function(cur.status = kev.curve) {
     try(  
       nls(frm
           , dt
-          , start = start.values)
+          , start = start.values
+          , control = list(maxiter = 500))
       , silent = TRUE
     )
   
