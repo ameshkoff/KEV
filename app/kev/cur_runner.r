@@ -22,6 +22,11 @@ library(Hmisc)
 library(stringi)
 library(stringr)
 
+
+if (Sys.info()["sysname"] %like% "indows")
+  Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
+
+
 # curve status as an object ----------------------------------
 
 setOldClass("nls")
@@ -36,8 +41,6 @@ setClassUnion("cur.model", c("nls", "list", "NULL"))
 setClass("kev.curve", slots = list(mode = "character"
                                    , sep = "character"
                                    , subdir = "character"
-                                   , file = "character.or.NULL"
-                                   , save.res = "logical"
                                    , dt.init = "data.table.or.NULL"
                                    , dt.par = "data.table.or.NULL"
                                    , cur.task = "character.or.NULL"
@@ -55,15 +58,12 @@ cur.data.runner <- function(mode = c("api", "script", "app")
                             , sep = ","
                             , subdir = ""
                             , file = NULL
-                            , save.res = TRUE
                             , dt.list = NULL) {
 
   cur.status <- new("kev.curve"
                     , mode = mode
                     , sep = sep
                     , subdir = subdir
-                    , file = file
-                    , save.res = save.res
                     , dt.init = NULL
                     , dt.par = NULL
                     , cur.task = NULL
@@ -84,14 +84,13 @@ cur.data.runner <- function(mode = c("api", "script", "app")
   source(paste0(dir.start, "cur_data.r"), chdir = TRUE)
   source(paste0(dir.start, "cur_preproc.r"), chdir = TRUE)
   source(paste0(dir.start, "cur_evaluator.r"), chdir = TRUE)
-  # source(paste0(dir.start, "cur_save.r"), chdir = TRUE)
-  
+
   
   # load data ---------------- #
   
   if (cur.status@mode[1] == "script") {
     
-    dt.ttl <- cur.scripts.load(cur.status@sep, cur.status@subdir, cur.status@file)
+    dt.ttl <- cur.scripts.load(cur.status@sep, cur.status@subdir, file)
   
   } else if (cur.status@mode[1] %in% c("app", "api")) {
     
@@ -188,6 +187,114 @@ cur.model.metrics <- function(dt, pred) {
   list(residuals.abs = residuals.abs, residuals.rel = residuals.rel
        , r.squared = r.squared, rmse = rmse, mae = mae)
   
+}
+
+
+# save -------------------------------------------------------
+
+cur.save <- function(cur.status = kev.curve
+                     , file = NULL) {
+  
+  dir.output <- ""
+  
+  # define output directory for script mode
+  
+  if (cur.status@mode[1] %in% c("script", "api")) {
+    
+    dir.output <- "output/"
+    
+    if (!is.na(cur.status@subdir) || cur.status@subdir == "") {
+      
+      dir.output <- paste0(dir.output, "/", cur.status@subdir, "/")
+      dir.output <- str_replace_all(dir.output, "//", "/")
+      
+      dir.create(file.path(dir.output), recursive = TRUE, showWarnings = FALSE)
+      
+    }
+
+  }
+  
+  # prepare datasets
+  
+  dt.par <- cur.status@dt.par
+  
+  if (nrow(dt.par[(is.na(name) | name == "") & param %in% c("left", "right")]) < 2)
+    dt.par <- rbind(dt.par, data.table(param = c("left", "right")
+                                       , value = cur.status@window.borders), use.names = TRUE, fill = TRUE)
+
+  if (nrow(dt.par[(is.na(name) | name == "") & param %in% c("cur.task")]) == 0)
+    dt.par <- rbind(dt.par, data.table(param = "cur.task"
+                                       , value = cur.status@cur.task), use.names = TRUE, fill = TRUE)
+  
+  
+  dt.auc <- cur.auc(cur.status)
+  dt.object.effects <- cur.object.effects(cur.status)
+  dt.residuals <- cbind(cur.status@metrics$residuals.abs, cur.status@metrics$residuals.rel[, residuals.rel])
+  
+  nm <- names(cur.status@metrics)
+  nm <- nm[!(nm %like% "residual")]
+  
+  dt.metrics <- as.data.table(cur.status@metrics[nm])
+  
+  # combine in a list to perform loop / vector operation
+  
+  dt.list <- list("input_data" = cur.status@dt.init
+                  , "output_params" = dt.par
+                  , "output_area_under_curve" = dt.auc
+                  , "output_calculated_curves" = dt.object.effects
+                  , "output_residuals" = dt.residuals
+                  , "output_metrics" = dt.metrics)
+  
+  # save
+  
+  if (is.null(file) || str_detect(file, "\\.zip$")) {
+    
+    # plain text
+    
+    if (cur.status@sep == ";") {
+      
+      for (i in 1:length(dt.list))
+        write.csv2(dt.list[[i]], file = paste0(dir.output, paste0(names(dt.list)[i], ".csv")), row.names = FALSE)
+
+    } else if (cur.status@sep == ",") {
+      
+      for (i in 1:length(dt.list))
+        write.csv(dt.list[[i]], file = paste0(dir.output, paste0(names(dt.list)[i], ".csv")), row.names = FALSE)
+      
+    } else if (cur.status@sep == "tab") {
+      
+      for (i in 1:length(dt.list))
+        write.table(dt.list[[i]], file = paste0(dir.output, paste0(names(dt.list)[i], ".csv")), sep = "\t", row.names = FALSE)
+      
+    }
+
+  } else if (str_detect(file, "\\.xlsx$")) {
+    
+    # XLSX
+    
+    if (cur.status@mode[1] %in% c("script", "api")) file <- paste0(dir.output, file)
+
+    write.xlsx(dt.list, file)
+        
+  }
+
+  # zip
+  
+  if (!is.null(file) && str_detect(file, "\\.zip$")) {
+    
+    utils::zip(paste0(dir.output, file), paste0(dir.output, names(dt.list), ".csv"))
+    
+    # remove garbage from the disc
+    
+    for (i in paste0(dir.output, names(dt.list), ".csv")) {
+      
+      if (file.exists(i))
+        file.remove(i)
+      
+    }
+
+  }
+
 }
 
 
