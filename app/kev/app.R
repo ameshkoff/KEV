@@ -1102,23 +1102,24 @@ ui <- tagList(
                                  , tabsetPanel(type = "tabs"
                                                , tabPanel("Plot"
                                                           , htmlOutput("cur.title")
-                                                          , plotlyOutput("plot.cur"))
+                                                          , plotlyOutput("plot.cur", height = "auto"))
                                                , tabPanel("Data"
-                                                          , fluidRow(column(6
-                                                                            , h4("Input Data")
-                                                                            , rHandsontableOutput("cur.dt.init"))
-                                                                     , column(6
-                                                                              , h4("Curve Areas")
-                                                                              , rHandsontableOutput("cur.auc")
-                                                                              , h4("Fitted Curves")
-                                                                              , rHandsontableOutput("cur.model.effects"))
+                                                          , fluidRow(column(5
+                                                                            , h4("Curve Areas")
+                                                                            , rHandsontableOutput("cur.auc")))
+                                                          , fluidRow(column(8
+                                                                            , h4("Fitted Curves")
+                                                                            , rHandsontableOutput("cur.object.effects"))
+                                                                     , column(4
+                                                                              , h4("Input Data")
+                                                                              , rHandsontableOutput("cur.dt.init"))
                                                                      )
                                                           )
                                                )
                                  
                                  , fluidRow(class = "download-row"
-                                            , downloadButton("cur.model.effects.csv", "csv")
-                                            , downloadButton("cur.model.effects.xlsx", "xlsx"))))
+                                            , downloadButton("kev.cur.data.bottom.csv", "csv")
+                                            , downloadButton("kev.cur.data.bottom.xlsx", "xlsx"))))
                
              ))
              
@@ -7373,7 +7374,7 @@ server <- function(input, output, session) {
   , ignoreInit = TRUE)
   
 
-  # calculating & output data #
+  # calculating -------------- #
   
   # refresh status
   
@@ -7464,8 +7465,11 @@ server <- function(input, output, session) {
     
   })
   
+  
+  # output data -------------- #
+  
   cur.auc.data <- reactive({
-    # cur.update.status(1L)
+    
     if (!is.null(values$cur.status) && !is.null(values$cur.status@dt.par)) {
       
       dt <- cur.auc(values$cur.status)
@@ -7480,6 +7484,23 @@ server <- function(input, output, session) {
 
   })
   
+  cur.object.effects.data <- reactive({
+    
+    if (!is.null(values$cur.status) && !is.null(values$cur.status@dt.par)) {
+      
+      dt <- cur.object.effects(values$cur.status)
+      dt <- dt[, !c("observed", "predicted"), with = FALSE]
+
+    } else {
+      
+      NULL
+      
+    }
+    
+  })
+  
+  
+  
   
   # rendering ---------------- #
   
@@ -7491,7 +7512,7 @@ server <- function(input, output, session) {
       
       if (nrow(dt.init) > 20) {
         
-        rhandsontable(dt.init, stretchH = "all", useTypes = FALSE, height = 600) %>%
+        rhandsontable(dt.init, stretchH = "all", useTypes = FALSE, height = 550) %>%
           hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
         
       } else {
@@ -7541,7 +7562,7 @@ server <- function(input, output, session) {
       theme(legend.title = element_blank()) +
       labs(x = "Labels", y = "Values")
     
-    g <- ggplotly(g)
+    g <- ggplotly(g, height = 600)
 
     g
     
@@ -7576,7 +7597,7 @@ server <- function(input, output, session) {
       
       if (nrow(dt) > 20) {
         
-        rhandsontable(dt, stretchH = "all", useTypes = TRUE, height = 600) %>%
+        rhandsontable(dt, stretchH = "all", useTypes = TRUE, height = 550) %>%
           hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
         
       } else {
@@ -7588,9 +7609,30 @@ server <- function(input, output, session) {
       
     }
     
+  })
+
+  output$cur.object.effects <- renderRHandsontable({
+    
+    dt <- cur.object.effects.data()
+    
+    if (!is.null(dt)) {
+      
+      if (nrow(dt) > 20) {
+        
+        rhandsontable(dt, stretchH = "all", useTypes = FALSE, height = 550) %>%
+          hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+        
+      } else {
+        
+        rhandsontable(dt, stretchH = "all", useTypes = FALSE, height = NULL) %>%
+          hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+        
+      }
+      
+    }
     
   })
-    
+  
   
   # end of main server part ----------------------------
   
