@@ -232,7 +232,7 @@ cur.save <- function(cur.status = kev.curve
   
   if (!is.null(cur.status@model)) {
     
-    dt.residuals <- cbind(cur.status@metrics$residuals.abs, cur.status@metrics$residuals.rel[, residuals.rel])
+    dt.residuals <- cbind(cur.status@metrics$residuals.abs, cur.status@metrics$residuals.rel[, .(residuals.rel)])
     
     nm <- names(cur.status@metrics)
     nm <- nm[!(nm %like% "residual")]
