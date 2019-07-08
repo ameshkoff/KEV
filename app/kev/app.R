@@ -1028,8 +1028,8 @@ ui <- tagList(
                                  , h4("Task")
                                  , selectInput("cur.task"
                                                , ""
-                                               , list("Spectrophotometry", "Other")
-                                               , selected = "Spectrophotometry")
+                                               , list("Spectrophotometry:UV-Vis", "Spectrophotometry:IR", "Other")
+                                               , selected = "Spectrophotometry:UV-Vis")
                         ), column(4
                                   , h4("Algorithm")
                                   , selectInput("cur.algorithm"
@@ -7206,7 +7206,7 @@ server <- function(input, output, session) {
     )
     
     for (cl in cln)
-      dt.par[, eval(cl) := str_replace_all(eval(as.name(cl)), "[^[:alnum:]|[ ,.-]]", ".")]
+      dt.par[, eval(cl) := str_replace_all(eval(as.name(cl)), "[^[:alnum:]|[ ,.\\-:]]", ".")]
 
     dt.par
     
