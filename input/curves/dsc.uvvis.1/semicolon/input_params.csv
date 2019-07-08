@@ -1,5 +1,5 @@
 ﻿name;design;param;value
-;;task;spectrophotometry
+;;task;spectrophotometry:uv-vis
 ;;left;200
 ;;right;350
 left;gaussian;amplitude;100

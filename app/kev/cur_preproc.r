@@ -63,14 +63,14 @@ cur.preproc <- function(dt.ttl) {
     
     dt.par[, eval(cl) := as.character(eval(as.name(cl)))]
     dt.par[is.na(eval(as.name(cl))), eval(cl) := ""]
-    dt.par[, eval(cl) := str_replace_all(eval(as.name(cl)), "[^[:alnum:]|[ ,.-]]", ".")]
+    dt.par[, eval(cl) := str_replace_all(eval(as.name(cl)), "[^[:alnum:]|[ ,.\\-:]]", ".")]
     
   }
   
   # extract parameters
 
   cur.task <- dt.par[name == "" & param == "task", value]
-  if (length(cur.task) == 0) cur.task <- "spectrophotometry"
+  if (length(cur.task) == 0) cur.task <- "spectrophotometry:uv-vis"
   
   window.borders <- c(dt.cur[, min(label)], dt.cur[, max(label)])
   
