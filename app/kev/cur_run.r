@@ -15,7 +15,7 @@ source("app/KEV/cur_runner.r", chdir = TRUE)
 
 cur.status <- cur.data.runner(mode = "script"
                               , sep = ";"
-                              , subdir = "curves/dsc.1.no.assumptions/semicolon"
+                              , subdir = "curves/dsc.1.uvvis.no.assumptions/semicolon"
                               , file = NULL
                               , dt.list = NULL)
 
@@ -47,6 +47,29 @@ cur.plot.effects(cur.status)
 cur.save(cur.status, file = NULL)
 cur.save(cur.status, file = "output.xlsx")
 cur.save(cur.status, file = "output.zip")
+
+
+
+# run loading & preprocessing --------------------------------
+
+cur.status <- cur.data.runner(mode = "script"
+                              , sep = ","
+                              , subdir = "curves/dsc.2.ir"
+                              , file = "data.xlsx"
+                              , dt.list = NULL)
+
+cur.plot.effects(cur.status)
+
+
+# run modelling ----------------------------------------------
+
+# cur.status@window.borders[1] <- 1600
+# cur.status@window.borders[2] <- 1700
+
+cur.status <- cur.remove.curves(cur.status, max.expvalue = 1680)
+
+cur.status <- cur.model(cur.status, algorithm = "gaussnewton")
+cur.status <- cur.model(cur.status, algorithm = "neldermead")
 
 
 
