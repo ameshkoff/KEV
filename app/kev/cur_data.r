@@ -38,7 +38,7 @@ cur.scripts.load.plain <- function(sep, subdir) {
   fls <- list.files(subdir)
   
   dt.cur.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*data(\\.csv|\\.txt)*"][1])
-  dt.par.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*(params*)(\\.csv|\\.txt)*"][1])
+  dt.par.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*(param(eter)*s*)(\\.csv|\\.txt)*"][1])
   
   if (sep == ";") {
     
@@ -118,7 +118,7 @@ cur.scripts.load.xlsx <- function(subdir, file) {
     
   }
   
-  sht <- shts[shts %like% "^(input\\_)*params*$"]
+  sht <- shts[shts %like% "^(input\\_)*param(eter)*s*$"]
   sht <- sort(sht)
   
   tbl[["dt.par"]] <- try(as.data.table(read.xlsx(fl, sheet = sht[1])), silent = TRUE)

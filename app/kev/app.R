@@ -7072,7 +7072,7 @@ server <- function(input, output, session) {
     
     mapply(function(input.id) {
       
-      cur.formula.values[[input.id]] <- reactive(input[[input.id]]) %>% debounce(2000)
+      cur.formula.values[[input.id]] <- reactive(input[[input.id]]) %>% debounce(500)
       
       cur.formula.observers$values[[input.id]] <-
         observeEvent(cur.formula.values[[input.id]]()
@@ -7389,8 +7389,9 @@ server <- function(input, output, session) {
                                            , file = NULL
                                            , dt.list = list(dt.cur = cur.dt.init.data()
                                                             , dt.par = copy(values$cur.dt.par)))
+      isolate(values$cur.dt.par <- cur.dt.par.sanitize(values$cur.status@dt.par))
     }
-
+    
     names <- values$cur.status@dt.par[!is.na(design) & design != "", name] %>% unique()
     
     if (input.source$cur.is.file.loaded) {
@@ -7438,8 +7439,8 @@ server <- function(input, output, session) {
       
     }
     
-    if (!is.logical(all.equal(values$cur.dt.par, values$cur.status@dt.par, check.attributes = FALSE, ignore.row.order = TRUE)))
-      values$cur.dt.par <- cur.dt.par.sanitize(values$cur.status@dt.par)
+    # if (!is.logical(all.equal(values$cur.dt.par, values$cur.status@dt.par, check.attributes = FALSE, ignore.row.order = TRUE)))
+      # values$cur.dt.par <- cur.dt.par.sanitize(values$cur.status@dt.par)
     
   }, ignoreNULL = FALSE, priority = 1000)
   
