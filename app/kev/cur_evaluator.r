@@ -9,23 +9,9 @@
 
 # curve functions ------------------------------------------ #
 
-kev.gaussian <- function(x, amplitude, expvalue, hwhm, base) {
-  
-  amplitude * exp(-log(2) * (x - expvalue) ^ 2 / hwhm ^ 2) 
-  if (x < 0) x <- 0
-  
-  x
-  
-}
+kev.gaussian <- function(x, amplitude, expvalue, hwhm) { amplitude * exp(-log(2) * (x - expvalue) ^ 2 / hwhm ^ 2) }
 
-kev.lorentzian <- function(x, amplitude, expvalue, hwhm, base) {
-  
-  x <- amplitude / (1 + (x - expvalue) ^ 2 / hwhm ^ 2) - base
-  if (x < 0) x <- 0
-  
-  x
-  
-}
+kev.lorentzian <- function(x, amplitude, expvalue, hwhm) { amplitude / (1 + (x - expvalue) ^ 2 / hwhm ^ 2) }
 
 
 

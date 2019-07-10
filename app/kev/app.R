@@ -6894,7 +6894,7 @@ server <- function(input, output, session) {
     if (is.null(cur.params))
       cur.params <- list(amplitude = cur.dt.init.data()[, max(value)]
                          , expvalue = cur.dt.init.data()[, mean(label)]
-                         , hwhm = cur.dt.init.data()[, max(label)] / 4)
+                         , hwhm = (cur.dt.init.data()[, max(label) - min(label)]) / 4)
     
     cur.params <- data.table(param = names(cur.params), value = unlist(cur.params))
     cur.params <- cur.params[order(param)]
@@ -6955,7 +6955,7 @@ server <- function(input, output, session) {
     if (is.null(cur.params))
       cur.params <- list(amplitude = cur.dt.init.data()[, max(value)]
                          , expvalue = cur.dt.init.data()[, mean(label)]
-                         , hwhm = cur.dt.init.data()[, max(label)] / 4)
+                         , hwhm = cur.dt.init.data()[, max(label) - min(label)] / 4)
     
     cur.params <- data.table(param = names(cur.params), value = unlist(cur.params))
     cur.params <- cur.params[order(param)]
