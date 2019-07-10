@@ -7380,6 +7380,8 @@ server <- function(input, output, session) {
   
   observeEvent(values$cur.dt.par, {
 
+    # update parameters in cur.status object for consistence
+    
     if (is.null(values$cur.status) || is.null(values$cur.dt.par) ||
         !is.logical(all.equal(values$cur.dt.par, values$cur.status@dt.par, check.attributes = FALSE, ignore.row.order = TRUE))) {
       
@@ -7392,7 +7394,12 @@ server <- function(input, output, session) {
       isolate(values$cur.dt.par <- cur.dt.par.sanitize(values$cur.status@dt.par))
     }
     
-    names <- values$cur.status@dt.par[!is.na(design) & design != "", name] %>% unique()
+    # update input data in cur.status object for consistence
+    
+    if (!is.logical(all.equal(values$cur.dt.init, values$cur.status@dt.init, check.attributes = FALSE)))
+      values$cur.dt.init <- values$cur.status@dt.init
+    
+    # update window boundaries GUI inputs when new data is loaded from the disc
     
     if (input.source$cur.is.file.loaded) {
       
@@ -7406,28 +7413,60 @@ server <- function(input, output, session) {
       
     }
     
-    if (!is.logical(all.equal(values$cur.dt.init, values$cur.status@dt.init, check.attributes = FALSE)))
-      values$cur.dt.init <- values$cur.status@dt.init
+    # define rows to insert, remove and update
+
+    dt.cur.rows <- values$cur.status@dt.par[!is.na(design) & design != "", .(name, design)] %>% unique()
+    dt.cur.rows[, cur.id := paste0(design, name, "_curve.row")]
     
-    if (length(names) > 0) {
+    dt.cur.rows.insert <- dt.cur.rows[!(cur.id %in% cur.curve.rows$values) | length(cur.curve.rows$values) == 0 | input.source$cur.is.file.loaded]
+    dt.cur.rows.update <- dt.cur.rows[(cur.id %in% cur.curve.rows$values) & !(cur.id %in% dt.cur.rows.insert[, cur.id])]
     
+    # # update existing rows
+    # 
+    # if (nrow(dt.cur.rows.update) > 0) {
+    #   
+    #   dt.par.update <- copy(values$cur.dt.par)
+    #   dt.par.update[, cur.id := paste0(design, name, "_cur.row")]
+    #   
+    #   dt.par.update <- dt.par.update[cur.id %in% dt.cur.rows.update[, cur.id]]
+    #   dt.par.update[, input.id := paste0(design, name, "_", param)]
+    #   
+    #   for (i in 1:nrow(dt.par.update)) {
+    #     
+    #     # browser()
+    #     # updateNumericInput(session, dt.par.update[i, input.id], value = as.numeric(dt.par.update[i, value]))
+    #     # values$cur.dt.par[name %in% dt.cur.rows.update[i, name]]
+    #     
+    #   }
+    #   
+    #   print(dt.cur.rows.update[, cur.id])
+    #   
+    # }
+    
+    # insert new rows
+    
+    if (nrow(dt.cur.rows.insert) > 0) {
+      
       # stop events to prevent overwriting with older data
       cur.update.status(0L)
       
       dt.par <- copy(values$cur.status@dt.par)
       dt.par[, input.id := paste0(design, name, "_", param)]
       
-      if (length(cur.curve.rows$values) > 0) {
+      cur.to.remove <- cur.curve.rows$values
+      cur.to.remove <- cur.to.remove[!(cur.to.remove %in% dt.cur.rows.update[, cur.id])]
+      
+      if (length(cur.to.remove) > 0) {
         
-        for (cr in cur.curve.rows$values) {
+        for (cr in cur.to.remove) {
           
           removeUI(paste0("#", escapeRegex(cr)), multiple = TRUE, immediate = FALSE)
           cur.curve.rows$values <- setdiff(cur.curve.rows$values, cr)
-          
+
         }
       }
       
-      for (nm in names) {
+      for (nm in dt.cur.rows.insert[, name]) {
         
         params <- as.list(values$cur.status@dt.par[name == nm, value])
         names(params) <- values$cur.status@dt.par[name == nm, param]
