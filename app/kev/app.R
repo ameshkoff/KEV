@@ -7587,9 +7587,6 @@ server <- function(input, output, session) {
     
     cln <- colnames(extr.effects)
     cln <- cln[cln %like% "^(Curve .*|label)$"]
-    # browser()
-    dt.par <- values$cur.status@dt.par %>% dcast.data.table(name + design ~ param, value.var = "value", fun.aggregate = sum)
-    dt.par <- dt.par[, .(cur.id = paste0(design, name, "_cur.row"), x = expvalue, y = amplitude)]
     
     lbl.perc <- (dt[, max(label)] - dt[, min(label)]) / 100
     
@@ -7608,21 +7605,8 @@ server <- function(input, output, session) {
       theme(legend.title = element_blank()) +
       labs(x = "Labels", y = "Values")
     
-    g <- ggplotly(g, height = 600) %>% plotly::layout(
-      xaxis = list(range = c(extr.effects[, min(label)], extr.effects[, max(label)])),
-      yaxis = list(range = c(0, extr.effects[, max(observed)] * 1.5)),
-      shapes = list(
-        type = "circle", 
-        fillcolor = "gray",
-        line = list(color = "gray"),
-        x0 = -1, x1 = 1,
-        y0 = -1, y1 = 1,
-        xsizemode = "pixel", 
-        ysizemode = "pixel",
-        xanchor = 0, yanchor = 0
-      )) %>% plotly::config(editable = TRUE)
-    #%>% plotly::config(toImageButtonOptions = list(format = c("svg")))
-    browser()
+    g <- ggplotly(g, height = 600)
+
     g
     
   })
