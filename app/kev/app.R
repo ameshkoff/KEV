@@ -6862,7 +6862,7 @@ server <- function(input, output, session) {
   
   cur.update.status <- reactiveVal(1L)
   
-  cur.curve.rows <- reactiveValues(values = character())
+  cur.curve.rows <- reactiveValues(values = data.table(cur.id = character(), plot.id = integer()))
   
   cur.formula.observers <- reactiveValues(values = list())
   
@@ -7051,7 +7051,7 @@ server <- function(input, output, session) {
     }
     
     cur.curves.iterator(cur.itr + as.integer(1))
-    cur.curve.rows$values <- c(cur.curve.rows$values, cur.id)
+    cur.curve.rows$values <- rbind(cur.curve.rows$values, data.table(cur.id = cur.id, plot.id = NA))
     
     insertUI(selector = "#cur_new_curves_place"
              , where = "beforeBegin"
@@ -7182,15 +7182,29 @@ server <- function(input, output, session) {
     
   })
   
-  # 
+  # update curve from plot
   
-  # observeEvent(input$cur.plot.curves.click, {
-  #   
-  #   ev <- input$cur.plot.curves.click
-  #   
-  #   print(paste(ev$x, ev$y))
-  #   
-  # })
+  observeEvent(event_data("plotly_relayout", source = "cur.plot.curves"), {
+    
+    ev <- event_data("plotly_relayout", source = "cur.plot.curves")
+    
+    if (length(names(ev)[names(ev) %like% "^shapes.*xanchor$"]) > 0) {
+      # browser()
+      
+      p.id <- names(ev)[1] %>% str_extract("^shapes\\[[0-9]+\\]") %>% str_extract("[0-9]+")
+      c.id <- cur.curve.rows$values[plot.id == p.id, cur.id]
+      
+      print(ev)
+      print(cur.curve.rows$values[plot.id == p.id, cur.id])
+      # browser()
+      updateNumericInput(session, str_replace(c.id, "curve.row", "expvalue"), value = ev[names(ev) %like% "xanchor$"][1][[1]])
+      updateNumericInput(session, str_replace(c.id, "curve.row", "amplitude"), value = ev[names(ev) %like% "yanchor$"][1][[1]])
+      
+      # browser()
+      
+    }
+    
+  })
   
   
   # data --------------------- #
@@ -7446,8 +7460,13 @@ server <- function(input, output, session) {
     dt.cur.rows <- values$cur.status@dt.par[!is.na(design) & design != "", .(name, design)] %>% unique()
     dt.cur.rows[, cur.id := paste0(design, name, "_curve.row")]
     
-    dt.cur.rows.insert <- dt.cur.rows[!(cur.id %in% cur.curve.rows$values) | length(cur.curve.rows$values) == 0 | input.source$cur.is.file.loaded]
-    dt.cur.rows.update <- dt.cur.rows[(cur.id %in% cur.curve.rows$values) & !(cur.id %in% dt.cur.rows.insert[, cur.id])]
+    dt.cur.rows.insert <- dt.cur.rows[!(cur.id %in% cur.curve.rows$values[, cur.id]) |
+                                        length(cur.curve.rows$values[, cur.id]) == 0 | input.source$cur.is.file.loaded]
+    dt.cur.rows.update <- dt.cur.rows[(cur.id %in% cur.curve.rows$values[, cur.id]) & !(cur.id %in% dt.cur.rows.insert[, cur.id])]
+    
+    cur.to.remove <- cur.curve.rows$values[, cur.id]
+    cur.to.remove <- cur.to.remove[!(cur.to.remove %in% dt.cur.rows.update[, cur.id])]
+    
     
     # update existing rows
 
@@ -7471,6 +7490,18 @@ server <- function(input, output, session) {
 
     }
     
+    # delete outdated rows
+    
+    if (length(cur.to.remove) > 0) {
+      
+      for (cr in cur.to.remove) {
+        
+        removeUI(paste0("#", escapeRegex(cr)), multiple = TRUE, immediate = FALSE)
+        cur.curve.rows$values <- cur.curve.rows$values[!(cur.id %in% cr)]
+        
+      }
+    }
+
     # insert new rows
     
     if (nrow(dt.cur.rows.insert) > 0) {
@@ -7480,19 +7511,6 @@ server <- function(input, output, session) {
       
       dt.par <- copy(values$cur.status@dt.par)
       dt.par[, input.id := paste0(design, name, "_", param)]
-      
-      cur.to.remove <- cur.curve.rows$values
-      cur.to.remove <- cur.to.remove[!(cur.to.remove %in% dt.cur.rows.update[, cur.id])]
-      
-      if (length(cur.to.remove) > 0) {
-        
-        for (cr in cur.to.remove) {
-          
-          removeUI(paste0("#", escapeRegex(cr)), multiple = TRUE, immediate = FALSE)
-          cur.curve.rows$values <- setdiff(cur.curve.rows$values, cr)
-
-        }
-      }
       
       for (nm in dt.cur.rows.insert[, name]) {
         
@@ -7624,11 +7642,11 @@ server <- function(input, output, session) {
     # pure plotly plot - not ggplotly to make it editable
 
     cln <- colnames(extr.effects)
-    cln <- cln[!(cln %in% c("label", "observed", "predicted"))]
+    cln <- cln[!(cln %in% c("label", "observed", "predicted"))] %>% sort()
     
     # observedand predictes
     
-    g <- plot_ly(height = 600) %>%
+    g <- plot_ly(height = 600, source = "cur.plot.curves") %>%
       add_lines(x = extr.effects[, label], y = extr.effects[, predicted], name = "Predicted"
                 , line = list(color = "darkblue", dash = "dash", width = 4)) %>%
       add_lines(x = extr.effects[, label], y = extr.effects[, observed], name = "Observed", fill = "tozeroy"
@@ -7658,11 +7676,51 @@ server <- function(input, output, session) {
     
     # browser()
     
-    # layout
+    # shapes
     
-    g <- g %>% layout(xaxis = list(title = "Labels", gridcolor = "white")
-                 , yaxis = list(title = "Values", gridcolor = "white")
-                 , plot_bgcolor = "#ebebeb")
+    dt.par <- copy(values$cur.dt.par)
+    dt.par[, cur.id := paste0(design, name, "_curve.row")]
+    
+    dt.par <- dcast.data.table(dt.par, cur.id + name ~ param, value.var = "value", fun.aggregate = sum)
+    dt.par <- dt.par[order(name)]
+    
+    peak.points <- 
+      mapply(function(x, y) {
+        list(
+          type = "circle"
+          , line = list(color = "black")
+          , x0 = -3, x1 = 3
+          , y0 = -3, y1 = 3
+          , xsizemode = "pixel" 
+          , ysizemode = "pixel"
+          , xanchor = x, yanchor = y
+          
+        )
+      } , dt.par[, expvalue]
+      , dt.par[, amplitude]
+      , SIMPLIFY = FALSE
+      )
+    
+    # shape data indices to match with curve names
+    
+    dt.par[, plot.id := 0:(nrow(dt.par)-1)]
+    
+    mapply(function(c.id, p.id) {
+      
+      if (!is.null(cur.curve.rows$values))
+        cur.curve.rows$values[cur.id == c.id, plot.id := p.id]
+        
+    }, dt.par[, cur.id], dt.par[, plot.id])
+    
+    # browser()
+    # names(peak.points) <- dt.par[, cur.id]
+    
+    g <- g %>%
+      layout(xaxis = list(title = "Labels", gridcolor = "white")
+             , yaxis = list(title = "Values", gridcolor = "white")
+             , plot_bgcolor = "#ebebeb"
+             , shapes = peak.points) %>%
+      config(edits = list(shapePosition = TRUE))
     
       # layout(shapes = circles) %>%
       # config(edits = list(shapePosition = TRUE))
