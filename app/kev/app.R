@@ -1106,7 +1106,9 @@ ui <- tagList(
                                  , tabsetPanel(type = "tabs"
                                                , tabPanel("Plot"
                                                           , htmlOutput("cur.title")
-                                                          , plotlyOutput("plot.cur", height = "auto"))
+                                                          , plotlyOutput("cur.plot.curves"
+                                                                         # , click = "cur.plot.curves.click"
+                                                                         , height = "auto"))
                                                , tabPanel("Data"
                                                           , fluidRow(column(5
                                                                             , h4("Curve Areas")
@@ -7180,6 +7182,16 @@ server <- function(input, output, session) {
     
   })
   
+  # 
+  
+  # observeEvent(input$cur.plot.curves.click, {
+  #   
+  #   ev <- input$cur.plot.curves.click
+  #   
+  #   print(paste(ev$x, ev$y))
+  #   
+  # })
+  
   
   # data --------------------- #
   
@@ -7585,7 +7597,10 @@ server <- function(input, output, session) {
 
   })
   
-  output$plot.cur <- renderPlotly({
+  output$cur.plot.curves <- renderPlotly({
+    
+    # ev <- event_data("plotly_click")
+    # print(ev)
     
     # temporary sync solution 
     cur.update.status(1L)
@@ -7606,22 +7621,68 @@ server <- function(input, output, session) {
     
     lbl.perc <- (dt[, max(label)] - dt[, min(label)]) / 100
     
-    g <-
-      ggplot() +
-      geom_area(data = extr.effects, aes(x = label, y = observed, group = 1), color = "darkgrey", size = 1, fill = "grey") +
-      geom_line(data = extr.effects, aes(x = label, y = predicted, group = 1), color = "darkblue", size = 1, linetype = 2) +
-      geom_line(data = melt(extr.effects[, cln, with = FALSE], id.vars = "label", variable.name = "Curves")
-                , aes(x = label, y = value, group = Curves, color = Curves)) +
-      geom_rect(aes(xmin = dt[, min(label)] - 2 * lbl.perc, xmax = values$cur.status@window.borders[1]
-                    , ymin = 0, ymax = dt[, max(value) * 1.1]), alpha = .1) +
-      geom_rect(aes(xmin = values$cur.status@window.borders[2], xmax = dt[, max(label)] + 2 * lbl.perc
-                    , ymin = 0, ymax = dt[, max(value) * 1.1]), alpha = .1) +
-      scale_x_continuous(expand = c(0, 0)) +
-      scale_y_continuous(expand = c(0, 0)) +
-      theme(legend.title = element_blank()) +
-      labs(x = "Labels", y = "Values")
+    # pure plotly plot - not ggplotly to make it editable
+
+    cln <- colnames(extr.effects)
+    cln <- cln[!(cln %in% c("label", "observed", "predicted"))]
     
-    g <- ggplotly(g, height = 600) #%>%
+    # observedand predictes
+    
+    g <- plot_ly(height = 600) %>%
+      add_lines(x = extr.effects[, label], y = extr.effects[, predicted], name = "Predicted"
+                , line = list(color = "darkblue", dash = "dash", width = 4)) %>%
+      add_lines(x = extr.effects[, label], y = extr.effects[, observed], name = "Observed", fill = "tozeroy"
+                , line = list(color = "rgb(155, 155, 155)"), fillcolor = "rgba(155, 155, 155, 0.5)")
+    
+    # curves
+    
+    for (cl in cln) {
+      
+      g <- add_lines(g, x = extr.effects[, label], y = extr.effects[, eval(as.name(cl))], name = cl)
+      
+    }
+    
+    # window borders
+    
+    g <- add_trace(g, type = "scatter", fill = "toself", mode = "none"
+                   , x = c(rep(dt[, min(label)] - 2 * lbl.perc, 2), rep(values$cur.status@window.borders[1], 2))
+                   , y = c(0, rep(dt[, max(value) * 1.1], 2), 0)
+                   , fillcolor = "rgba(155, 155, 155, 0.2)"
+                   , name = "", showlegend = FALSE)
+    
+    g <- add_trace(g, type = "scatter", fill = "toself", mode = "none"
+                   , x = c(rep(values$cur.status@window.borders[2], 2), rep(dt[, max(label)] + 2 * lbl.perc, 2))
+                   , y = c(0, rep(dt[, max(value) * 1.1], 2), 0)
+                   , fillcolor = "rgba(155, 155, 155, 0.2)"
+                   , name = "", showlegend = FALSE)
+    
+    # browser()
+    
+    # layout
+    
+    g <- g %>% layout(xaxis = list(title = "Labels", gridcolor = "white")
+                 , yaxis = list(title = "Values", gridcolor = "white")
+                 , plot_bgcolor = "#ebebeb")
+    
+      # layout(shapes = circles) %>%
+      # config(edits = list(shapePosition = TRUE))
+
+    # g <-
+    #   ggplot() +
+    #   geom_area(data = extr.effects, aes(x = label, y = observed, group = 1), color = "darkgrey", size = 1, fill = "grey") +
+    #   geom_line(data = extr.effects, aes(x = label, y = predicted, group = 1), color = "darkblue", size = 1, linetype = 2) +
+    #   geom_line(data = melt(extr.effects[, cln, with = FALSE], id.vars = "label", variable.name = "Curves")
+    #             , aes(x = label, y = value, group = Curves, color = Curves)) +
+    #   geom_rect(aes(xmin = dt[, min(label)] - 2 * lbl.perc, xmax = values$cur.status@window.borders[1]
+    #                 , ymin = 0, ymax = dt[, max(value) * 1.1]), alpha = .1) +
+    #   geom_rect(aes(xmin = values$cur.status@window.borders[2], xmax = dt[, max(label)] + 2 * lbl.perc
+    #                 , ymin = 0, ymax = dt[, max(value) * 1.1]), alpha = .1) +
+    #   scale_x_continuous(expand = c(0, 0)) +
+    #   scale_y_continuous(expand = c(0, 0)) +
+    #   theme(legend.title = element_blank()) +
+    #   labs(x = "Labels", y = "Values")
+    # 
+    # g <- ggplotly(g, height = 600) #%>%
       # add_paths() %>%
       # plotly::layout(
       #   shapes = list(
