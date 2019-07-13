@@ -49,6 +49,10 @@ options(shiny.sanitize.errors = TRUE)
 
 userguide.date <- "20190331"
 
+cur.task.list <- list("Spectrophotometry:UV-Vis" = "spectrophotometry:uv-vis"
+                       , "Spectrophotometry:IR" = "spectrophotometry:ir"
+                       , "Other" = "other")
+
 cur.curves.list <- list("Add Curve", "Gaussian", "Lorentzian")
 cur.algorithms <- data.table(value = c("gaussnewton", "neldermead")
                              , label = c("Gauss-Newton", "Nelder-Mead"))
@@ -1028,8 +1032,8 @@ ui <- tagList(
                                  , h4("Task")
                                  , selectInput("cur.task"
                                                , ""
-                                               , list("Spectrophotometry:UV-Vis", "Spectrophotometry:IR", "Other")
-                                               , selected = "Spectrophotometry:UV-Vis")
+                                               , cur.task.list
+                                               , selected = "spectrophotometry:uv-vis")
                         ), column(4
                                   , h4("Algorithm")
                                   , selectInput("cur.algorithm"
@@ -6865,6 +6869,17 @@ server <- function(input, output, session) {
   
   # controls ----------------- #
   
+  # cur task
+  
+  observeEvent(input$cur.task, {
+    
+    if (!is.null(input$cur.task) && values$cur.status@cur.task != input$cur.task)
+      values$cur.status@cur.task <- input$cur.task
+    
+  })
+  
+  # curve inner
+  
   cur.curve.input <- function(input.id, label, value, size = 2, type = "numeric") {
     
     if (type == "numeric") {
@@ -7305,7 +7320,7 @@ server <- function(input, output, session) {
     
     if (!is.null(in.file.bulk)) {
       
-      in.file <- as.data.table(in.file.bulk)[name %like% "^(input\\_)*params(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(in.file.bulk)[name %like% "^(input\\_)*param(eter)s*(\\.csv|\\.txt)*$"][1]
       in.file <- as.data.frame(in.file)
       
       in.file.xlsx <- as.data.table(in.file.bulk)[name %like% "\\.xlsx$"]
@@ -7399,12 +7414,13 @@ server <- function(input, output, session) {
     if (!is.logical(all.equal(values$cur.dt.init, values$cur.status@dt.init, check.attributes = FALSE)))
       values$cur.dt.init <- values$cur.status@dt.init
     
-    # update window boundaries GUI inputs when new data is loaded from the disc
+    # update GUI inputs when new data is loaded from the disc
     
     if (input.source$cur.is.file.loaded) {
       
       updateNumericInput(session, "cur.window.left", value = values$cur.status@window.borders[1])
       updateNumericInput(session, "cur.window.right", value = values$cur.status@window.borders[2])
+      isolate(updateSelectInput(session, "cur.task", selected = values$cur.status@cur.task))
       
     } else {
       
@@ -7421,27 +7437,27 @@ server <- function(input, output, session) {
     dt.cur.rows.insert <- dt.cur.rows[!(cur.id %in% cur.curve.rows$values) | length(cur.curve.rows$values) == 0 | input.source$cur.is.file.loaded]
     dt.cur.rows.update <- dt.cur.rows[(cur.id %in% cur.curve.rows$values) & !(cur.id %in% dt.cur.rows.insert[, cur.id])]
     
-    # # update existing rows
-    # 
-    # if (nrow(dt.cur.rows.update) > 0) {
-    #   
-    #   dt.par.update <- copy(values$cur.dt.par)
-    #   dt.par.update[, cur.id := paste0(design, name, "_cur.row")]
-    #   
-    #   dt.par.update <- dt.par.update[cur.id %in% dt.cur.rows.update[, cur.id]]
-    #   dt.par.update[, input.id := paste0(design, name, "_", param)]
-    #   
-    #   for (i in 1:nrow(dt.par.update)) {
-    #     
-    #     # browser()
-    #     # updateNumericInput(session, dt.par.update[i, input.id], value = as.numeric(dt.par.update[i, value]))
-    #     # values$cur.dt.par[name %in% dt.cur.rows.update[i, name]]
-    #     
-    #   }
-    #   
-    #   print(dt.cur.rows.update[, cur.id])
-    #   
-    # }
+    # update existing rows
+
+    if (nrow(dt.cur.rows.update) > 0 && values$cur.status@model.status == "OK") {
+
+      dt.par.update <- copy(values$cur.dt.par)
+      dt.par.update[, cur.id := paste0(design, name, "_curve.row")]
+
+      dt.par.update <- dt.par.update[cur.id %in% dt.cur.rows.update[, cur.id]]
+      dt.par.update[, input.id := paste0(design, name, "_", param)]
+
+      for (i in 1:nrow(dt.par.update)) {
+
+        # browser()
+        updateNumericInput(session, dt.par.update[i, input.id], value = as.numeric(dt.par.update[i, value]))
+        # values$cur.dt.par[name %in% dt.cur.rows.update[i, name]]
+
+      }
+
+      # print(dt.cur.rows.update[, cur.id])
+
+    }
     
     # insert new rows
     
@@ -7605,7 +7621,21 @@ server <- function(input, output, session) {
       theme(legend.title = element_blank()) +
       labs(x = "Labels", y = "Values")
     
-    g <- ggplotly(g, height = 600)
+    g <- ggplotly(g, height = 600) #%>%
+      # add_paths() %>%
+      # plotly::layout(
+      #   shapes = list(
+      #     type = "circle", 
+      #     fillcolor = "gray",
+      #     line = list(color = "gray"),
+      #     x0 = -1, x1 = 1,
+      #     y0 = -1, y1 = 1,
+      #     xsizemode = "pixel", 
+      #     ysizemode = "pixel",
+      #     xanchor = 0, yanchor = 0
+      #   )
+      # )
+    # browser()
 
     g
     

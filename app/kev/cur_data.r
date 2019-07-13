@@ -37,8 +37,8 @@ cur.scripts.load.plain <- function(sep, subdir) {
   subdir <- paste0("input", subdir)
   fls <- list.files(subdir)
   
-  dt.cur.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*data(\\.csv|\\.txt)*"][1])
-  dt.par.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*(param(eter)*s*)(\\.csv|\\.txt)*"][1])
+  dt.cur.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*data(\\.csv|\\.txt)*$"][1])
+  dt.par.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*param(eter)*s*(\\.csv|\\.txt)*$"][1])
   
   if (sep == ";") {
     

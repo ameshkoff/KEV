@@ -75,6 +75,7 @@ cur.preproc <- function(dt.ttl) {
 
   cur.task <- dt.par[name == "" & param == "task", str_to_lower(value)]
   if (length(cur.task) == 0) cur.task <- "spectrophotometry:uv-vis"
+  cur.task <- str_replace(cur.task, escapeRegex("uv-viz"), "uv-vis")
   
   window.borders <- c(dt.cur[, min(label)], dt.cur[, max(label)])
   
