@@ -7194,14 +7194,9 @@ server <- function(input, output, session) {
       p.id <- names(ev)[1] %>% str_extract("^shapes\\[[0-9]+\\]") %>% str_extract("[0-9]+")
       c.id <- cur.curve.rows$values[plot.id == p.id, cur.id]
       
-      print(ev)
-      print(cur.curve.rows$values[plot.id == p.id, cur.id])
-      # browser()
       updateNumericInput(session, str_replace(c.id, "curve.row", "expvalue"), value = ev[names(ev) %like% "xanchor$"][1][[1]])
       updateNumericInput(session, str_replace(c.id, "curve.row", "amplitude"), value = ev[names(ev) %like% "yanchor$"][1][[1]])
-      
-      # browser()
-      
+
     }
     
   })
@@ -7617,9 +7612,6 @@ server <- function(input, output, session) {
   
   output$cur.plot.curves <- renderPlotly({
     
-    # ev <- event_data("plotly_click")
-    # print(ev)
-    
     # temporary sync solution 
     cur.update.status(1L)
     
@@ -7674,9 +7666,7 @@ server <- function(input, output, session) {
                    , fillcolor = "rgba(155, 155, 155, 0.2)"
                    , name = "", showlegend = FALSE)
     
-    # browser()
-    
-    # shapes
+    # define curve controls
     
     dt.par <- copy(values$cur.dt.par)
     dt.par[, cur.id := paste0(design, name, "_curve.row")]
@@ -7701,7 +7691,7 @@ server <- function(input, output, session) {
       , SIMPLIFY = FALSE
       )
     
-    # shape data indices to match with curve names
+    # curve controls indices to match with curve names
     
     dt.par[, plot.id := 0:(nrow(dt.par)-1)]
     
@@ -7712,8 +7702,7 @@ server <- function(input, output, session) {
         
     }, dt.par[, cur.id], dt.par[, plot.id])
     
-    # browser()
-    # names(peak.points) <- dt.par[, cur.id]
+    # curve controls into layout
     
     g <- g %>%
       layout(xaxis = list(title = "Labels", gridcolor = "white")
@@ -7722,40 +7711,6 @@ server <- function(input, output, session) {
              , shapes = peak.points) %>%
       config(edits = list(shapePosition = TRUE))
     
-      # layout(shapes = circles) %>%
-      # config(edits = list(shapePosition = TRUE))
-
-    # g <-
-    #   ggplot() +
-    #   geom_area(data = extr.effects, aes(x = label, y = observed, group = 1), color = "darkgrey", size = 1, fill = "grey") +
-    #   geom_line(data = extr.effects, aes(x = label, y = predicted, group = 1), color = "darkblue", size = 1, linetype = 2) +
-    #   geom_line(data = melt(extr.effects[, cln, with = FALSE], id.vars = "label", variable.name = "Curves")
-    #             , aes(x = label, y = value, group = Curves, color = Curves)) +
-    #   geom_rect(aes(xmin = dt[, min(label)] - 2 * lbl.perc, xmax = values$cur.status@window.borders[1]
-    #                 , ymin = 0, ymax = dt[, max(value) * 1.1]), alpha = .1) +
-    #   geom_rect(aes(xmin = values$cur.status@window.borders[2], xmax = dt[, max(label)] + 2 * lbl.perc
-    #                 , ymin = 0, ymax = dt[, max(value) * 1.1]), alpha = .1) +
-    #   scale_x_continuous(expand = c(0, 0)) +
-    #   scale_y_continuous(expand = c(0, 0)) +
-    #   theme(legend.title = element_blank()) +
-    #   labs(x = "Labels", y = "Values")
-    # 
-    # g <- ggplotly(g, height = 600) #%>%
-      # add_paths() %>%
-      # plotly::layout(
-      #   shapes = list(
-      #     type = "circle", 
-      #     fillcolor = "gray",
-      #     line = list(color = "gray"),
-      #     x0 = -1, x1 = 1,
-      #     y0 = -1, y1 = 1,
-      #     xsizemode = "pixel", 
-      #     ysizemode = "pixel",
-      #     xanchor = 0, yanchor = 0
-      #   )
-      # )
-    # browser()
-
     g
     
   })
