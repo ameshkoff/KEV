@@ -82,6 +82,8 @@ ui <- tagList(
   ),
   
   navbarPage(title = "KEV",
+             collapsible = TRUE,
+             position = "static-top", #"fixed-top",
              windowTitle = "KEV: Constant Evaluator",
              theme = "kev.css",
 
@@ -1107,8 +1109,8 @@ ui <- tagList(
                                                , tabPanel("Plot"
                                                           , htmlOutput("cur.title")
                                                           , plotlyOutput("cur.plot.curves"
-                                                                         # , click = "cur.plot.curves.click"
-                                                                         , height = "auto"))
+                                                                         , height = "600px"
+                                                                         ))
                                                , tabPanel("Data"
                                                           , fluidRow(column(5
                                                                             , h4("Curve Areas")
@@ -7256,6 +7258,8 @@ server <- function(input, output, session) {
     input$cur.sep
     }, {
   
+    if (is.null(input$file.cur.bulk.input)) return()
+      
     # load data ------ #
     
     in.file.bulk <- input$file.cur.bulk.input
@@ -7636,7 +7640,7 @@ server <- function(input, output, session) {
     cln <- colnames(extr.effects)
     cln <- cln[!(cln %in% c("label", "observed", "predicted"))] %>% sort()
     
-    # observedand predictes
+    # observed and predicted
     
     g <- plot_ly(height = 600, source = "cur.plot.curves") %>%
       add_lines(x = extr.effects[, label], y = extr.effects[, predicted], name = "Predicted"
@@ -7708,7 +7712,8 @@ server <- function(input, output, session) {
       layout(xaxis = list(title = "Labels", gridcolor = "white")
              , yaxis = list(title = "Values", gridcolor = "white")
              , plot_bgcolor = "#ebebeb"
-             , shapes = peak.points) %>%
+             , shapes = peak.points
+             ) %>%
       config(edits = list(shapePosition = TRUE))
     
     g
