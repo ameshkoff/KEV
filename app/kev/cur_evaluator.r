@@ -163,14 +163,42 @@ cur.auc <- function(cur.status = kev.curve) {
 
 # objective function --------------------------------------- #
 
-cur.objective.rmse <- function(scalar.values.vector, dt, formula, obs) {
+cur.objective.rmse <- function(err.v) {
   
-  scalar.values.list <- as.list(scalar.values.vector)
+  # factory
   
-  pred <- cur.formula.execute(dt, formula = formula, scalar.values.list = scalar.values.list)
+  factory <- list()
   
-  mean((obs - pred) ^ 2) ^ .5
+  # logging
+  
+  err.v <- integer(0)
+  pred.list <- list()
+  
+  factory$error.log <- function(){ err.v }
+  factory$pred.log <- function(){ pred.list }
 
+  # objective function
+    
+  factory$objective <- function(scalar.values.vector, dt, formula, obs) {
+     
+      scalar.values.list <- as.list(scalar.values.vector)
+      
+      pred <- cur.formula.execute(dt, formula = formula, scalar.values.list = scalar.values.list)
+
+      rtrn <- mean((obs - pred) ^ 2) ^ .5
+      
+      err.v <<- c(err.v, rtrn)
+      
+      err.min.pos <- which(err.v == min(err.v)) %>% tail(1)
+      if (err.min.pos != 1 && err.min.pos != length(err.v)) pred.list <<- tail(pred.list, length(err.v) - err.min.pos)
+      pred.list[[as.character(length(err.v))]] <<- pred
+      
+      rtrn
+      
+    }
+  
+  factory
+  
 }
 
 
@@ -230,11 +258,19 @@ cur.model.coefs <- function(md) {
   
   if (is(md, "nls")) {
     
-    coefs <- md %>% coefficients
+    coefs <- as.data.table(summary(md)$parameters, keep.rownames = TRUE)
+    coefs <- coefs[, .(param = rn, value = Estimate, st.error = `Std. Error`)]
     
   } else if (is.list(md) && !is.null(md$par)) {
     
     coefs <- md$par
+    
+    
+    
+    browser()
+    
+    
+    
     
   }
   
@@ -247,15 +283,15 @@ cur.parameters.update <- function(dt.par, md){
   dt.par <- copy(dt.par)
   coefs <- cur.model.coefs(md)
   
-  params <- str_extract(names(coefs), "^.*\\^\\^\\^") %>% str_replace_all("\\^\\^\\^", "")
-  names <- str_extract(names(coefs), "\\^\\^\\^.*$") %>% str_replace_all("\\^\\^\\^", "")
-  
-  for (i in 1:length(coefs)) {
-    
-    dt.par[name == names[i] & param == params[i], value := coefs[i]]
-    
-  }
+  coefs[, name := str_replace_all(str_extract(param, "\\^\\^\\^.*$"), "\\^\\^\\^", "")]
+  coefs[, param := str_replace_all(str_extract(param, "^.*\\^\\^\\^"), "\\^\\^\\^", "")]
 
+  dt.par <- coefs[dt.par, on = .(name = name, param = param)]
+  dt.par[is.na(st.error), value := i.value]
+  dt.par[, i.value := NULL]
+  
+  dt.par <- dt.par[, .(name, design, param, value, st.error)]
+  
   dt.par
   
 }
@@ -320,10 +356,18 @@ cur.model.neldermead <- function(cur.status = kev.curve) {
   
   # run
   
-  md <- optim(unlist(start.values), cur.objective.rmse, dt = dt, formula = frm, obs = dt[, value]
+  pred.list <- list()
+  # err.v <- ""
+  
+  obj.fn <- cur.objective.rmse()
+  
+  md <- optim(unlist(start.values), obj.fn$objective, dt = dt, formula = frm, obs = dt[, value]
               , method = "Nelder-Mead", control = list(maxit = 1e+4, reltol = 1e-7))
   
   if (is.list(md) && md$convergence < 10) {
+
+    md$value.log <- obj.fn$error.log()
+    md$pred.log <- obj.fn$pred.log()
     
     cur.status@model <- md
     cur.status@model.status <- "OK"
