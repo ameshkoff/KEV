@@ -15,7 +15,7 @@ source("app/KEV/cur_runner.r", chdir = TRUE)
 
 cur.status <- cur.data.runner(mode = "script"
                               , sep = ";"
-                              , subdir = "curves/dsc.1.uvvis.no.assumptions/semicolon"
+                              , subdir = "curves/dsc.1.uvvis/semicolon"
                               , file = NULL
                               , dt.list = NULL)
 
