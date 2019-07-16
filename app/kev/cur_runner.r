@@ -18,6 +18,7 @@ library(ggplot2)
 library(MASS)
 library(Matrix)
 library(Hmisc)
+library(nloptr)
 # strings
 library(stringi)
 library(stringr)
