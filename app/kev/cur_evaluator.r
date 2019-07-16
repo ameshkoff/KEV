@@ -172,30 +172,31 @@ cur.objective.rmse <- function(err.v) {
   # logging
   
   err.v <- integer(0)
-  pred.list <- list()
+  param.list <- list()
   
   factory$error.log <- function(){ err.v }
-  factory$pred.log <- function(){ pred.list }
+  factory$param.log <- function(){ param.list }
 
   # objective function
     
   factory$objective <- function(scalar.values.vector, dt, formula, obs) {
-     
-      scalar.values.list <- as.list(scalar.values.vector)
+    
+    param.list[[as.character(length(err.v))]] <<- scalar.values.vector
+    
+    scalar.values.list <- as.list(scalar.values.vector)
       
-      pred <- cur.formula.execute(dt, formula = formula, scalar.values.list = scalar.values.list)
+    pred <- cur.formula.execute(dt, formula = formula, scalar.values.list = scalar.values.list)
 
-      rtrn <- mean((obs - pred) ^ 2) ^ .5
-      
-      err.v <<- c(err.v, rtrn)
-      
-      err.min.pos <- which(err.v == min(err.v)) %>% tail(1)
-      if (err.min.pos != 1 && err.min.pos != length(err.v)) pred.list <<- tail(pred.list, length(err.v) - err.min.pos)
-      pred.list[[as.character(length(err.v))]] <<- pred
-      
-      rtrn
-      
-    }
+    rtrn <- mean((obs - pred) ^ 2) ^ .5
+    
+    err.v <<- c(err.v, rtrn)
+    
+    err.min.pos <- which(err.v == min(err.v)) %>% tail(1)
+    if (err.min.pos != 1 && err.min.pos != length(err.v)) param.list <<- tail(param.list, length(err.v) - err.min.pos)
+    
+    rtrn
+    
+  }
   
   factory
   
@@ -263,9 +264,11 @@ cur.model.coefs <- function(md) {
     
   } else if (is.list(md) && !is.null(md$par)) {
     
-    coefs <- md$par
+    coefs <- data.table(param = names(md$par), value = md$par)
     
+    cov.m <- solve(md$hessian)
     
+    coefs[, st.error := abs(diag(cov.m)) ^ .5]
     
     browser()
     
@@ -356,19 +359,17 @@ cur.model.neldermead <- function(cur.status = kev.curve) {
   
   # run
   
-  pred.list <- list()
-  # err.v <- ""
-  
   obj.fn <- cur.objective.rmse()
   
   md <- optim(unlist(start.values), obj.fn$objective, dt = dt, formula = frm, obs = dt[, value]
-              , method = "Nelder-Mead", control = list(maxit = 1e+4, reltol = 1e-7))
+              , method = "Nelder-Mead", control = list(maxit = 1e+4, reltol = 1e-7)
+              , hessian = TRUE)
   
   if (is.list(md) && md$convergence < 10) {
 
     md$value.log <- obj.fn$error.log()
-    md$pred.log <- obj.fn$pred.log()
-    
+    md$param.log <- obj.fn$param.log()
+    # browser()
     cur.status@model <- md
     cur.status@model.status <- "OK"
     cur.status@metrics <- cur.model.metrics(dt, cur.formula.execute(dt, formula = frm, scalar.values.list = as.list(md$par)))

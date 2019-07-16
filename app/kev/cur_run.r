@@ -54,7 +54,7 @@ cur.save(cur.status, file = "output.zip")
 
 cur.status <- cur.data.runner(mode = "script"
                               , sep = ","
-                              , subdir = "curves/dsc.2.ir"
+                              , subdir = "curves/dsc.2.ir/xlsx"
                               , file = "data.xlsx"
                               , dt.list = NULL)
 
