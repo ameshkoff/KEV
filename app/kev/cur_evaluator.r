@@ -266,14 +266,10 @@ cur.model.coefs <- function(md) {
     
     coefs <- data.table(param = names(md$par), value = md$par)
     
-    cov.m <- solve(md$hessian)
+    fr.degr <- md$obs.length - length(md$par)
+    cov.m <- (md$value / fr.degr) * solve(-md$hessian)
     
     coefs[, st.error := abs(diag(cov.m)) ^ .5]
-    
-    browser()
-    
-    
-    
     
   }
   
@@ -369,6 +365,7 @@ cur.model.neldermead <- function(cur.status = kev.curve) {
 
     md$value.log <- obj.fn$error.log()
     md$param.log <- obj.fn$param.log()
+    md$obs.length <- nrow(dt)
     # browser()
     cur.status@model <- md
     cur.status@model.status <- "OK"

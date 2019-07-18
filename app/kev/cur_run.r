@@ -44,9 +44,9 @@ cur.plot.effects(cur.status)
 
 # save
 
-cur.save(cur.status, file = NULL)
 cur.save(cur.status, file = "output.xlsx")
 cur.save(cur.status, file = "output.zip")
+cur.save(cur.status, file = NULL)
 
 
 
