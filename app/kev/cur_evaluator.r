@@ -257,6 +257,8 @@ cur.remove.curves <- function(cur.status = kev.curve, min.expvalue = NULL, max.e
 
 cur.model.coefs <- function(md) {
   
+  # coefs
+  
   if (is(md, "nls")) {
     
     coefs <- as.data.table(summary(md)$parameters, keep.rownames = TRUE)
@@ -272,6 +274,14 @@ cur.model.coefs <- function(md) {
     coefs[, st.error := abs(diag(cov.m)) ^ .5]
     
   }
+  
+  # coefs validity
+  
+  coefs[, validity := "OK"]
+  coefs[st.error / value > .1, validity := "Insignificant"]
+  
+  
+  # return
   
   coefs
   
@@ -289,7 +299,7 @@ cur.parameters.update <- function(dt.par, md){
   dt.par[is.na(st.error), value := i.value]
   dt.par[, i.value := NULL]
   
-  dt.par <- dt.par[, .(name, design, param, value, st.error)]
+  dt.par <- dt.par[, .(name, design, param, value, st.error, validity)]
   
   dt.par
   

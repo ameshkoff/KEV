@@ -1114,7 +1114,10 @@ ui <- tagList(
                                                , tabPanel("Data"
                                                           , fluidRow(column(5
                                                                             , h4("Curve Areas")
-                                                                            , rHandsontableOutput("cur.auc")))
+                                                                            , rHandsontableOutput("cur.auc"))
+                                                                     , column(7
+                                                                              , h4("Parameters")
+                                                                              , rHandsontableOutput("cur.dt.par")))
                                                           , fluidRow(column(8
                                                                             , h4("Fitted Curves")
                                                                             , rHandsontableOutput("cur.object.effects"))
@@ -6957,7 +6960,7 @@ server <- function(input, output, session) {
                            , value = cur.params[i, value])
       
       if (nrow(merge(dt.par, dt.ins, by = c("name", "design", "param"))) == 0)
-        dt.par <- rbind(dt.par, dt.ins)
+        dt.par <- rbind(dt.par, dt.ins, use.names = TRUE, fill = TRUE)
     }
     
     if (nrow(values$cur.dt.par) != nrow(dt.par))
@@ -7018,7 +7021,7 @@ server <- function(input, output, session) {
                            , value = cur.params[i, value])
       
       if (nrow(merge(dt.par, dt.ins, by = c("name", "design", "param"))) == 0)
-        dt.par <- rbind(dt.par, dt.ins)
+        dt.par <- rbind(dt.par, dt.ins, use.names = TRUE, fill = TRUE)
     }
     
     if (nrow(values$cur.dt.par) != nrow(dt.par))
@@ -7238,7 +7241,7 @@ server <- function(input, output, session) {
     cln <- cln[cln %in% c("name", "design", "param")]
     
     validate(
-      need(length(cln) == 3
+      need(length(cln) >= 3
           , paste("Parameters data does not contain one or more of the mandatory columns:"
                   , "`name`, `design`, `param`"))
     )
@@ -7763,6 +7766,54 @@ server <- function(input, output, session) {
     
   })
 
+  output$cur.dt.par <- renderRHandsontable({
+    
+    dt <- cur.dt.par.data()
+    
+    dt <- dt[!is.na(design) & !(design == "")]
+
+    if (!is.null(dt) && nrow(dt) > 0) {
+      
+      dt <- dt[order(name, design, param)]
+
+      cln <- colnames(dt)
+      row_highlight <- integer(0)
+      
+      if (length(cln[cln == "validity"]) > 0)
+        row_highlight <- dt[validity != "OK", which = TRUE] - 1
+      
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+    
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+          hrows = instance.params.row_highlight
+          hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+        if (instance.params && hrows.includes(row)) {
+          td.style.background = 'pink';
+        }
+        
+      }" 
+      
+      if (nrow(dt) > 20) {
+        
+        rhandsontable(dt, stretchH = "all", row_highlight = row_highlight, useTypes = TRUE, height = 550) %>%
+          hot_cols(renderer = renderer)
+        
+      } else {
+        
+        rhandsontable(dt, stretchH = "all", row_highlight = row_highlight, useTypes = TRUE, height = NULL) %>%
+          hot_cols(renderer = renderer)
+        
+      }
+      
+    }
+    
+  })
+  
   output$cur.object.effects <- renderRHandsontable({
     
     dt <- cur.object.effects.data()
