@@ -264,6 +264,8 @@ cur.model.coefs <- function(md) {
     coefs <- as.data.table(summary(md)$parameters, keep.rownames = TRUE)
     coefs <- coefs[, .(param = rn, value = Estimate, st.error = `Std. Error`)]
     
+    fr.degr <- summary(md)$df[2]
+    
   } else if (is.list(md) && !is.null(md$par)) {
     
     coefs <- data.table(param = names(md$par), value = md$par)
@@ -278,7 +280,7 @@ cur.model.coefs <- function(md) {
   # coefs validity
   
   coefs[, validity := "OK"]
-  coefs[st.error / value > .1, validity := "Insignificant"]
+  coefs[abs(value) - abs(qt(.975, fr.degr) * st.error) < 0, validity := "Insignificant"]
   
   
   # return
