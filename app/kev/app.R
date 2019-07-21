@@ -7257,7 +7257,6 @@ server <- function(input, output, session) {
     
   }
   
-  
   # load data from file
   
   observeEvent({
@@ -7324,6 +7323,15 @@ server <- function(input, output, session) {
       
     }
     
+    if (!is.data.frame(dt.init) || ncol(dt.init) != 2) {
+      
+      values$cur.status@model.status <- paste("The data file for curve fitting should contain exactly 1 column `label` for labels"
+                                              , "and 1 column `value` for observed values."
+                                              , "Check if the column separator provided is consistent with your data"
+                                              , "and there are no surplus cells and columns")
+      
+    }
+    
     validate(
       
       need(is.data.frame(dt.init), "Your file doesn't look like a data file (table-like)") %then%
@@ -7352,7 +7360,7 @@ server <- function(input, output, session) {
     
     if (!is.null(in.file.bulk)) {
       
-      in.file <- as.data.table(in.file.bulk)[name %like% "^(input\\_)*param(eter)s*(\\.csv|\\.txt)*$"][1]
+      in.file <- as.data.table(in.file.bulk)[name %like% "^(input\\_)*param(eter)*s*(\\.csv|\\.txt)*$"][1]
       in.file <- as.data.frame(in.file)
       
       in.file.xlsx <- as.data.table(in.file.bulk)[name %like% "\\.xlsx$"]
@@ -7392,7 +7400,7 @@ server <- function(input, output, session) {
       
       shts <- getSheetNames(in.file.xlsx$datapath)
       
-      shts <- shts[shts %like% "^(input_|output_)*params*"]
+      shts <- shts[shts %like% "^(input_|output_)*param(eter)*s*"]
       shts <- sort(shts)
       
       dt.par <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
@@ -7402,6 +7410,22 @@ server <- function(input, output, session) {
       dt.par <- NULL
       
     }
+    
+    # validate needs output to bw shown (which is impossible in event observer)
+    # so use if-s
+    
+    if (!is.null(dt.par) && !is.data.frame(dt.par)) {
+      
+      values$cur.status@model.status <- paste("Params file exists but is not properly formatted"
+                                              , "Check examples via `Check Examples` button")
+      
+    } else if (!is.null(dt.par) && ncol(dt.par) <= 1) {
+      
+      values$cur.status@model.status <- paste("Params file should contain > 1 columns. Check column delimiter")
+      
+    }
+    
+    # 
     
     validate(
       
@@ -7413,7 +7437,7 @@ server <- function(input, output, session) {
     if (!is.null(dt.par)) {
       
       setDT(dt.par)
-      values[["cur.dt.par"]] <- dt.par
+      values$cur.dt.par <- dt.par
       
     }
     
