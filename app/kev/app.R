@@ -1118,12 +1118,12 @@ ui <- tagList(
                                                                      , column(7
                                                                               , h4("Parameters")
                                                                               , rHandsontableOutput("cur.dt.par")))
-                                                          , fluidRow(column(8
+                                                          , fluidRow(column(4
+                                                                            , h4("Input Data")
+                                                                            , rHandsontableOutput("cur.dt.init"))
+                                                                     , column(8
                                                                             , h4("Fitted Curves")
                                                                             , rHandsontableOutput("cur.object.effects"))
-                                                                     , column(4
-                                                                              , h4("Input Data")
-                                                                              , rHandsontableOutput("cur.dt.init"))
                                                                      )
                                                           )
                                                )
@@ -6852,7 +6852,7 @@ server <- function(input, output, session) {
   # curve fitting -------------------------------------
   
   
-  # technical
+  # reactive values ---------- #
   
   cur.sep <- reactive({
     
@@ -7213,11 +7213,15 @@ server <- function(input, output, session) {
   
   cur.dt.init.data <- reactive({
     
-    if (is.null(values$cur.dt.init)){
+    if (!is.null(input$cur.dt.init)) {
+      
+      values$cur.dt.init <- hot_to_r(input$cur.dt.init)
+
+    } else if (is.null(values$cur.dt.init)){
       
       set.seed(1)
       
-      values$cur.dt.init <- data.table(label = 1:121, value = dnorm(seq(-3, 3, .05)) * (1 + rnorm(121, sd = 1e-2)))
+      values$cur.dt.init <- data.table(label = as.numeric(1:121), value = dnorm(seq(-3, 3, .05)) * (1 + rnorm(121, sd = 1e-2)))
       cur.dt.par.data()
       
     }
@@ -7416,10 +7420,19 @@ server <- function(input, output, session) {
   }
   , ignoreInit = TRUE)
   
+  
 
   # calculating -------------- #
   
   # refresh status
+  
+  observeEvent(values$cur.dt.init, {
+    
+    if (!is.null(values$cur.status)
+        && !is.logical(all.equal(values$cur.dt.init, values$cur.status@dt.init, check.attributes = FALSE)))
+      values$cur.status@dt.init <- values$cur.dt.init
+    
+  })
   
   observeEvent(values$cur.dt.par, {
 
@@ -7557,6 +7570,7 @@ server <- function(input, output, session) {
   })
   
   
+  
   # output data -------------- #
   
   cur.auc.data <- reactive({
@@ -7592,13 +7606,12 @@ server <- function(input, output, session) {
   
   
   
-  
   # rendering ---------------- #
   
   output$cur.dt.init <- renderRHandsontable({
     
     dt.init <- cur.dt.init.data()
-
+    
     if (!is.null(dt.init)) {
       
       if (nrow(dt.init) > 20) {
@@ -7835,6 +7848,7 @@ server <- function(input, output, session) {
     }
     
   })
+  
   
   
   # end of main server part ----------------------------
