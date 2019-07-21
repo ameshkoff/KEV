@@ -334,6 +334,14 @@ fieldset[disabled] .navbar-inverse .btn-link:focus{
   border:none;
 }
 
+/* ------------------------------- column ------------------------------- */
+
+.kev-densed-input-row {
+  padding-right:3px;
+  padding-left:3px;
+}
+
+
 
 /* ------------------------------- footer ------------------------------- */
 
