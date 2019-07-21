@@ -1,0 +1,10 @@
+﻿name,design,param,value
+,,task,spectrophotometry:uv-vis
+,,left,200
+,,right,350
+left,gaussian,amplitude,1
+left,gaussian,expvalue,230
+left,gaussian,hwhm,50
+2,gaussian,amplitude,1
+2,gaussian,expvalue,300
+2,gaussian,hwhm,50
