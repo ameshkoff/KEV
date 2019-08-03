@@ -22,7 +22,7 @@ newton.evaluator <- function(cnst.m, dt.coef.m, dt.conc.in, dt.conc.out, part.eq
     part.eq.reac <- (ncol(dt.coef.m) + 1) : length(cnst.m)
     
     cnst.m[part.eq.reac] <- cnst.m[part.eq.reac] +
-      dt.coef.m[, part.eq, drop = FALSE][part.eq.reac, , drop = FALSE] %*% log(dt.conc.in[part.eq])
+      dt.coef.m[part.eq.reac, part.eq, drop = FALSE] %*% log(dt.conc.in[part.eq])
     
     dt.coef.m.back <- dt.coef.m
     dt.conc.out.back <- dt.conc.out
