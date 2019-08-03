@@ -13,3 +13,5 @@
 *kev.data
 *notpublished*
 *checkpoint*
+/app_py/kev/__pycache__
+*.pyc

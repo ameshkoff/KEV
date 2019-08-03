@@ -9,15 +9,22 @@
 # import libraries -------------------------------------------
 
 import pandas as pd
+from pathlib import Path
 
 def eq_output(sep_out, subdir_out, file_out, results_stoich_coeff, lg_k_data, c_inp_out, c_res_out, 
               c_yie_out, component_name_for_yields, g_res_out, comp_name_res):
-       
-    if file_out != "":
+
+    if subdir_out != '':
+        subdir_out = '/' + subdir_out
+    subdir_out = '../../output' + subdir_out + '/'
+    
+    path = Path(subdir_out)
+    if not path.exists():    
+        path.mkdir(parents = True, exist_ok = True)
         
-        if subdir_out != '':
-            subdir_out = '/' + subdir_out
-        subdir_out = '../../output' + subdir_out + '/'
+    # single file (xlsx)
+    
+    if file_out != "":
         
         file_out = subdir_out + file_out
     
@@ -33,9 +40,7 @@ def eq_output(sep_out, subdir_out, file_out, results_stoich_coeff, lg_k_data, c_
     
     else:
         
-        if subdir_out != '':
-            subdir_out = '/' + subdir_out
-        subdir_out = '../../output' + subdir_out + '/'
+        # multiple files (plain files)
         
         file_out = subdir_out + 'stoich_coefficients.csv'
         results_stoich_coeff.to_csv(file_out, sep = sep_out, index = False)

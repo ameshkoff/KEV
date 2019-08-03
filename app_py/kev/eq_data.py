@@ -63,7 +63,7 @@ def eq_scripts_load(_sep, _subdir, _file):
         file = list(filter(r.search, file_names))[0]
         file = _subdir + str(file)
         st_coeff_data = pd.read_csv(file, sep = _sep)
-		
+        
         r = re.compile(r'^(input\_)*k\_constants\_log10')
         file = list(filter(r.search, file_names))[0]
         file = _subdir + str(file)
