@@ -23,16 +23,18 @@ def eq_preproc(st_coeff_data, con_data, type_con, lg_k_data, component_name_for_
     
     # list of products and reagents names for further using in output data
     
-    st_coeff_data['prod_names'] = ''
-        
-    for cl in st_coeff_data.drop('prod_names', axis = 1):
-        
-        st_coeff_data['prod_names'] = np.where(st_coeff_data[cl] > 0,
-                                               st_coeff_data['prod_names'] + '+' + st_coeff_data[cl].apply(str) + cl,
-                                               st_coeff_data['prod_names'])
-        
-        st_coeff_data['prod_names'] = st_coeff_data['prod_names'].replace({r'(\+)1([a-zA-Z])' : r'\1\2'}, regex = True)
-        st_coeff_data['prod_names'] = st_coeff_data['prod_names'].replace(to_replace = r'^\+', value = '', regex = True)
+    if 'name' not in st_coeff_data.columns:
+
+        st_coeff_data['name'] = ''
+
+        for cl in st_coeff_data.drop('name', axis = 1):
+
+            st_coeff_data['name'] = np.where(st_coeff_data[cl] > 0,
+                                                   st_coeff_data['name'] + '+' + st_coeff_data[cl].apply(str) + cl,
+                                                   st_coeff_data['name'])
+
+            st_coeff_data['name'] = st_coeff_data['name'].replace({r'(\+)1([a-zA-Z])' : r'\1\2'}, regex = True)
+            st_coeff_data['name'] = st_coeff_data['name'].replace(to_replace = r'^\+', value = '', regex = True)
         
     # trim series columns if exists
     
@@ -44,13 +46,13 @@ def eq_preproc(st_coeff_data, con_data, type_con, lg_k_data, component_name_for_
     # product names lists : full and base components only
     
     prod_names_con = list(con_data.columns)
-    prod_names = prod_names_con + st_coeff_data['prod_names'].tolist()
+    prod_names = prod_names_con + st_coeff_data['name'].tolist()
     
     # creating the vector of equilibrium constants including the formal reactions
     lg_k = (np.vstack((np.zeros((np.shape(st_coeff_matrix)[1], 1)), lg_k_data.to_numpy().astype(float))))
     
     # checking the consistency of reagent names in different sheets    
-    if prod_names_con != list(st_coeff_data.drop('prod_names', axis = 1)):
+    if prod_names_con != list(st_coeff_data.drop('name', axis = 1)):
         print('Check the consistency of reagent names!')
     
     # concentrations matrix

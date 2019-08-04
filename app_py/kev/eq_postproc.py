@@ -52,7 +52,7 @@ def eq_postproc(st_coeff_matrix, con_matrix, idx, c_res_out, g_res_out, con_data
     g_res_out = pd.DataFrame(data=np.array(g_res_out), columns = prod_names_con)
     
     
-    results_stoich_coeff = st_coeff_data.drop('prod_names', axis = 1)
+    results_stoich_coeff = st_coeff_data.drop('name', axis = 1)
     comp_name_res = pd.DataFrame(data=np.array(component_name_for_yields).reshape((1, 1)))
     
     return c_inp_out, c_res_out, c_yie_out, g_res_out, comp_name_res, results_stoich_coeff
