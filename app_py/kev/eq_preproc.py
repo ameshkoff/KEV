@@ -10,6 +10,7 @@
 
 import numpy as np
 import re
+from copy import deepcopy
 
 # basic preprocessing ----------------------------------------
     
@@ -33,6 +34,13 @@ def eq_preproc(st_coeff_data, con_data, type_con, lg_k_data, component_name_for_
         st_coeff_data['prod_names'] = st_coeff_data['prod_names'].replace({r'(\+)1([a-zA-Z])' : r'\1\2'}, regex = True)
         st_coeff_data['prod_names'] = st_coeff_data['prod_names'].replace(to_replace = r'^\+', value = '', regex = True)
         
+    # trim series columns if exists
+    
+    if 'series' in con_data.columns:
+        con_data = deepcopy(con_data)
+        con_data = con_data.drop('series', 1)
+        type_con = type_con[:-1]
+    
     # product names lists : full and base components only
     
     prod_names_con = list(con_data.columns)
@@ -48,7 +56,8 @@ def eq_preproc(st_coeff_data, con_data, type_con, lg_k_data, component_name_for_
     # concentrations matrix
     
     con_matrix = con_data.to_numpy()    
-    print(con_matrix)    
+    print(con_matrix) 
+    
     # creating vector of indices of components with predetermined concentrations
     ign_indices = np.array(type_con.index[type_con == 'eq'])
     
@@ -57,4 +66,5 @@ def eq_preproc(st_coeff_data, con_data, type_con, lg_k_data, component_name_for_
         
     idx, = np.where(component_name_for_yields == np.array(prod_names_con))
     
-    return st_coeff_matrix, prod_names, lg_k, prod_names_con, con_matrix, ign_indices, idx, type_con  
+    return st_coeff_matrix, prod_names, lg_k, prod_names_con, con_matrix, ign_indices, idx, type_con
+

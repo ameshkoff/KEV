@@ -11,12 +11,19 @@
 import math
 import numpy as np
 import pandas as pd
+from copy import deepcopy
 
 def eq_postproc(st_coeff_matrix, con_matrix, idx, c_res_out, g_res_out, con_data, 
                 st_coeff_data, prod_names, prod_names_con, component_name_for_yields, type_con, ign_indices): 
 
     c_yie_out = c_res_out * st_coeff_matrix[:, idx[0]] * 100 / con_matrix[:, idx[0]].reshape((len(con_matrix[:, idx[0]]), 1))
     
+    # trim series columns if exists
+    
+    if 'series' in con_data.columns:
+        con_data = deepcopy(con_data)
+        con_data = con_data.drop('series', 1)
+
     c_inp_out = con_data.to_numpy()
     
     prod_names_3 = prod_names_con
@@ -49,3 +56,4 @@ def eq_postproc(st_coeff_matrix, con_matrix, idx, c_res_out, g_res_out, con_data
     comp_name_res = pd.DataFrame(data=np.array(component_name_for_yields).reshape((1, 1)))
     
     return c_inp_out, c_res_out, c_yie_out, g_res_out, comp_name_res, results_stoich_coeff
+
