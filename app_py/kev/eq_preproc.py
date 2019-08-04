@@ -16,11 +16,6 @@ from copy import deepcopy
     
 def eq_preproc(st_coeff_data, con_data, type_con, lg_k_data, component_name_for_yields):
 
-    # matrix of stoich coeff with formal reactions added
-    st_coeff_matrix = st_coeff_data.to_numpy()
-    formal_matrix = np.eye(np.shape(st_coeff_matrix)[1], dtype = int)
-    st_coeff_matrix = np.vstack((formal_matrix, st_coeff_matrix))
-    
     # list of products and reagents names for further using in output data
     
     if 'name' not in st_coeff_data.columns:
@@ -36,6 +31,13 @@ def eq_preproc(st_coeff_data, con_data, type_con, lg_k_data, component_name_for_
             st_coeff_data['name'] = st_coeff_data['name'].replace({r'(\+)1([a-zA-Z])' : r'\1\2'}, regex = True)
             st_coeff_data['name'] = st_coeff_data['name'].replace(to_replace = r'^\+', value = '', regex = True)
         
+    # matrix of stoich coeff with formal reactions added
+    
+    tmp = st_coeff_data.drop('name', axis=1)
+    st_coeff_matrix = tmp.to_numpy()
+    formal_matrix = np.eye(np.shape(st_coeff_matrix)[1], dtype = int)
+    st_coeff_matrix = np.vstack((formal_matrix, st_coeff_matrix))
+    
     # trim series columns if exists
     
     if 'series' in con_data.columns:

@@ -35,7 +35,7 @@ def eq_run(_subdir, _sep = ',', _file = '', _file_out = '', max_iter = 1000, eps
     # calculate
 
     c_res_out, g_res_out = eq_evaluator.eq_calc(
-        max_iter, eps, component_name_for_yields, st_coeff_matrix, type_con,\
+        max_iter, eps, st_coeff_matrix, type_con,\
         lg_k, con_matrix, ign_indices)
 
     # postprocess

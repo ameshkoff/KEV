@@ -12,7 +12,7 @@ import math
 import numpy as np
 from copy import copy, deepcopy
 
-def eq_calc(max_iter, eps, component_name_for_yields, st_coeff_matrix, type_con, lg_k,
+def eq_calc(max_iter, eps, st_coeff_matrix, type_con, lg_k,
             con_matrix, ign_indices):
     
     c_res_out, c_yie_out, g_res_out = [0] * len(con_matrix), [0] * len(con_matrix), [0] * len(con_matrix)
