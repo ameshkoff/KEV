@@ -14,7 +14,7 @@ from copy import copy, deepcopy
 
 def eq_calc(max_iter, eps, st_coeff_matrix, type_con, lg_k,
             con_matrix, ign_indices):
-    
+    #print(lg_k)
     c_res_out, c_yie_out, g_res_out = [0] * len(con_matrix), [0] * len(con_matrix), [0] * len(con_matrix)
     
     for k in range(np.shape(con_matrix)[0]):
