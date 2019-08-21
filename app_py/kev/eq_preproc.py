@@ -60,7 +60,6 @@ def eq_preproc(st_coeff_data, con_data, type_con, lg_k_data, component_name_for_
     # concentrations matrix
     
     con_matrix = con_data.to_numpy()    
-    print(con_matrix) 
     
     # creating vector of indices of components with predetermined concentrations
     ign_indices = np.array(type_con.index[type_con == 'eq'])
