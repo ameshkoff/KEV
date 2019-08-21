@@ -12,3 +12,7 @@
 *kev.nm.data
 *kev.data
 *notpublished*
+*checkpoint*
+/app_py/kev/__pycache__
+*.pyc
+*checkpoint.ipynb
