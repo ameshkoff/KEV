@@ -1,19 +1,20 @@
 version: "0.1"
 services:
   caddy:  
-    image: joshix/caddy
+    image: joshix/caddy:v0.11.0
     links:
       - kev
     volumes:
       - /home/www/:/var/www/html
-#      - ./.caddy/:/.caddy
+      #- /home/dotcaddy:/.caddy:rw 
+      #- /home/.caddy:/.caddy
     ports:
       - 80:80
       - 443:443
     restart: always
 
   kev:
-    image: kev2
+    image: kev2:latest
     volumes:
       - /home/app/:/srv/shiny-server/
       - /home/app_log/:/var/log/shiny-server/
