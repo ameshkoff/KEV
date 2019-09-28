@@ -67,6 +67,10 @@ source("emf_runner.r", chdir = TRUE)
 source("nm_runner.r", chdir = TRUE)
 source("cur_runner.r", chdir = TRUE)
 
+# load shiny modules
+
+source("app/ui_modules.r")
+
 
 
 # frontend ------------------------------------------------- #
@@ -159,16 +163,17 @@ ui <- tagList(
                                   ,  fluidRow(
                                     column(5
                                            , h4("Stoichiometric coefficients")
-                                           , rHandsontableOutput("dt.coef")
-                                           , fileInput("file.dt.coef", "Choose CSV File",
+                                           , rHandsontableOutput("eq.dt.coef")
+                                           # , ui_dt.coef("eq")
+                                           , fileInput("file.eq.dt.coef", "Choose CSV File",
                                                        accept = c(
                                                          "text/csv",
                                                          "text/comma-separated-values,text/plain",
                                                          ".csv")
                                            )
                                            , fluidRow(class = "download-row"
-                                                      , downloadButton("dt.coef.csv", "csv")
-                                                      , downloadButton("dt.coef.xlsx", "xlsx"))
+                                                      , downloadButton("eq.dt.coef.csv", "csv")
+                                                      , downloadButton("eq.dt.coef.xlsx", "xlsx"))
                                            , p("")
                                            , textInput("part.names", "Component names, comma separated", paste(paste0("molecule", 1:4), collapse = ", "))
                                            )
@@ -1159,6 +1164,7 @@ ui <- tagList(
 
 server <- function(input, output, session) {
 
+  source("app/server_modules.r", local = TRUE)  
   
   values <- reactiveValues()
   
@@ -1290,7 +1296,6 @@ server <- function(input, output, session) {
   }, priority = 1000)
   
   
-  
   # data --------------------- #
   
   # input data
@@ -1324,35 +1329,38 @@ server <- function(input, output, session) {
 
   })
   
-  dt.coef.data <- reactive({
-    
-    if (!is.null(input$dt.coef)) {
-      
-      dt.coef <- hot_to_r(input$dt.coef)
-      
-    } else {
-      
-      if (is.null(values[["dt.coef"]])) {
-        
-        dt.coef <- as.data.table(matrix(rep(1, 16), 4))
-        setnames(dt.coef, paste0("molecule", 1:4))
-        
-      } else {
-        
-        dt.coef <- values[["dt.coef"]]
-        
-      }
-        
-    }
-    
-    dt.coef <- as.data.table(dt.coef)
-    setnames(dt.coef, part.names.data()[1:ncol(dt.coef)])
-    
-    values[["dt.coef"]] <- dt.coef
-    
-    dt.coef
-    
-  })
+  eq.dt.coef.data <- common.input.data("eq")
+  # eq.dt.coef.data <- callModule(common.input.data, "eq", module = "eq")
+  
+  # eq.dt.coef.data <- reactive({
+  #   
+  #   if (!is.null(input$eq.dt.coef)) {
+  #     
+  #     eq.dt.coef <- hot_to_r(input$eq.dt.coef)
+  #     
+  #   } else {
+  #     
+  #     if (is.null(values[["eq.dt.coef"]])) {
+  #       
+  #       eq.dt.coef <- as.data.table(matrix(rep(1, 16), 4))
+  #       setnames(eq.dt.coef, paste0("molecule", 1:4))
+  #       
+  #     } else {
+  #       
+  #       eq.dt.coef <- values[["eq.dt.coef"]]
+  #       
+  #     }
+  #       
+  #   }
+  #   
+  #   eq.dt.coef <- as.data.table(eq.dt.coef)
+  #   setnames(eq.dt.coef, part.names.data()[1:ncol(eq.dt.coef)])
+  #   
+  #   values[["eq.dt.coef"]] <- eq.dt.coef
+  #   
+  #   eq.dt.coef
+  #   
+  # })
 
   dt.conc.data <- reactive({
     
@@ -1631,7 +1639,7 @@ server <- function(input, output, session) {
 
     # restore column order
     
-    cln <- colnames(dt.coef.data())
+    cln <- colnames(eq.dt.coef.data())
     
     setcolorder(dt.conc, cln)
     setcolorder(part.eq, cln)
@@ -1657,7 +1665,7 @@ server <- function(input, output, session) {
         
       validate(
         
-        need(length(colnames(dt.coef.data())[colnames(dt.coef.data()) == bs.name.data()]) > 0, "Input correct component name to get fractions of")
+        need(length(colnames(eq.dt.coef.data())[colnames(eq.dt.coef.data()) == bs.name.data()]) > 0, "Input correct component name to get fractions of")
         
       )
       
@@ -1673,7 +1681,7 @@ server <- function(input, output, session) {
                                  , bs.name = bs.name.data()
                                  , thr.type = c("rel")
                                  , threshold = 1e-08
-                                 , dt.list = list(dt.coef = dt.coef.data()
+                                 , dt.list = list(dt.coef = eq.dt.coef.data()
                                                   , cnst = cnst.data()
                                                   , dt.conc = dt.conc.data()
                                                   , part.eq = part.eq.data())
@@ -1778,9 +1786,9 @@ server <- function(input, output, session) {
   
   # rendering ---------------- #
   
-  output$dt.coef <- renderRHandsontable({
+  output$eq.dt.coef <- renderRHandsontable({
     
-    in.file <- input$file.dt.coef
+    in.file <- input$file.eq.dt.coef
     in.file.bulk <- input$file.eq.bulk.input
     in.file.xlsx <- NULL
     
@@ -1815,21 +1823,21 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (eq.sep() == ";") {
-        dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        eq.dt.coef <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       } else if (eq.sep() == ",") {
-        dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        eq.dt.coef <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       } else if (eq.sep() == "tab") {
-        dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        eq.dt.coef <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
       
       validate(
         
-        need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
-          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
+        need(is.data.frame(eq.dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
+          need(eq.dt.coef[1, 1][!(eq.dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
         
       )
       
-      tmp <- colnames(dt.coef)
+      tmp <- colnames(eq.dt.coef)
       updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
       
       
@@ -1840,28 +1848,28 @@ server <- function(input, output, session) {
       shts <- shts[shts %like% "^(input_|output_)*stoich_coefficients"]
       shts <- sort(shts)
       
-      dt.coef <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
+      eq.dt.coef <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
 
       validate(
         
-        need(is.data.frame(dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
-          need(dt.coef[1, 1][!(dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
+        need(is.data.frame(eq.dt.coef), "Your file doesn't look like a stoich. coefficients file") %then%
+          need(eq.dt.coef[1, 1][!(eq.dt.coef[1, 1] %like% "[a-zA-Z]")], "Your file doesn't look like a stoich. coefficients file")
         
       )
       
-      tmp <- colnames(dt.coef)
+      tmp <- colnames(eq.dt.coef)
       updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
       
     } else {
       
-      dt.coef <- dt.coef.data()
+      eq.dt.coef <- eq.dt.coef.data()
       
     }
-
-    setnames(dt.coef, part.names.data()[1:ncol(dt.coef)])
     
-    if (!is.null(dt.coef))
-      rhandsontable(dt.coef, stretchH = "all", useTypes = FALSE) %>%
+    setnames(eq.dt.coef, part.names.data()[1:ncol(eq.dt.coef)])
+    
+    if (!is.null(eq.dt.coef))
+      rhandsontable(eq.dt.coef, stretchH = "all", useTypes = FALSE) %>%
         hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
     
   })
@@ -7880,7 +7888,7 @@ server <- function(input, output, session) {
   
   # equilibrium download ---------------- #
   
-  output$dt.coef.csv <- downloadHandler(
+  output$eq.dt.coef.csv <- downloadHandler(
     # ----
     filename = function() {
       
@@ -7891,9 +7899,9 @@ server <- function(input, output, session) {
     content = function(file) {
       
       if (eq.sep() == ";") {
-        write.csv2(dt.coef.data(), file, row.names = FALSE)
+        write.csv2(eq.dt.coef.data(), file, row.names = FALSE)
       } else {
-        write.csv(dt.coef.data(), file, row.names = FALSE)
+        write.csv(("eq"), file, row.names = FALSE)
       }
       
     }
@@ -7901,7 +7909,7 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$dt.coef.xlsx <- downloadHandler(
+  output$eq.dt.coef.xlsx <- downloadHandler(
     # ----
     filename = function() {
       
@@ -7911,7 +7919,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      write.xlsx(dt.coef.data(), file)
+      write.xlsx(eq.dt.coef.data(), file)
       
     }
     
@@ -8178,7 +8186,7 @@ server <- function(input, output, session) {
       
       data.files <- c(
         
-        dt.coef = "input_stoichiometric_coefficients.csv"
+        eq.dt.coef = "input_stoichiometric_coefficients.csv"
         , cnst = "input_k_constants_log10.csv"
         , dt.conc = "input_concentrations.csv"
         , dt.conc.tot = "total_concentrations.csv"
@@ -8297,7 +8305,7 @@ server <- function(input, output, session) {
       
       data.files <- c(
         
-        dt.coef = "input_stoich_coefficients"
+        eq.dt.coef = "input_stoich_coefficients"
         , cnst = "input_k_constants_log10"
         , dt.conc = "input_concentrations"
         , dt.conc.tot = "total_concentrations"
