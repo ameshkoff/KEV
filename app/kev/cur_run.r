@@ -8,7 +8,7 @@
 
 
 
-source("app/KEV/cur_runner.r", chdir = TRUE)
+source("app/kev/cur_runner.r", chdir = TRUE)
 
 
 # run loading & preprocessing --------------------------------

@@ -8,7 +8,7 @@
 
 
 
-source("app/KEV/eq_runner.r", chdir = TRUE)
+source("app/kev/eq_runner.r", chdir = TRUE)
 
 eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.2p"
                      , bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = TRUE)
@@ -33,7 +33,7 @@ eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.
 
 #
 
-source("app/KEV/ab_runner.r", chdir = TRUE)
+source("app/kev/ab_runner.r", chdir = TRUE)
 
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.1"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
@@ -164,7 +164,7 @@ sp.evaluation.runner(mode = "script", sep = "tab", subdir = "molar.extinction.co
 
 #
 
-source("app/KEV/emf_runner.r", chdir = TRUE)
+source("app/kev/emf_runner.r", chdir = TRUE)
 
 emf.evaluation.runner(mode = "script", sep = ";", subdir = "emf/dsp.1/csv.semicolon"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
@@ -204,7 +204,7 @@ emf.evaluation.runner(mode = "script", sep = ";", subdir = "emf/dsp.3"
 
 #
 
-source("app/KEV/nm_runner.r", chdir = TRUE)
+source("app/kev/nm_runner.r", chdir = TRUE)
 
 nm.evaluation.runner(mode = "script", sep = ",", subdir = "nmr/dsn.1"
                      , eq.thr.type = "rel", eq.threshold = 1e-08

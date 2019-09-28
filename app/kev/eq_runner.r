@@ -38,7 +38,7 @@ eq.evaluation.runner <- function(mode = c("api", "script", "app")
   dir.start <- ""
   
   if (mode %in% c("script", "api"))
-    dir.start <- "app/KEV/"
+    dir.start <- "app/kev/"
 
   source(paste0(dir.start, "eq_data.r"), chdir = TRUE)
   source(paste0(dir.start, "eq_preproc.r"), chdir = TRUE)

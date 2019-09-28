@@ -79,7 +79,7 @@ cur.data.runner <- function(mode = c("api", "script", "app")
   dir.start <- ""
   
   if (cur.status@mode[1] %in% c("script", "api"))
-    dir.start <- "app/KEV/"
+    dir.start <- "app/kev/"
   
   source(paste0(dir.start, "cur_data.r"), chdir = TRUE)
   source(paste0(dir.start, "cur_preproc.r"), chdir = TRUE)
