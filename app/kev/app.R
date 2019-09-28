@@ -1300,67 +1300,36 @@ server <- function(input, output, session) {
   
   # input data
   
-  part.names.data <- reactive({
+  eq.part.names.data <- reactive({
     
-    if (!is.null(input$part.names)) {
+    if (!is.null(input$eq.part.names)) {
       
-      part.names <- input$part.names
-      part.names <- str_split(part.names, "\\, *")
-      part.names <- unlist(part.names)
+      eq.part.names <- input$eq.part.names
+      eq.part.names <- str_split(eq.part.names, "\\, *")
+      eq.part.names <- unlist(eq.part.names)
       
     } else {
       
-      if (is.null(values[["part.names"]])) {
+      if (is.null(values[["eq.part.names"]])) {
         
-        part.names <- "molecule1"
+        eq.part.names <- "molecule1"
         
       } else {
         
-        part.names <- values[["part.names"]]
+        eq.part.names <- values[["eq.part.names"]]
         
       }
       
     }
     
-    part.names <- str_trim(part.names)
-    values[["part.names"]] <- part.names
+    eq.part.names <- str_trim(eq.part.names)
+    values[["eq.part.names"]] <- eq.part.names
     
-    part.names
+    eq.part.names
 
   })
   
-  eq.dt.coef.data <- common.input.data("eq")
-  # eq.dt.coef.data <- callModule(common.input.data, "eq", module = "eq")
-  
-  # eq.dt.coef.data <- reactive({
-  #   
-  #   if (!is.null(input$eq.dt.coef)) {
-  #     
-  #     eq.dt.coef <- hot_to_r(input$eq.dt.coef)
-  #     
-  #   } else {
-  #     
-  #     if (is.null(values[["eq.dt.coef"]])) {
-  #       
-  #       eq.dt.coef <- as.data.table(matrix(rep(1, 16), 4))
-  #       setnames(eq.dt.coef, paste0("molecule", 1:4))
-  #       
-  #     } else {
-  #       
-  #       eq.dt.coef <- values[["eq.dt.coef"]]
-  #       
-  #     }
-  #       
-  #   }
-  #   
-  #   eq.dt.coef <- as.data.table(eq.dt.coef)
-  #   setnames(eq.dt.coef, part.names.data()[1:ncol(eq.dt.coef)])
-  #   
-  #   values[["eq.dt.coef"]] <- eq.dt.coef
-  #   
-  #   eq.dt.coef
-  #   
-  # })
+  eq.dt.coef.data <- server_dt.coef.data("eq")
 
   dt.conc.data <- reactive({
     
@@ -1384,7 +1353,7 @@ server <- function(input, output, session) {
     }
     
     dt.conc <- as.data.table(dt.conc)
-    setnames(dt.conc, part.names.data()[1:ncol(dt.conc)])
+    setnames(dt.conc, eq.part.names.data()[1:ncol(dt.conc)])
     
     values[["dt.conc"]] <- dt.conc
     
@@ -1444,7 +1413,7 @@ server <- function(input, output, session) {
     
     eq.dt.conc.pc <- as.data.table(eq.dt.conc.pc)
     
-    cln <- part.names.data()[1:(ncol(eq.dt.conc.pc) + 1)]
+    cln <- eq.part.names.data()[1:(ncol(eq.dt.conc.pc) + 1)]
     cln <- cln[!(cln %in% eq.pc.name.data())]
     
     validate(
@@ -1838,7 +1807,7 @@ server <- function(input, output, session) {
       )
       
       tmp <- colnames(eq.dt.coef)
-      updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
+      updateTextInput(session, "eq.part.names", value = paste(tmp, collapse = ", "))
       
       
     } else if (!is.null(in.file.xlsx)) {
@@ -1858,7 +1827,7 @@ server <- function(input, output, session) {
       )
       
       tmp <- colnames(eq.dt.coef)
-      updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
+      updateTextInput(session, "eq.part.names", value = paste(tmp, collapse = ", "))
       
     } else {
       
@@ -1866,7 +1835,7 @@ server <- function(input, output, session) {
       
     }
     
-    setnames(eq.dt.coef, part.names.data()[1:ncol(eq.dt.coef)])
+    setnames(eq.dt.coef, eq.part.names.data()[1:ncol(eq.dt.coef)])
     
     if (!is.null(eq.dt.coef))
       rhandsontable(eq.dt.coef, stretchH = "all", useTypes = FALSE) %>%
@@ -1926,7 +1895,7 @@ server <- function(input, output, session) {
       validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
       
       tmp <- colnames(dt.conc)
-      updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
+      updateTextInput(session, "eq.part.names", value = paste(tmp, collapse = ", "))
       
       
     } else if (!is.null(in.file.xlsx)) {
@@ -1941,7 +1910,7 @@ server <- function(input, output, session) {
       validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
       
       tmp <- colnames(dt.conc)
-      updateTextInput(session, "part.names", value = paste(tmp, collapse = ", "))
+      updateTextInput(session, "eq.part.names", value = paste(tmp, collapse = ", "))
       
     } else if (input.source$eq.dt.conc.pc.fl) {
       
@@ -1953,7 +1922,7 @@ server <- function(input, output, session) {
       
     }
     
-    setnames(dt.conc, part.names.data()[1:ncol(dt.conc)])
+    setnames(dt.conc, eq.part.names.data()[1:ncol(dt.conc)])
     
     if (!is.null(dt.conc)) {
       
@@ -2408,40 +2377,8 @@ server <- function(input, output, session) {
     
   })
   
-  ab.dt.coef.data <- reactive({
-    
-    if (!is.null(input$ab.dt.coef)) {
-      
-      dt.coef <- hot_to_r(input$ab.dt.coef)
-      
-    } else {
-      
-      if (is.null(values[["ab.dt.coef"]])) {
-        
-        dt.coef <- as.data.table(matrix(rep(1, 16), 4))
-        setnames(dt.coef, paste0("molecule", 1:4))
-        
-        # dt.coef <- as.data.table(dt.coef)
-        dt.coef <- cbind(dt.coef, name = paste0("product", 1:4))
-        
-      } else {
-        
-        dt.coef <- values[["ab.dt.coef"]]
-        
-      }
-      
-    }
-    
-    dt.coef <- as.data.table(dt.coef)
-    
-    setnames(dt.coef, c(ab.part.names.data()[1:(ncol(dt.coef) - 1)], "name"))
-    
-    values[["ab.dt.coef"]] <- dt.coef
-    
-    dt.coef
-    
-  })
-  
+  ab.dt.coef.data <- server_dt.coef.data("ab")
+
   ab.dt.conc.data <- reactive({
     
     if (!is.null(input$ab.dt.conc)) {
@@ -4222,39 +4159,7 @@ server <- function(input, output, session) {
     
   })
   
-  emf.dt.coef.data <- reactive({
-    
-    if (!is.null(input$emf.dt.coef)) {
-      
-      dt.coef <- hot_to_r(input$emf.dt.coef)
-      
-    } else {
-      
-      if (is.null(values[["emf.dt.coef"]])) {
-        
-        dt.coef <- as.data.table(matrix(rep(1, 16), 4))
-        setnames(dt.coef, paste0("molecule", 1:4))
-        
-        # dt.coef <- as.data.table(dt.coef)
-        dt.coef <- cbind(dt.coef, name = paste0("product", 1:4))
-        
-      } else {
-        
-        dt.coef <- values[["emf.dt.coef"]]
-        
-      }
-      
-    }
-    
-    dt.coef <- as.data.table(dt.coef)
-    
-    setnames(dt.coef, c(emf.part.names.data()[1:(ncol(dt.coef) - 1)], "name"))
-    
-    values[["emf.dt.coef"]] <- dt.coef
-    
-    dt.coef
-    
-  })
+  emf.dt.coef.data <- server_dt.coef.data("emf")
   
   emf.dt.conc.data <- reactive({
     
@@ -5562,39 +5467,7 @@ server <- function(input, output, session) {
     
   })
   
-  nm.dt.coef.data <- reactive({
-    
-    if (!is.null(input$nm.dt.coef)) {
-      
-      dt.coef <- hot_to_r(input$nm.dt.coef)
-      
-    } else {
-      
-      if (is.null(values[["nm.dt.coef"]])) {
-        
-        dt.coef <- as.data.table(matrix(rep(1, 16), 4))
-        setnames(dt.coef, paste0("molecule", 1:4))
-        
-        # dt.coef <- as.data.table(dt.coef)
-        dt.coef <- cbind(dt.coef, name = paste0("product", 1:4))
-        
-      } else {
-        
-        dt.coef <- values[["nm.dt.coef"]]
-        
-      }
-      
-    }
-    
-    dt.coef <- as.data.table(dt.coef)
-    
-    setnames(dt.coef, c(nm.part.names.data()[1:(ncol(dt.coef) - 1)], "name"))
-    
-    values[["nm.dt.coef"]] <- dt.coef
-    
-    dt.coef
-    
-  })
+  nm.dt.coef.data <- server_dt.coef.data("nm")
   
   nm.dt.conc.data <- reactive({
     
