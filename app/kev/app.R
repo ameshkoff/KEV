@@ -194,16 +194,16 @@ ui <- tagList(
                                              , h4("Concentrations")
                                              , tabsetPanel(type = "tabs", id = "eq.conc.tab"
                                                            , tabPanel("Input", value = "input"
-                                                                      , rHandsontableOutput("dt.conc")
-                                                                      , rHandsontableOutput("part.eq")
+                                                                      , rHandsontableOutput("eq.dt.conc")
+                                                                      , rHandsontableOutput("eq.part.eq")
                                                                       , fluidRow(class = "download-row"
-                                                                                 , downloadButton("dt.conc.csv", "csv")
-                                                                                 , downloadButton("dt.conc.xlsx", "xlsx")))
+                                                                                 , downloadButton("eq.dt.conc.csv", "csv")
+                                                                                 , downloadButton("eq.dt.conc.xlsx", "xlsx")))
                                                            , tabPanel("Total", value = "total"
-                                                                      , rHandsontableOutput("dt.conc.tot")
+                                                                      , rHandsontableOutput("eq.dt.conc.tot")
                                                                       , fluidRow(class = "download-row"
-                                                                                 , downloadButton("dt.conc.tot.csv", "csv")
-                                                                                 , downloadButton("dt.conc.tot.xlsx", "xlsx")))
+                                                                                 , downloadButton("eq.dt.conc.tot.csv", "csv")
+                                                                                 , downloadButton("eq.dt.conc.tot.xlsx", "xlsx")))
                                                            , tabPanel("pC range (optional)", value = "pc"
                                                                       , h5("Variable component and its pC range")
                                                                       , textInput("eq.pc.name", "", "molecule1")
@@ -213,7 +213,7 @@ ui <- tagList(
                                                                       , fluidRow(class = "download-row"
                                                                                  , actionButton("eq.pc.update.btn", "Update Input Concentrations")))
                                              )
-                                             , fileInput("file.dt.conc", "Choose CSV File",
+                                             , fileInput("file.eq.dt.conc", "Choose CSV File",
                                                          accept = c(
                                                            "text/csv",
                                                            "text/comma-separated-values,text/plain",
@@ -1300,95 +1300,42 @@ server <- function(input, output, session) {
   
   # input data
   
-  eq.part.names.data <- reactive({
-    
-    if (!is.null(input$eq.part.names)) {
-      
-      eq.part.names <- input$eq.part.names
-      eq.part.names <- str_split(eq.part.names, "\\, *")
-      eq.part.names <- unlist(eq.part.names)
-      
-    } else {
-      
-      if (is.null(values[["eq.part.names"]])) {
-        
-        eq.part.names <- "molecule1"
-        
-      } else {
-        
-        eq.part.names <- values[["eq.part.names"]]
-        
-      }
-      
-    }
-    
-    eq.part.names <- str_trim(eq.part.names)
-    values[["eq.part.names"]] <- eq.part.names
-    
-    eq.part.names
-
-  })
+  eq.part.names.data <- server_part.names.data("eq")
   
   eq.dt.coef.data <- server_dt.coef.data("eq")
 
-  dt.conc.data <- reactive({
-    
-    if (!is.null(input$dt.conc)) {
-      
-      dt.conc <- hot_to_r(input$dt.conc)
-      
-    } else {
-      
-      if (is.null(values[["dt.conc"]])) {
-        
-        dt.conc <- as.data.table(matrix(rep(1e-03, 20), ncol = 4))
-        setnames(dt.conc, paste0("molecule", 1:4))
-        
-      } else {
-        
-        dt.conc <- values[["dt.conc"]]
-        
-      }
-      
-    }
-    
-    dt.conc <- as.data.table(dt.conc)
-    setnames(dt.conc, eq.part.names.data()[1:ncol(dt.conc)])
-    
-    values[["dt.conc"]] <- dt.conc
-    
-    dt.conc
-    
-  })
-
-  part.eq.data <- reactive({
-    
-    if (!is.null(input$part.eq)) {
-      
-      part.eq <- hot_to_r(input$part.eq)
-      
-    } else {
-      
-      if (is.null(values[["part.eq"]])) {
-        
-        part.eq <- as.data.table(matrix(rep("tot", 4), ncol = 4))
-        setnames(part.eq, paste0("molecule", 1:4))
-        
-      } else {
-        
-        part.eq <- values[["part.eq"]]
-        
-      }
-      
-    }
-    
-    part.eq <- as.data.table(part.eq)
-    
-    values[["part.eq"]] <- part.eq
-    
-    part.eq
-    
-  })
+  eq.dt.conc.data <- server_dt.conc.data("eq")
+  
+  eq.part.eq.data <- server_part.eq.data("eq")
+  
+  # eq.part.eq.data <- reactive({
+  #   
+  #   if (!is.null(input$eq.part.eq)) {
+  #     
+  #     eq.part.eq <- hot_to_r(input$eq.part.eq)
+  #     
+  #   } else {
+  #     
+  #     if (is.null(values[["eq.part.eq"]])) {
+  #       
+  #       eq.part.eq <- as.data.table(matrix(rep("tot", 4), ncol = 4))
+  #       setnames(eq.part.eq, paste0("molecule", 1:4))
+  #       
+  #     } else {
+  #       
+  #       eq.part.eq <- values[["eq.part.eq"]]
+  #       
+  #     }
+  #     
+  #   }
+  #   
+  #   eq.part.eq <- as.data.table(eq.part.eq)
+  #   
+  #   values[["eq.part.eq"]] <- eq.part.eq
+  #   
+  #   eq.part.eq
+  #   
+  # })
   
   eq.dt.conc.pc.data <- reactive({
     
@@ -1597,32 +1544,32 @@ server <- function(input, output, session) {
     
     # concentrations data table
 
-    dt.conc <- data.table(eq.dt.conc.pc, pc.range)
+    eq.dt.conc <- data.table(eq.dt.conc.pc, pc.range)
     
     # type of concentration
     
-    part.eq <- data.table(t(c(rep("tot", ncol(eq.dt.conc.pc)), "eq")))
+    eq.part.eq <- data.table(t(c(rep("tot", ncol(eq.dt.conc.pc)), "eq")))
     
     cln <- c(colnames(eq.dt.conc.pc), pc.name)
-    setnames(part.eq, cln)
+    setnames(eq.part.eq, cln)
 
     # restore column order
     
     cln <- colnames(eq.dt.coef.data())
     
-    setcolorder(dt.conc, cln)
-    setcolorder(part.eq, cln)
+    setcolorder(eq.dt.conc, cln)
+    setcolorder(eq.part.eq, cln)
     
     # update values
     
-    values[["dt.conc"]] <- dt.conc
-    values[["part.eq"]] <- part.eq
+    values[["eq.dt.conc"]] <- eq.dt.conc
+    values[["eq.part.eq"]] <- eq.part.eq
     
     # input.source$eq.dt.conc.pc <- TRUE
     
     # return
 
-    list(dt.conc = dt.conc, part.eq = part.eq)
+    list(eq.dt.conc = eq.dt.conc, eq.part.eq = eq.part.eq)
     
   })
   
@@ -1652,8 +1599,8 @@ server <- function(input, output, session) {
                                  , threshold = 1e-08
                                  , dt.list = list(dt.coef = eq.dt.coef.data()
                                                   , cnst = cnst.data()
-                                                  , dt.conc = dt.conc.data()
-                                                  , part.eq = part.eq.data())
+                                                  , dt.conc = eq.dt.conc.data()
+                                                  , part.eq = eq.part.eq.data())
                                  , save.res = FALSE
                                  , pc.name = pc.name)
     
@@ -1693,9 +1640,9 @@ server <- function(input, output, session) {
     
   })
 
-  dt.conc.tot.data <- eventReactive(input$eq.conc.exec.btn, {
+  eq.dt.conc.tot.data <- eventReactive(input$eq.conc.exec.btn, {
     
-    eval.data()$dt.conc.tot
+    eval.data()$eq.dt.conc.tot
     
   })
   
@@ -1843,9 +1790,9 @@ server <- function(input, output, session) {
     
   })
   
-  output$dt.conc <- renderRHandsontable({
+  output$eq.dt.conc <- renderRHandsontable({
     
-    in.file <- input$file.dt.conc
+    in.file <- input$file.eq.dt.conc
     in.file.bulk <- input$file.eq.bulk.input
     in.file.xlsx <- NULL
     
@@ -1885,16 +1832,16 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (eq.sep() == ";") {
-        dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+        eq.dt.conc <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
       } else if (eq.sep() == ",") {
-        dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+        eq.dt.conc <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
       } else if (eq.sep() == "tab") {
-        dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
+        eq.dt.conc <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1), silent = TRUE)
       }
       
-      validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
+      validate(need(is.data.frame(eq.dt.conc), "Check the column delimiter or content of your file"))
       
-      tmp <- colnames(dt.conc)
+      tmp <- colnames(eq.dt.conc)
       updateTextInput(session, "eq.part.names", value = paste(tmp, collapse = ", "))
       
       
@@ -1905,35 +1852,35 @@ server <- function(input, output, session) {
       shts <- shts[shts %like% "^(input_|output_)*concentrations"]
       shts <- sort(shts)
       
-      dt.conc <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], startRow = 2), silent = TRUE)
+      eq.dt.conc <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], startRow = 2), silent = TRUE)
 
-      validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
+      validate(need(is.data.frame(eq.dt.conc), "Check the column delimiter or content of your file"))
       
-      tmp <- colnames(dt.conc)
+      tmp <- colnames(eq.dt.conc)
       updateTextInput(session, "eq.part.names", value = paste(tmp, collapse = ", "))
       
     } else if (input.source$eq.dt.conc.pc.fl) {
       
-      dt.conc <- eq.pc.update()$dt.conc
+      eq.dt.conc <- eq.pc.update()$eq.dt.conc
       
     } else {
       
-      dt.conc <- dt.conc.data()
+      eq.dt.conc <- eq.dt.conc.data()
       
     }
     
-    setnames(dt.conc, eq.part.names.data()[1:ncol(dt.conc)])
+    setnames(eq.dt.conc, eq.part.names.data()[1:ncol(eq.dt.conc)])
     
-    if (!is.null(dt.conc)) {
+    if (!is.null(eq.dt.conc)) {
       
-      if (nrow(dt.conc) > 15) {
+      if (nrow(eq.dt.conc) > 15) {
         
-        rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE, height = 300) %>%
+        rhandsontable(eq.dt.conc, stretchH = "all", useTypes = FALSE, height = 300) %>%
           hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
         
       } else {
         
-        rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE, height = NULL) %>%
+        rhandsontable(eq.dt.conc, stretchH = "all", useTypes = FALSE, height = NULL) %>%
           hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
         
       }
@@ -1944,9 +1891,9 @@ server <- function(input, output, session) {
     
   })
 
-  output$part.eq <- renderRHandsontable({
+  output$eq.part.eq <- renderRHandsontable({
     
-    in.file <- input$file.dt.conc
+    in.file <- input$file.eq.dt.conc
     in.file.bulk <- input$file.eq.bulk.input
     in.file.xlsx <- NULL
     
@@ -1983,36 +1930,36 @@ server <- function(input, output, session) {
     
     # choose source
     
-    part.eq <- part.eq.data()
+    eq.part.eq <- eq.part.eq.data()
     
     if (!is.null(in.file)) {
       
       
       if (eq.sep() == ";") {
         
-        part.eq <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
+        eq.part.eq <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
         tmp <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
         
       } else if (eq.sep() == ",") {
         
-        part.eq <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
+        eq.part.eq <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
         tmp <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
         
       } else if (eq.sep() == "tab") {
         
-        part.eq <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
+        eq.part.eq <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE), silent = TRUE)
         tmp <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE)[1, ], silent = TRUE)
         
       }
       
       validate(
         
-        need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
-          need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
+        need(is.data.frame(eq.part.eq), "Check the column delimiter or content of your file") %then%
+          need(ncol(eq.part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
         
       )
       
-      colnames(part.eq) <- tmp
+      colnames(eq.part.eq) <- tmp
       
     } else if (!is.null(in.file.xlsx)) {
       
@@ -2021,26 +1968,26 @@ server <- function(input, output, session) {
       shts <- shts[shts %like% "^(input_|output_)*concentrations"]
       shts <- sort(shts)
       
-      part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 1), silent = TRUE)
+      eq.part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 1), silent = TRUE)
       tmp <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 2), silent = TRUE)
 
       validate(
         
-        need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
-          need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
+        need(is.data.frame(eq.part.eq), "Check the column delimiter or content of your file") %then%
+          need(ncol(eq.part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
         
       )
       
-      colnames(part.eq) <- tmp
+      colnames(eq.part.eq) <- tmp
       
     } else if (input.source$eq.dt.conc.pc.fl) {
       
-      part.eq <- eq.pc.update()$part.eq
+      eq.part.eq <- eq.pc.update()$eq.part.eq
       
     }
     
-    if (!is.null(part.eq))
-      rhandsontable(part.eq, stretchH = "all", useTypes = FALSE, colHeaders = NULL) %>%
+    if (!is.null(eq.part.eq))
+      rhandsontable(eq.part.eq, stretchH = "all", useTypes = FALSE, colHeaders = NULL) %>%
       hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
     
   })
@@ -2210,13 +2157,13 @@ server <- function(input, output, session) {
     
   })
 
-  output$dt.conc.tot <- renderRHandsontable({
+  output$eq.dt.conc.tot <- renderRHandsontable({
     
-    dt.conc.tot <- dt.conc.tot.data()
+    eq.dt.conc.tot <- eq.dt.conc.tot.data()
     
-    if (!is.null(dt.conc.tot))
+    if (!is.null(eq.dt.conc.tot))
       
-      rhandsontable(dt.conc.tot, stretchH = FALSE, useTypes = FALSE) %>%
+      rhandsontable(eq.dt.conc.tot, stretchH = FALSE, useTypes = FALSE) %>%
       hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
     
   })
@@ -2379,64 +2326,9 @@ server <- function(input, output, session) {
   
   ab.dt.coef.data <- server_dt.coef.data("ab")
 
-  ab.dt.conc.data <- reactive({
-    
-    if (!is.null(input$ab.dt.conc)) {
-      
-      dt.conc <- hot_to_r(input$ab.dt.conc)
-      
-    } else {
-      
-      if (is.null(values[["ab.dt.conc"]])) {
-        
-        dt.conc <- as.data.table(matrix(rep(1e-03, 20), ncol = 4))
-        setnames(dt.conc, paste0("molecule", 1:4))
-        
-      } else {
-        
-        dt.conc <- values[["ab.dt.conc"]]
-        
-      }
-      
-    }
-    
-    dt.conc <- as.data.table(dt.conc)
-    setnames(dt.conc, ab.part.names.data()[1:ncol(dt.conc)])
-    
-    values[["ab.dt.conc"]] <- dt.conc
-    
-    dt.conc
-    
-  })
+  ab.dt.conc.data <- server_dt.conc.data("ab")
   
-  ab.part.eq.data <- reactive({
-    
-    if (!is.null(input$ab.part.eq)) {
-      
-      part.eq <- hot_to_r(input$ab.part.eq)
-      
-    } else {
-      
-      if (is.null(values[["ab.part.eq"]])) {
-        
-        part.eq <- as.data.table(matrix(rep("tot", 4), ncol = 4))
-        setnames(part.eq, paste0("molecule", 1:4))
-        
-      } else {
-        
-        part.eq <- values[["ab.part.eq"]]
-        
-      }
-      
-    }
-    
-    part.eq <- as.data.table(part.eq)
-    
-    values[["ab.part.eq"]] <- part.eq
-    
-    part.eq
-    
-  })
+  ab.part.eq.data <- server_part.eq.data("ab")
   
   ab.cnst.data <- reactive({
     
@@ -2698,9 +2590,9 @@ server <- function(input, output, session) {
     
     # bulk input
     
-    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"]) > 0){
+    if (nrow(as.data.table(input$file.bulk.input)[name %like% "^(constants*_names*|targets*)(\\.csv|\\.txt)*"]) > 0){
       
-      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants_names|targets*)(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input$file.bulk.input)[name %like% "^(constants*_names*|targets*)(\\.csv|\\.txt)*"][1]
       in.file <- as.data.frame(in.file)
       
     }
@@ -4161,64 +4053,9 @@ server <- function(input, output, session) {
   
   emf.dt.coef.data <- server_dt.coef.data("emf")
   
-  emf.dt.conc.data <- reactive({
-    
-    if (!is.null(input$emf.dt.conc)) {
-      
-      dt.conc <- hot_to_r(input$emf.dt.conc)
-      
-    } else {
-      
-      if (is.null(values[["emf.dt.conc"]])) {
-        
-        dt.conc <- as.data.table(matrix(rep(1e-03, 20), ncol = 4))
-        setnames(dt.conc, paste0("molecule", 1:4))
-        
-      } else {
-        
-        dt.conc <- values[["emf.dt.conc"]]
-        
-      }
-      
-    }
-    
-    dt.conc <- as.data.table(dt.conc)
-    setnames(dt.conc, emf.part.names.data()[1:ncol(dt.conc)])
-    
-    values[["emf.dt.conc"]] <- dt.conc
-    
-    dt.conc
-    
-  })
+  emf.dt.conc.data <- server_dt.conc.data("emf")
   
-  emf.part.eq.data <- reactive({
-    
-    if (!is.null(input$emf.part.eq)) {
-      
-      part.eq <- hot_to_r(input$emf.part.eq)
-      
-    } else {
-      
-      if (is.null(values[["emf.part.eq"]])) {
-        
-        part.eq <- as.data.table(matrix(rep("tot", 4), ncol = 4))
-        setnames(part.eq, paste0("molecule", 1:4))
-        
-      } else {
-        
-        part.eq <- values[["emf.part.eq"]]
-        
-      }
-      
-    }
-    
-    part.eq <- as.data.table(part.eq)
-    
-    values[["emf.part.eq"]] <- part.eq
-    
-    part.eq
-    
-  })
+  emf.part.eq.data <- server_part.eq.data("emf")
   
   emf.cnst.data <- reactive({
     
@@ -5469,64 +5306,9 @@ server <- function(input, output, session) {
   
   nm.dt.coef.data <- server_dt.coef.data("nm")
   
-  nm.dt.conc.data <- reactive({
-    
-    if (!is.null(input$nm.dt.conc)) {
-      
-      dt.conc <- hot_to_r(input$nm.dt.conc)
-      
-    } else {
-      
-      if (is.null(values[["nm.dt.conc"]])) {
-        
-        dt.conc <- as.data.table(matrix(rep(1e-03, 20), ncol = 4))
-        setnames(dt.conc, paste0("molecule", 1:4))
-        
-      } else {
-        
-        dt.conc <- values[["nm.dt.conc"]]
-        
-      }
-      
-    }
-    
-    dt.conc <- as.data.table(dt.conc)
-    setnames(dt.conc, nm.part.names.data()[1:ncol(dt.conc)])
-    
-    values[["nm.dt.conc"]] <- dt.conc
-    
-    dt.conc
-    
-  })
+  nm.dt.conc.data <- server_dt.conc.data("nm")
   
-  nm.part.eq.data <- reactive({
-    
-    if (!is.null(input$nm.part.eq)) {
-      
-      part.eq <- hot_to_r(input$nm.part.eq)
-      
-    } else {
-      
-      if (is.null(values[["nm.part.eq"]])) {
-        
-        part.eq <- as.data.table(matrix(rep("tot", 4), ncol = 4))
-        setnames(part.eq, paste0("molecule", 1:4))
-        
-      } else {
-        
-        part.eq <- values[["nm.part.eq"]]
-        
-      }
-      
-    }
-    
-    part.eq <- as.data.table(part.eq)
-    
-    values[["nm.part.eq"]] <- part.eq
-    
-    part.eq
-    
-  })
+  nm.part.eq.data <- server_part.eq.data("nm")
   
   nm.cnst.data <- reactive({
     
@@ -7837,7 +7619,7 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$dt.conc.csv <- downloadHandler(
+  output$eq.dt.conc.csv <- downloadHandler(
     # ----
     filename = function() {
       
@@ -7847,10 +7629,10 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      tmp <- dt.conc.data()
+      tmp <- eq.dt.conc.data()
       tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
       
-      setnames(tmp, unlist(part.eq.data()))
+      setnames(tmp, unlist(eq.part.eq.data()))
       
       if (eq.sep() == ";") {
         write.csv2(tmp, file, row.names = FALSE)
@@ -7863,7 +7645,7 @@ server <- function(input, output, session) {
   )
   # ----
 
-  output$dt.conc.xlsx <- downloadHandler(
+  output$eq.dt.conc.xlsx <- downloadHandler(
     # ----
     filename = function() {
       
@@ -7873,10 +7655,10 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      tmp <- dt.conc.data()
+      tmp <- eq.dt.conc.data()
       tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
       
-      setnames(tmp, unlist(part.eq.data()))
+      setnames(tmp, unlist(eq.part.eq.data()))
       
       write.xlsx(tmp, file)
       
@@ -7885,7 +7667,7 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$dt.conc.tot.csv <- downloadHandler(
+  output$eq.dt.conc.tot.csv <- downloadHandler(
     # ----
     filename = function() {
       
@@ -7895,7 +7677,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      tmp <- try(dt.conc.tot.data())
+      tmp <- try(eq.dt.conc.tot.data())
       
       if (!is.data.frame(tmp))
         tmp <- data.frame(error = "Evaluate before downloading total concentrations")
@@ -7911,7 +7693,7 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$dt.conc.tot.xlsx <- downloadHandler(
+  output$eq.dt.conc.tot.xlsx <- downloadHandler(
     # ----
     filename = function() {
       
@@ -7921,7 +7703,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      tmp <- try(dt.conc.tot.data())
+      tmp <- try(eq.dt.conc.tot.data())
       
       if (!is.data.frame(tmp))
         tmp <- data.frame(error = "Evaluate before downloading total concentrations")
@@ -8061,8 +7843,8 @@ server <- function(input, output, session) {
         
         eq.dt.coef = "input_stoichiometric_coefficients.csv"
         , cnst = "input_k_constants_log10.csv"
-        , dt.conc = "input_concentrations.csv"
-        , dt.conc.tot = "total_concentrations.csv"
+        , eq.dt.conc = "input_concentrations.csv"
+        , eq.dt.conc.tot = "total_concentrations.csv"
         , dt.res = "equilibrium_concentrations.csv"
         , dt.frac = paste0(bs.name.data(), "_fractions.csv")
         , dt.err = "percent_error.csv"
@@ -8091,10 +7873,10 @@ server <- function(input, output, session) {
             
             if (data.files[i] == "input_concentrations.csv") {
               
-              dt <- dt.conc.data()
+              dt <- eq.dt.conc.data()
               dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
               
-              setnames(dt, unlist(part.eq.data()))
+              setnames(dt, unlist(eq.part.eq.data()))
               
             }
             
@@ -8120,10 +7902,10 @@ server <- function(input, output, session) {
             
             if (data.files[i] == "input_concentrations.csv") {
               
-              dt <- dt.conc.data()
+              dt <- eq.dt.conc.data()
               dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
               
-              setnames(dt, unlist(part.eq.data()))
+              setnames(dt, unlist(eq.part.eq.data()))
               
             }
             
@@ -8180,8 +7962,8 @@ server <- function(input, output, session) {
         
         eq.dt.coef = "input_stoich_coefficients"
         , cnst = "input_k_constants_log10"
-        , dt.conc = "input_concentrations"
-        , dt.conc.tot = "total_concentrations"
+        , eq.dt.conc = "input_concentrations"
+        , eq.dt.conc.tot = "total_concentrations"
         , dt.res = "equilibrium_concentrations"
         , dt.frac = paste0(bs.name.data(), "_fractions")
         , dt.err = "percent_error"
@@ -8202,10 +7984,10 @@ server <- function(input, output, session) {
           
           if (data.files[i] == "input_concentrations") {
             
-            dt <- dt.conc.data()
+            dt <- eq.dt.conc.data()
             dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
             
-            setnames(dt, unlist(part.eq.data()))
+            setnames(dt, unlist(eq.part.eq.data()))
             
           }
           
