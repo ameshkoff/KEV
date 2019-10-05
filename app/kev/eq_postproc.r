@@ -12,7 +12,7 @@
 eq.cond.fractions <- function(dt.res, bs.name, dt.coef, dt.coef.m, dt.conc.m, pc.name) {
   
   cln <- colnames(dt.res)
-  cln <- cln[cln %like% bs.name]
+  cln <- cln[cln %like% paste0(bs.name, "(\\b|_[0-9])")]
   
   dt.frac <- t(round(100 * t(as.matrix(dt.res[, cln, with = FALSE]) %*%
                                diag(dt.coef.m[dt.coef[, eval(as.name(bs.name))] != 0, bs.name])) %*%

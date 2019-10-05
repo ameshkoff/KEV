@@ -180,6 +180,45 @@ server_part.eq.data <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
+server_cnst.data <- function(module = c("eq", "ab", "emf", "nm")) {
+  
+  cnst.name <- paste0(module[1], ".cnst")
+  
+  cnst.reac <- reactive({
+    
+    if (!is.null(input[[cnst.name]])) {
+      
+      cnst <- hot_to_r(input[[cnst.name]])
+      
+    } else {
+      
+      if (is.null(values[[cnst.name]])) {
+        
+        cnst <- as.data.table(matrix(rep(1, 4), ncol = 1))
+        setnames(cnst, "k_constants_log10")
+        
+      } else {
+        
+        cnst <- values[[cnst.name]]
+        
+      }
+      
+    }
+    
+    cnst <- as.data.table(cnst)
+    
+    values[[cnst.name]] <- cnst
+    
+    cnst
+    
+  })
+  
+  # return
+  
+  return(cnst.reac)
+  
+}
+
 
 
 

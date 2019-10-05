@@ -175,20 +175,20 @@ ui <- tagList(
                                                       , downloadButton("eq.dt.coef.csv", "csv")
                                                       , downloadButton("eq.dt.coef.xlsx", "xlsx"))
                                            , p("")
-                                           , textInput("part.names", "Component names, comma separated", paste(paste0("molecule", 1:4), collapse = ", "))
+                                           , textInput("eq.part.names", "Component names, comma separated", paste(paste0("molecule", 1:4), collapse = ", "))
                                            )
                                     , column(2
                                              , h4("K: lg constants")
-                                             , rHandsontableOutput("cnst")
-                                             , fileInput("file.cnst", "Choose CSV File",
+                                             , rHandsontableOutput("eq.cnst")
+                                             , fileInput("file.eq.cnst", "Choose CSV File",
                                                          accept = c(
                                                            "text/csv",
                                                            "text/comma-separated-values,text/plain",
                                                            ".csv")
                                              )
                                              , fluidRow(class = "download-row"
-                                                        , downloadButton("cnst.csv", "csv")
-                                                        , downloadButton("cnst.xlsx", "xlsx"))
+                                                        , downloadButton("eq.cnst.csv", "csv")
+                                                        , downloadButton("eq.cnst.xlsx", "xlsx"))
                                              )
                                     , column(5
                                              , h4("Concentrations")
@@ -1308,35 +1308,6 @@ server <- function(input, output, session) {
   
   eq.part.eq.data <- server_part.eq.data("eq")
   
-  # eq.part.eq.data <- reactive({
-  #   
-  #   if (!is.null(input$eq.part.eq)) {
-  #     
-  #     eq.part.eq <- hot_to_r(input$eq.part.eq)
-  #     
-  #   } else {
-  #     
-  #     if (is.null(values[["eq.part.eq"]])) {
-  #       
-  #       eq.part.eq <- as.data.table(matrix(rep("tot", 4), ncol = 4))
-  #       setnames(eq.part.eq, paste0("molecule", 1:4))
-  #       
-  #     } else {
-  #       
-  #       eq.part.eq <- values[["eq.part.eq"]]
-  #       
-  #     }
-  #     
-  #   }
-  #   
-  #   eq.part.eq <- as.data.table(eq.part.eq)
-  #   
-  #   values[["eq.part.eq"]] <- eq.part.eq
-  #   
-  #   eq.part.eq
-  #   
-  # })
-  
   eq.dt.conc.pc.data <- reactive({
     
     if (!is.null(input$eq.dt.conc.pc)) {
@@ -1377,34 +1348,7 @@ server <- function(input, output, session) {
     
   })
   
-  cnst.data <- reactive({
-    
-    if (!is.null(input$cnst)) {
-      
-      cnst <- hot_to_r(input$cnst)
-      
-    } else {
-      
-      if (is.null(values[["cnst"]])) {
-        
-        cnst <- as.data.table(matrix(rep(1, 4), ncol = 1))
-        setnames(cnst, "k_constants_log10")
-        
-      } else {
-        
-        cnst <- values[["cnst"]]
-        
-      }
-      
-    }
-    
-    cnst <- as.data.table(cnst)
-    
-    values[["cnst"]] <- cnst
-    
-    cnst
-    
-  })
+  eq.cnst.data <- server_cnst.data("eq")
   
   bs.name.data <- reactive({
     
@@ -1598,7 +1542,7 @@ server <- function(input, output, session) {
                                  , thr.type = c("rel")
                                  , threshold = 1e-08
                                  , dt.list = list(dt.coef = eq.dt.coef.data()
-                                                  , cnst = cnst.data()
+                                                  , cnst = eq.cnst.data()
                                                   , dt.conc = eq.dt.conc.data()
                                                   , part.eq = eq.part.eq.data())
                                  , save.res = FALSE
@@ -2002,9 +1946,9 @@ server <- function(input, output, session) {
     
   })
   
-  output$cnst <- renderRHandsontable({
+  output$eq.cnst <- renderRHandsontable({
 
-    in.file <- input$file.cnst
+    in.file <- input$file.eq.cnst
     in.file.bulk <- input$file.eq.bulk.input
     in.file.xlsx <- NULL
     
@@ -2037,16 +1981,16 @@ server <- function(input, output, session) {
     if (!is.null(in.file)) {
       
       if (eq.sep() == ";") {
-        cnst <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        eq.cnst <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       } else if (eq.sep() == ",") {
-        cnst <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        eq.cnst <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       } else if (eq.sep() == "tab") {
-        cnst <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
+        eq.cnst <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character"), silent = TRUE)
       }
       
       validate(
-        need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
-          need(ncol(cnst) == 1, "Check the column delimiter or content of your file")
+        need(is.data.frame(eq.cnst), "Check the column delimiter or content of your file") %then%
+          need(ncol(eq.cnst) == 1, "Check the column delimiter or content of your file")
       )
       
     } else if (!is.null(in.file.xlsx)) {
@@ -2056,21 +2000,21 @@ server <- function(input, output, session) {
       shts <- shts[shts %like% "^(input_|output_)*k_constants_log10"]
       shts <- sort(shts)
       
-      cnst <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
+      eq.cnst <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
 
       validate(
-        need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
-          need(ncol(cnst) == 1, "Check the column delimiter or content of your file")
+        need(is.data.frame(eq.cnst), "Check the column delimiter or content of your file") %then%
+          need(ncol(eq.cnst) == 1, "Check the column delimiter or content of your file")
       )
       
     } else {
       
-      cnst <- cnst.data()
+      eq.cnst <- eq.cnst.data()
       
     }
 
-    if (!is.null(cnst))
-      rhandsontable(cnst, stretchH = "all", useTypes = FALSE) %>%
+    if (!is.null(eq.cnst))
+      rhandsontable(eq.cnst, stretchH = "all", useTypes = FALSE) %>%
       hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
     
   })
@@ -2330,34 +2274,7 @@ server <- function(input, output, session) {
   
   ab.part.eq.data <- server_part.eq.data("ab")
   
-  ab.cnst.data <- reactive({
-    
-    if (!is.null(input$ab.cnst)) {
-      
-      cnst <- hot_to_r(input$ab.cnst)
-      
-    } else {
-      
-      if (is.null(values[["ab.cnst"]])) {
-        
-        cnst <- as.data.table(matrix(rep(1, 4), ncol = 1))
-        setnames(cnst, "k_constants_log10")
-        
-      } else {
-        
-        cnst <- values[["ab.cnst"]]
-        
-      }
-      
-    }
-    
-    cnst <- as.data.table(cnst)
-    
-    values[["ab.cnst"]] <- cnst
-    
-    cnst
-    
-  })
+  ab.cnst.data <- server_cnst.data("ab")
   
   dt.ab.data <- reactive({
     
@@ -4057,34 +3974,7 @@ server <- function(input, output, session) {
   
   emf.part.eq.data <- server_part.eq.data("emf")
   
-  emf.cnst.data <- reactive({
-    
-    if (!is.null(input$emf.cnst)) {
-      
-      cnst <- hot_to_r(input$emf.cnst)
-      
-    } else {
-      
-      if (is.null(values[["emf.cnst"]])) {
-        
-        cnst <- as.data.table(matrix(rep(1, 4), ncol = 1))
-        setnames(cnst, "k_constants_log10")
-        
-      } else {
-        
-        cnst <- values[["emf.cnst"]]
-        
-      }
-      
-    }
-    
-    cnst <- as.data.table(cnst)
-    
-    values[["emf.cnst"]] <- cnst
-    
-    cnst
-    
-  })
+  emf.cnst.data <- server_cnst.data("emf")
   
   dt.emf.data <- reactive({
     
@@ -4164,7 +4054,6 @@ server <- function(input, output, session) {
     dt
     
   })
-  
   
   
   emf.dt.params.data <- reactive({
@@ -5310,34 +5199,7 @@ server <- function(input, output, session) {
   
   nm.part.eq.data <- server_part.eq.data("nm")
   
-  nm.cnst.data <- reactive({
-    
-    if (!is.null(input$nm.cnst)) {
-      
-      cnst <- hot_to_r(input$nm.cnst)
-      
-    } else {
-      
-      if (is.null(values[["nm.cnst"]])) {
-        
-        cnst <- as.data.table(matrix(rep(1, 4), ncol = 1))
-        setnames(cnst, "k_constants_log10")
-        
-      } else {
-        
-        cnst <- values[["nm.cnst"]]
-        
-      }
-      
-    }
-    
-    cnst <- as.data.table(cnst)
-    
-    values[["nm.cnst"]] <- cnst
-    
-    cnst
-    
-  })
+  nm.cnst.data <- server_cnst.data("nm")
   
   dt.nm.data <- reactive({
     
@@ -7581,7 +7443,7 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$cnst.csv <- downloadHandler(
+  output$eq.cnst.csv <- downloadHandler(
     # ----
     filename = function() {
       
@@ -7592,9 +7454,9 @@ server <- function(input, output, session) {
     content = function(file) {
       
       if (eq.sep() == ";") {
-        write.csv2(cnst.data(), file, row.names = FALSE)
+        write.csv2(eq.cnst.data(), file, row.names = FALSE)
       } else {
-        write.csv(cnst.data(), file, row.names = FALSE)
+        write.csv(eq.cnst.data(), file, row.names = FALSE)
       }
       
     }
@@ -7602,7 +7464,7 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$cnst.xlsx <- downloadHandler(
+  output$eq.cnst.xlsx <- downloadHandler(
     # ----
     filename = function() {
       
@@ -7612,7 +7474,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      write.xlsx(cnst.data(), file)
+      write.xlsx(eq.cnst.data(), file)
       
     }
     
@@ -7842,7 +7704,7 @@ server <- function(input, output, session) {
       data.files <- c(
         
         eq.dt.coef = "input_stoichiometric_coefficients.csv"
-        , cnst = "input_k_constants_log10.csv"
+        , eq.cnst = "input_k_constants_log10.csv"
         , eq.dt.conc = "input_concentrations.csv"
         , eq.dt.conc.tot = "total_concentrations.csv"
         , dt.res = "equilibrium_concentrations.csv"
@@ -7961,7 +7823,7 @@ server <- function(input, output, session) {
       data.files <- c(
         
         eq.dt.coef = "input_stoich_coefficients"
-        , cnst = "input_k_constants_log10"
+        , eq.cnst = "input_k_constants_log10"
         , eq.dt.conc = "input_concentrations"
         , eq.dt.conc.tot = "total_concentrations"
         , dt.res = "equilibrium_concentrations"
