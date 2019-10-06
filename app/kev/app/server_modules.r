@@ -486,6 +486,123 @@ server_render_dt.conc <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
+server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm")) {
+  
+  bulk.input.name <- paste0("file.", module[1], ".bulk.input")
+  sep.fun <- eval(as.name(paste0(module[1], ".sep")))
+  dt.conc.data <- eval(as.name(paste0(module[1], ".dt.conc.data")))
+  part.eq.data <- eval(as.name(paste0(module[1], ".part.eq.data")))
+  # part.names.data <- eval(as.name(paste0(module[1], ".part.names.data")))
+  
+  rndr <- renderRHandsontable({
+    
+    in.file <- input[[paste0("file.", module[1], ".dt.conc")]]
+    in.file.bulk <- input[[bulk.input.name]]
+    in.file.xlsx <- NULL
+    
+    # bulk input
+    
+    if (input.source[[paste0(module[1], ".dt.conc.bulk")]]) {
+      
+      in.file <- as.data.table(input[[bulk.input.name]])[name %like% "^(input\\_)*concentrations*(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.frame(in.file)
+      
+      in.file.xlsx <- as.data.table(input[[bulk.input.name]])[name %like% "\\.xlsx$"]
+      
+      if (nrow(in.file.xlsx) > 0) {
+        
+        in.file.xlsx <- as.data.frame(in.file.xlsx[1])
+        
+      } else {
+        
+        in.file.xlsx <- NULL
+        
+      }
+      
+      if (!is.null(in.file.xlsx))
+        in.file <- NULL
+      
+    }
+    
+    if (module[1] == "eq" && input.source[[paste0(module[1], ".dt.conc.pc.fl")]]) {
+      
+      in.file <- NULL
+      in.file.xlsx <- NULL
+      
+    }
+    
+    # choose source
+    
+    part.eq <- part.eq.data()
+    
+    if (!is.null(in.file)) {
+      
+      
+      if (sep.fun() == ";") {
+        
+        part.eq <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE, check.names = FALSE), silent = TRUE)
+        tmp <- try(read.csv2(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE, check.names = FALSE)[1, ], silent = TRUE)
+        
+      } else if (sep.fun() == ",") {
+        
+        part.eq <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE, check.names = FALSE), silent = TRUE)
+        tmp <- try(read.csv(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE, check.names = FALSE)[1, ], silent = TRUE)
+        
+      } else if (sep.fun() == "tab") {
+        
+        part.eq <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", nrows = 1, header = FALSE, check.names = FALSE), silent = TRUE)
+        tmp <- try(read.delim(in.file$datapath, stringsAsFactors = FALSE, colClasses = "character", skip = 1, header = FALSE, check.names = FALSE)[1, ], silent = TRUE)
+        
+      }
+      
+      validate(
+        
+        need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
+          need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
+        
+      )
+      
+      setDT(part.eq)
+      part.eq[1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), "")]
+      
+      colnames(part.eq) <- unlist(tmp)
+      
+    } else if (!is.null(in.file.xlsx)) {
+      
+      shts <- getSheetNames(in.file.xlsx$datapath)
+      
+      shts <- shts[shts %like% "^(input_|output_)*concentrations*"]
+      shts <- sort(shts)
+      
+      part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 1), silent = TRUE)
+      tmp <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 2), silent = TRUE)
+      
+      validate(
+        
+        need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
+          need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
+        
+      )
+      
+      colnames(part.eq) <- unlist(tmp)
+      
+    } else if (module[1] == "eq" && input.source[[paste0(module[1], ".dt.conc.pc.fl")]]) {
+      
+      part.eq <- eq.pc.update()$eq.part.eq
+      
+    }
+    
+    if (!is.null(part.eq))
+      rhandsontable(part.eq, stretchH = "all", useTypes = FALSE, colHeaders = NULL) %>%
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  })
+  
+  # return
+  
+  return(rndr)
+  
+}
 
 
 
