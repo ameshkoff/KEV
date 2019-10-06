@@ -695,6 +695,49 @@ server_render_cnst <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
+server_render_dt.res <- function(module = c("eq", "ab", "emf", "nm")) {
+  
+  dt.res.data <- eval(as.name(paste0(module[1], ".dt.res.data")))
+
+  rndr <- renderRHandsontable({
+    
+    dt.res <- dt.res.data()
+    
+    if (!is.null(dt.res)) {
+      
+      renderer <- "
+      function (instance, td, row, col, prop, value, cellProperties) {
+      
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (parseInt(value, 10) < 0) {
+        td.style.background = 'pink';
+        }
+        
+      }" 
+      
+      if (nrow(dt.res) > 15) {
+        
+        rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE, height = 300) %>%
+          hot_cols(renderer = renderer)
+        
+      } else {
+        
+        rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE, height = NULL) %>%
+          hot_cols(renderer = renderer)
+        
+      }
+      
+    }
+    
+  })
+  
+  # return
+  
+  return(rndr)
+  
+}
+
 
 
 

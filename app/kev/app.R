@@ -238,10 +238,10 @@ ui <- tagList(
                               , wellPanel(
                                 fluidRow(column(12
                                                 , h4("Equilibrium concentrations")
-                                                , rHandsontableOutput("dt.res")
+                                                , rHandsontableOutput("eq.dt.res")
                                                 , fluidRow(class = "download-row"
-                                                           , downloadButton("dt.res.csv", "csv")
-                                                           , downloadButton("dt.res.xlsx", "xlsx"))))
+                                                           , downloadButton("eq.dt.res.csv", "csv")
+                                                           , downloadButton("eq.dt.res.xlsx", "xlsx"))))
 
                                 , fluidRow(column(12
                                                   , h4(textOutput("txt.frac"))
@@ -1557,7 +1557,7 @@ server <- function(input, output, session) {
   
   # output data
   
-  dt.res.data <- eventReactive(input$eq.conc.exec.btn, {
+  eq.dt.res.data <- eventReactive(input$eq.conc.exec.btn, {
     
     eval.data()$dt.res
     
@@ -1633,7 +1633,6 @@ server <- function(input, output, session) {
   
   
   
-  
   # text --------------------- #
   
   output$txt.frac <- renderText({
@@ -1662,39 +1661,7 @@ server <- function(input, output, session) {
   
   output$eq.cnst <- server_render_cnst("eq")
   
-  output$dt.res <- renderRHandsontable({
-    
-    dt.res <- dt.res.data()
-    
-    if (!is.null(dt.res)) {
-      
-      renderer <- "
-      function (instance, td, row, col, prop, value, cellProperties) {
-      
-        Handsontable.renderers.TextRenderer.apply(this, arguments);
-        
-        if (parseInt(value, 10) < 0) {
-        td.style.background = 'pink';
-        }
-        
-      }" 
-      
-      if (nrow(dt.res) > 15) {
-        
-        rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE, height = 300) %>%
-          hot_cols(renderer = renderer)
-        
-      } else {
-        
-        rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE, height = NULL) %>%
-          hot_cols(renderer = renderer)
-        
-      }
-      
-    }
-    
-
-  })
+  output$eq.dt.res <- server_render_dt.res("eq")
   
   output$dt.frac <- renderRHandsontable({
     
@@ -2669,28 +2636,7 @@ server <- function(input, output, session) {
 
   })
   
-  output$ab.dt.res <- renderRHandsontable({
-    
-    dt.res <- ab.dt.res.data()
-    
-    if (!is.null(dt.res)) {
-      
-      renderer <- "
-        function (instance, td, row, col, prop, value, cellProperties) {
-    
-          Handsontable.renderers.TextRenderer.apply(this, arguments);
-          
-          if (parseInt(value, 10) < 0) {
-            td.style.background = 'pink';
-          }
-          
-        }" 
-
-      rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
-        hot_cols(renderer = renderer)
-    }
-    
-  })
+  output$ab.dt.res <- server_render_dt.res("ab")
   
   output$dt.ab.abs <- renderRHandsontable({
     
@@ -3827,28 +3773,7 @@ server <- function(input, output, session) {
     
   })
   
-  output$emf.dt.res <- renderRHandsontable({
-    
-    dt.res <- emf.dt.res.data()
-    
-    if (!is.null(dt.res)) {
-      
-      renderer <- "
-      function (instance, td, row, col, prop, value, cellProperties) {
-      
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (parseInt(value, 10) < 0) {
-      td.style.background = 'pink';
-      }
-      
-      }" 
-
-      rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
-        hot_cols(renderer = renderer)
-    }
-    
-})
+  output$emf.dt.res <- server_render_dt.res("emf")
   
   output$dt.emf.abs <- renderRHandsontable({
     
@@ -4760,28 +4685,7 @@ server <- function(input, output, session) {
     
   })
   
-  output$nm.dt.res <- renderRHandsontable({
-    
-    dt.res <- nm.dt.res.data()
-    
-    if (!is.null(dt.res)) {
-      
-      renderer <- "
-      function (instance, td, row, col, prop, value, cellProperties) {
-      
-      Handsontable.renderers.TextRenderer.apply(this, arguments);
-      
-      if (parseInt(value, 10) < 0) {
-      td.style.background = 'pink';
-      }
-      
-      }" 
-
-      rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE) %>%
-        hot_cols(renderer = renderer)
-    }
-    
-})
+  output$nm.dt.res <- server_render_dt.res("nm")
   
   output$dt.nm.abs <- renderRHandsontable({
     
@@ -6168,7 +6072,7 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$dt.res.csv <- downloadHandler(
+  output$eq.dt.res.csv <- downloadHandler(
     # ----
     filename = function() {
       
@@ -6179,9 +6083,9 @@ server <- function(input, output, session) {
     content = function(file) {
       
       if (eq.sep() == ";") {
-        write.csv2(dt.res.data(), file, row.names = FALSE)
+        write.csv2(eq.dt.res.data(), file, row.names = FALSE)
       } else {
-        write.csv(dt.res.data(), file, row.names = FALSE)
+        write.csv(eq.dt.res.data(), file, row.names = FALSE)
       }
       
     }
@@ -6189,7 +6093,7 @@ server <- function(input, output, session) {
   )
   # ----
   
-  output$dt.res.xlsx <- downloadHandler(
+  output$eq.dt.res.xlsx <- downloadHandler(
     # ----
     filename = function() {
       
@@ -6199,7 +6103,7 @@ server <- function(input, output, session) {
     
     content = function(file) {
       
-      write.xlsx(dt.res.data(), file)
+      write.xlsx(eq.dt.res.data(), file)
       
     }
     
@@ -6298,7 +6202,7 @@ server <- function(input, output, session) {
         , eq.cnst = "input_k_constants_log10.csv"
         , eq.dt.conc = "input_concentrations.csv"
         , eq.dt.conc.tot = "total_concentrations.csv"
-        , dt.res = "equilibrium_concentrations.csv"
+        , eq.dt.res = "equilibrium_concentrations.csv"
         , dt.frac = paste0(bs.name.data(), "_fractions.csv")
         , dt.err = "percent_error.csv"
         , bs.name = "component_names.csv"
@@ -6417,7 +6321,7 @@ server <- function(input, output, session) {
         , eq.cnst = "input_k_constants_log10"
         , eq.dt.conc = "input_concentrations"
         , eq.dt.conc.tot = "total_concentrations"
-        , dt.res = "equilibrium_concentrations"
+        , eq.dt.res = "equilibrium_concentrations"
         , dt.frac = paste0(bs.name.data(), "_fractions")
         , dt.err = "percent_error"
         , bs.name = "component_names"
@@ -8457,7 +8361,6 @@ server <- function(input, output, session) {
   # ----
   
 }
-
 
 
 # run
