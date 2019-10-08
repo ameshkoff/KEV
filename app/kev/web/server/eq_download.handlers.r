@@ -10,129 +10,14 @@
 
 # equilibrium download ---------------- #
 
-output$eq.dt.coef.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "input_stoichiometric_coefficients.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (eq.sep() == ";") {
-      write.csv2(eq.dt.coef.data(), file, row.names = FALSE)
-    } else {
-      write.csv(("eq"), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
+output$eq.dt.coef.csv <- download_dt.coef.csv("eq")
+output$eq.dt.coef.xlsx <- download_dt.coef.xlsx("eq")
 
-output$eq.dt.coef.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "input_stoichiometric_coefficients.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(eq.dt.coef.data(), file)
-    
-  }
-  
-)
-# ----
+output$eq.cnst.csv <- download_cnst.csv("eq")
+output$eq.cnst.xlsx <- download_cnst.xlsx("eq")
 
-output$eq.cnst.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "k_constants_log10.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (eq.sep() == ";") {
-      write.csv2(eq.cnst.data(), file, row.names = FALSE)
-    } else {
-      write.csv(eq.cnst.data(), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
-
-output$eq.cnst.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "k_constants_log10.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(eq.cnst.data(), file)
-    
-  }
-  
-)
-# ----
-
-output$eq.dt.conc.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "input_concentrations.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    tmp <- eq.dt.conc.data()
-    tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
-    
-    setnames(tmp, unlist(eq.part.eq.data()))
-    
-    if (eq.sep() == ";") {
-      write.csv2(tmp, file, row.names = FALSE)
-    } else {
-      write.csv(tmp, file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
-
-output$eq.dt.conc.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "input_concentrations.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    tmp <- eq.dt.conc.data()
-    tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
-    
-    setnames(tmp, unlist(eq.part.eq.data()))
-    
-    write.xlsx(tmp, file)
-    
-  }
-  
-)
-# ----
+output$eq.dt.conc.csv <- download_dt.conc.csv("eq")
+output$eq.dt.conc.xlsx <- download_dt.conc.xlsx("eq")
 
 output$eq.dt.conc.tot.csv <- downloadHandler(
   # ----

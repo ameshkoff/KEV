@@ -4858,6 +4858,8 @@ server <- function(input, output, session) {
   
   # source download handlers
   
+  source("web/server/download.handlers.r", local = TRUE)
+  
   source("web/server/eq_download.handlers.r", local = TRUE)
   source("web/server/ab_download.handlers.r", local = TRUE)
   source("web/server/sp_download.handlers.r", local = TRUE)

@@ -17,7 +17,7 @@ server_dt.coef.data <- function(module = c("eq", "ab", "emf", "nm")) {
   dt.coef.name <- paste0(module[1], ".dt.coef")
   
   dt.coef.reac <- reactive({
-
+    
     if (!is.null(input[[dt.coef.name]])) {
       
       dt.coef <- hot_to_r(input[[dt.coef.name]])
@@ -50,7 +50,6 @@ server_dt.coef.data <- function(module = c("eq", "ab", "emf", "nm")) {
       setnames(dt.coef, c(eval(as.name(paste0(module, ".part.names.data")))()[1:(ncol(dt.coef) - 1)], "name"))
       
     }
-    
     
     values[[dt.coef.name]] <- dt.coef
     

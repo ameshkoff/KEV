@@ -10,129 +10,14 @@
 
 # absorbance download ---------------- #
 
-output$ab.dt.coef.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "input_stoichiometric_coefficients.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (ab.sep() == ";") {
-      write.csv2(ab.dt.coef.data(), file, row.names = FALSE)
-    } else {
-      write.csv(ab.dt.coef.data(), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
+output$ab.dt.coef.csv <- download_dt.coef.csv("ab")
+output$ab.dt.coef.xlsx <- download_dt.coef.xlsx("ab")
 
-output$ab.dt.coef.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "input_stoichiometric_coefficients.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(ab.dt.coef.data(), file)
-    
-  }
-  
-)
-# ----
+output$ab.cnst.csv <- download_cnst.csv("ab")
+output$ab.cnst.xlsx <- download_cnst.xlsx("ab")
 
-output$ab.cnst.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "input_k_constants_log10.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (ab.sep() == ";") {
-      write.csv2(ab.cnst.data(), file, row.names = FALSE)
-    } else {
-      write.csv(ab.cnst.data(), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
-
-output$ab.cnst.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "input_k_constants_log10.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(ab.cnst.data(), file)
-    
-  }
-  
-)
-# ----
-
-output$ab.dt.conc.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "input_concentrations.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    tmp <- ab.dt.conc.data()
-    tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
-    
-    setnames(tmp, unlist(ab.part.eq.data()))
-    
-    if (ab.sep() == ";") {
-      write.csv2(tmp, file, row.names = FALSE)
-    } else {
-      write.csv(tmp, file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
-
-output$ab.dt.conc.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "input_concentrations.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    tmp <- ab.dt.conc.data()
-    tmp <- rbind(data.table(t(data.table(colnames(tmp)))), tmp, use.names = FALSE)
-    
-    setnames(tmp, unlist(ab.part.eq.data()))
-    
-    write.xlsx(tmp, file)
-    
-  }
-  
-)
-# ----
+output$ab.dt.conc.csv <- download_dt.conc.csv("ab")
+output$ab.dt.conc.xlsx <- download_dt.conc.xlsx("ab")
 
 output$dt.ab.csv <- downloadHandler(
   # ----
