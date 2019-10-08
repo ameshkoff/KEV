@@ -95,43 +95,8 @@ output$dt.mol.xlsx <- downloadHandler(
 )
 # ----
 
-output$ab.dt.res.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "equilibrium_concentrations.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (ab.sep() == ";") {
-      write.csv2(ab.dt.res.data(), file, row.names = FALSE)
-    } else {
-      write.csv(ab.dt.res.data(), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
-
-output$ab.dt.res.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "equilibrium_concentrations.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(ab.dt.res.data(), file)
-    
-  }
-  
-)
-# ----
+output$ab.dt.res.csv <- download_dt.res.csv("ab")
+output$ab.dt.res.xlsx <- download_dt.res.xlsx("ab")
 
 output$dt.ab.abs.csv <- downloadHandler(
   # ----
@@ -209,119 +174,14 @@ output$dt.ab.rel.xlsx <- downloadHandler(
 )
 # ----
 
-output$cnst.dev.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "constants_evaluated.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (ab.sep() == ";") {
-      write.csv2(cnst.dev.data(), file, row.names = FALSE)
-    } else {
-      write.csv(cnst.dev.data(), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
+output$ab.cnst.dev.csv <- download_cnst.dev.csv("ab")
+output$ab.cnst.dev.xlsx <- download_cnst.dev.xlsx("ab")
 
-output$cnst.dev.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "constants_evaluated.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(cnst.dev.data(), file)
-    
-  }
-  
-)
-# ----
+output$ab.cor.m.csv <- download_cor.m.csv("ab")
+output$ab.cor.m.xlsx <- download_cor.m.xlsx("ab")
 
-output$cor.m.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "correlation_matrix.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (ab.sep() == ";") {
-      write.csv2(cor.m.data(), file, row.names = FALSE)
-    } else {
-      write.csv(cor.m.data(), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
-
-output$cor.m.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "correlation_matrix.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(cor.m.data(), file)
-    
-  }
-  
-)
-# ----
-
-output$ab.adj.r.squared.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "adj_r_squared.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (ab.sep() == ";") {
-      write.csv2(ab.adj.r.squared.data(), file, row.names = FALSE)
-    } else {
-      write.csv(ab.adj.r.squared.data(), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
-
-output$ab.adj.r.squared.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "adj_r_squared.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(ab.adj.r.squared.data(), file)
-    
-  }
-  
-)
-# ----
+output$ab.adj.r.squared.csv <- download_adj.r.squared.csv("ab")
+output$ab.adj.r.squared.xlsx <- download_adj.r.squared.xlsx("ab")
 
 output$mol.coef.csv <- downloadHandler(
   # ----
@@ -381,8 +241,8 @@ output$kev.data.zip <- downloadHandler(
       , ab.dt.res = "equilibrium_concentrations.csv"
       , dt.ab.abs = "absorbance_calculated_abs_errors.csv"
       , dt.ab.rel = "absorbance_calculated_rel_errors.csv"
-      , cnst.dev = "constants_evaluated.csv"
-      , cor.m = "correlation_matrix.csv"
+      , ab.cnst.dev = "constants_evaluated.csv"
+      , ab.cor.m = "correlation_matrix.csv"
       , ab.adj.r.squared = "adj_r_squared.csv"
       , mol.coef = "mol_ext_coefficients_calculated.csv"
       , target = "target.csv"
@@ -490,8 +350,8 @@ output$kev.data.xlsx <- downloadHandler(
       , ab.dt.res = "equilibrium_concentrations"
       , dt.ab.abs = "absorbance_calc_abs_errors"
       , dt.ab.rel = "absorbance_calc_rel_errors"
-      , cnst.dev = "constants_evaluated"
-      , cor.m = "correlation_matrix"
+      , ab.cnst.dev = "constants_evaluated"
+      , ab.cor.m = "correlation_matrix"
       , ab.adj.r.squared = "adj_r_squared"
       , mol.coef = "mol_ext_coefficients_calc"
       

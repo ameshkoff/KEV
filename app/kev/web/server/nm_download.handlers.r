@@ -95,43 +95,8 @@ output$nm.dt.ind.xlsx <- downloadHandler(
 )
 # ----
 
-output$nm.dt.res.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "equilibrium_concentrations.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (nm.sep() == ";") {
-      write.csv2(nm.dt.res.data(), file, row.names = FALSE)
-    } else {
-      write.csv(nm.dt.res.data(), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
-
-output$nm.dt.res.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "equilibrium_concentrations.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(nm.dt.res.data(), file)
-    
-  }
-  
-)
-# ----
+output$nm.dt.res.csv <- download_dt.res.csv("nm")
+output$nm.dt.res.xlsx <- download_dt.res.xlsx("nm")
 
 output$dt.nm.abs.csv <- downloadHandler(
   # ----
@@ -209,119 +174,14 @@ output$dt.nm.rel.xlsx <- downloadHandler(
 )
 # ----
 
-output$nm.cnst.dev.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "constants_evaluated.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (nm.sep() == ";") {
-      write.csv2(nm.cnst.dev.data(), file, row.names = FALSE)
-    } else {
-      write.csv(nm.cnst.dev.data(), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
+output$nm.cnst.dev.csv <- download_cnst.dev.csv("nm")
+output$nm.cnst.dev.xlsx <- download_cnst.dev.xlsx("nm")
 
-output$nm.cnst.dev.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "constants_evaluated.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(nm.cnst.dev.data(), file)
-    
-  }
-  
-)
-# ----
+output$nm.cor.m.csv <- download_cor.m.csv("nm")
+output$nm.cor.m.xlsx <- download_cor.m.xlsx("nm")
 
-output$nm.cor.m.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "correlation_matrix.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (nm.sep() == ";") {
-      write.csv2(nm.cor.m.data(), file, row.names = FALSE)
-    } else {
-      write.csv(nm.cor.m.data(), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
-
-output$nm.cor.m.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "correlation_matrix.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(nm.cor.m.data(), file)
-    
-  }
-  
-)
-# ----
-
-output$nm.adj.r.squared.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "adj_r_squared.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (nm.sep() == ";") {
-      write.csv2(nm.adj.r.squared.data(), file, row.names = FALSE)
-    } else {
-      write.csv(nm.adj.r.squared.data(), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
-
-output$nm.adj.r.squared.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "adj_r_squared.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(nm.adj.r.squared.data(), file)
-    
-  }
-  
-)
-# ----
+output$nm.adj.r.squared.csv <- download_adj.r.squared.csv("nm")
+output$nm.adj.r.squared.xlsx <- download_adj.r.squared.xlsx("nm")
 
 output$nm.ind.shift.csv <- downloadHandler(
   # ----

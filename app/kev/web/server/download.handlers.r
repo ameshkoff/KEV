@@ -191,4 +191,229 @@ download_dt.conc.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
 }
 
 
+# dt.res
+
+download_dt.res.csv <- function(module = c("eq", "ab", "emf", "nm")) {
+  
+  dt.res.data <- eval(as.name(paste0(module[1], ".dt.res.data")))
+  sep.fun <- eval(as.name(paste0(module[1], ".sep")))
+  
+  hndlr <- downloadHandler(
+    
+    filename = function() {
+      
+      "equilibrium_concentrations.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep.fun() == ";") {
+        write.csv2(dt.res.data(), file, row.names = FALSE)
+      } else {
+        write.csv(dt.res.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  
+  return(hndlr)
+  
+}
+
+download_dt.res.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
+  
+  dt.res.data <- eval(as.name(paste0(module[1], ".dt.res.data")))
+  
+  hndlr <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "equilibrium_concentrations.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.res.data(), file)
+      
+    }
+    
+  )
+  
+  return(hndlr)
+  
+}
+
+
+# cnst.dev
+
+download_cnst.dev.csv <- function(module = c("eq", "ab", "emf", "nm")) {
+  
+  cnst.dev.data <- eval(as.name(paste0(module[1], ".cnst.dev.data")))
+  sep.fun <- eval(as.name(paste0(module[1], ".sep")))
+  
+  hndlr <- downloadHandler(
+    
+    filename = function() {
+      
+      "constants_evaluated.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep.fun() == ";") {
+        write.csv2(cnst.dev.data(), file, row.names = FALSE)
+      } else {
+        write.csv(cnst.dev.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  
+  return(hndlr)
+  
+}
+
+download_cnst.dev.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
+  
+  cnst.dev.data <- eval(as.name(paste0(module[1], ".cnst.dev.data")))
+  
+  hndlr <- downloadHandler(
+    
+    filename = function() {
+      
+      "constants_evaluated.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(cnst.dev.data(), file)
+      
+    }
+    
+  )
+  
+  return(hndlr)
+  
+}
+
+
+# cor.m
+
+download_cor.m.csv <- function(module = c("eq", "ab", "emf", "nm")) {
+  
+  cor.m.data <- eval(as.name(paste0(module[1], ".cor.m.data")))
+  sep.fun <- eval(as.name(paste0(module[1], ".sep")))
+  
+  hndlr <- downloadHandler(
+    
+    filename = function() {
+      
+      "correlation_matrix.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep.fun() == ";") {
+        write.csv2(cor.m.data(), file, row.names = FALSE)
+      } else {
+        write.csv(cor.m.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  
+  return(hndlr)
+  
+}
+
+download_cor.m.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
+  
+  cor.m.data <- eval(as.name(paste0(module[1], ".cor.m.data")))
+  
+  hndlr <- downloadHandler(
+    
+    filename = function() {
+      
+      "correlation_matrix.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(cor.m.data(), file)
+      
+    }
+    
+  )
+  
+  return(hndlr)
+  
+}
+
+
+# adj.r.squared
+
+download_adj.r.squared.csv <- function(module = c("eq", "ab", "emf", "nm")) {
+  
+  adj.r.squared.data <- eval(as.name(paste0(module[1], ".adj.r.squared.data")))
+  sep.fun <- eval(as.name(paste0(module[1], ".sep")))
+  
+  hndlr <- downloadHandler(
+    
+    filename = function() {
+      
+      "adj_r_squared.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep.fun() == ";") {
+        write.csv2(adj.r.squared.data(), file, row.names = FALSE)
+      } else {
+        write.csv(adj.r.squared.data(), file, row.names = FALSE)
+      }
+      
+    }
+    
+  )
+  
+  return(hndlr)
+  
+}
+
+download_adj.r.squared.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
+  
+  adj.r.squared.data <- eval(as.name(paste0(module[1], ".adj.r.squared.data")))
+  
+  hndlr <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "adj_r_squared.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(adj.r.squared.data(), file)
+      
+    }
+    
+  )
+  
+  return(hndlr)
+  
+}
+
+
+
 

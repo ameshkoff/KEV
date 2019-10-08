@@ -1326,7 +1326,7 @@ server <- function(input, output, session) {
     
   })
   
-  cnst.dev.data <- eventReactive(input$ab.conc.exec.btn, {
+  ab.cnst.dev.data <- eventReactive(input$ab.conc.exec.btn, {
     
     cnst.dev <- ab.eval.data()$cnst.dev
     cnst.dev <- as.data.table(cnst.dev)
@@ -1335,7 +1335,7 @@ server <- function(input, output, session) {
     
   })
 
-  cor.m.data <- eventReactive(input$ab.conc.exec.btn, {
+  ab.cor.m.data <- eventReactive(input$ab.conc.exec.btn, {
     
     cor.m <- ab.eval.data()$cor.m
     
@@ -1677,9 +1677,9 @@ server <- function(input, output, session) {
     
   })
   
-  output$cnst.dev <- renderRHandsontable({
+  output$ab.cnst.dev <- renderRHandsontable({
     
-    cnst.dev <- cnst.dev.data()
+    cnst.dev <- ab.cnst.dev.data()
     
     if (!is.null(cnst.dev))
       
@@ -1707,9 +1707,9 @@ server <- function(input, output, session) {
     
   })
 
-  output$cor.m <- renderRHandsontable({
+  output$ab.cor.m <- renderRHandsontable({
     
-    cor.m <- cor.m.data()
+    cor.m <- ab.cor.m.data()
     
     if (!is.null(cor.m))
       

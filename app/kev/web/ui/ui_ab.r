@@ -205,16 +205,16 @@ ui_ab <- function() {
                  , fluidRow(column(12)
                             , column(6
                                      , h4("Evaluated Constants")
-                                     , rHandsontableOutput("cnst.dev")
+                                     , rHandsontableOutput("ab.cnst.dev")
                                      , fluidRow(class = "download-row"
-                                                , downloadButton("cnst.dev.csv", "csv")
-                                                , downloadButton("cnst.dev.xlsx", "xlsx")))
+                                                , downloadButton("ab.cnst.dev.csv", "csv")
+                                                , downloadButton("ab.cnst.dev.xlsx", "xlsx")))
                             , column(3
                                      , h4("Correlation Matrix")
-                                     , rHandsontableOutput("cor.m")
+                                     , rHandsontableOutput("ab.cor.m")
                                      , fluidRow(class = "download-row"
-                                                , downloadButton("cor.m.csv", "csv")
-                                                , downloadButton("cor.m.xlsx", "xlsx")))
+                                                , downloadButton("ab.cor.m.csv", "csv")
+                                                , downloadButton("ab.cor.m.xlsx", "xlsx")))
                             , column(3
                                      , h4(HTML("Adjusted R<sup>2</sup>"))
                                      , rHandsontableOutput("ab.adj.r.squared")

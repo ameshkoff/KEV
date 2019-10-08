@@ -67,43 +67,8 @@ output$eq.dt.conc.tot.xlsx <- downloadHandler(
 )
 # ----
 
-output$eq.dt.res.csv <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "equilibrium_concentrations.csv"
-    
-  },
-  
-  content = function(file) {
-    
-    if (eq.sep() == ";") {
-      write.csv2(eq.dt.res.data(), file, row.names = FALSE)
-    } else {
-      write.csv(eq.dt.res.data(), file, row.names = FALSE)
-    }
-    
-  }
-  
-)
-# ----
-
-output$eq.dt.res.xlsx <- downloadHandler(
-  # ----
-  filename = function() {
-    
-    "equilibrium_concentrations.xlsx"
-    
-  },
-  
-  content = function(file) {
-    
-    write.xlsx(eq.dt.res.data(), file)
-    
-  }
-  
-)
-# ----
+output$eq.dt.res.csv <- download_dt.res.csv("eq")
+output$eq.dt.res.xlsx <- download_dt.res.xlsx("eq")
 
 output$dt.frac.csv <- downloadHandler(
   # ----
