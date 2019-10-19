@@ -79,11 +79,11 @@ cur.data.runner <- function(mode = c("api", "script", "app")
   dir.start <- ""
   
   if (cur.status@mode[1] %in% c("script", "api"))
-    dir.start <- "app/kev/"
+    dir.start <- "app/kev/algo/"
   
-  source(paste0(dir.start, "cur_data.r"), chdir = TRUE)
-  source(paste0(dir.start, "cur_preproc.r"), chdir = TRUE)
-  source(paste0(dir.start, "cur_evaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "curves/cur_data.r"), chdir = TRUE)
+  source(paste0(dir.start, "curves/cur_preproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "curves/cur_evaluator.r"), chdir = TRUE)
 
   
   # load data ---------------- #

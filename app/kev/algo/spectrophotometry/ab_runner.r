@@ -51,21 +51,21 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
   dir.start <- ""
   
   if (mode %in% c("script", "api"))
-    dir.start <- "app/kev/"
+    dir.start <- "app/kev/algo/"
   
-  source(paste0(dir.start, "eq_data.r"), chdir = TRUE)
-  source(paste0(dir.start, "ab_data.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_data.r"), chdir = TRUE)
+  source(paste0(dir.start, "spectrophotometry/ab_data.r"), chdir = TRUE)
   
-  source(paste0(dir.start, "eq_preproc.r"), chdir = TRUE)
-  source(paste0(dir.start, "ab_preproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_preproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "spectrophotometry/ab_preproc.r"), chdir = TRUE)
   
-  source(paste0(dir.start, "eq_evaluator.r"), chdir = TRUE)
-  source(paste0(dir.start, "ab_evaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_evaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "spectrophotometry/ab_evaluator.r"), chdir = TRUE)
   
-  source(paste0(dir.start, "eq_postproc.r"), chdir = TRUE)
-  source(paste0(dir.start, "ab_postproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_postproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "spectrophotometry/ab_postproc.r"), chdir = TRUE)
   
-  source(paste0(dir.start, "ab_save.r"), chdir = TRUE)
+  source(paste0(dir.start, "spectrophotometry/ab_save.r"), chdir = TRUE)
   
   
   # load data ---------------- #

@@ -8,7 +8,7 @@
 
 
 
-source("app/kev/eq_runner.r", chdir = TRUE)
+source("app/kev/algo/concentrations/eq_runner.r", chdir = TRUE)
 
 eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.2p"
                      , bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = TRUE)
@@ -27,13 +27,13 @@ eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.5p"
                      , bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
 eq.evaluation.runner(mode = "script", sep = "tab", subdir = "concentrations/ds.5p.tab"
                      , bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
-eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.2eq"
+eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.3p.2eq"
                      , bs.name = "L", thr.type = c("rel"), threshold = 1e-08, save.res = FALSE)
 
 
 #
 
-source("app/kev/ab_runner.r", chdir = TRUE)
+source("app/kev/algo/spectrophotometry/ab_runner.r", chdir = TRUE)
 
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.1"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
@@ -157,14 +157,14 @@ ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl
 
 
 
-source("app/kev/sp_runner.r", chdir = TRUE)
+source("app/kev/algo/molar.extinction.coefficients/sp_runner.r", chdir = TRUE)
 
 sp.evaluation.runner(mode = "script", sep = "tab", subdir = "molar.extinction.coefficients/dsl.4", save.res = TRUE)
 
 
 #
 
-source("app/kev/emf_runner.r", chdir = TRUE)
+source("app/kev/algo/emf/emf_runner.r", chdir = TRUE)
 
 emf.evaluation.runner(mode = "script", sep = ";", subdir = "emf/dsp.1/csv.semicolon"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
@@ -182,7 +182,7 @@ emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.2"
 
 #
 
-emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.1/comma"
+emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.1/csv.comma"
                       , eq.thr.type = "rel", eq.threshold = 1e-08
                       , cnst.tune = c("HL")
                       , algorithm = "direct search", emf.mode = "base", method = "basic wls"
@@ -204,7 +204,7 @@ emf.evaluation.runner(mode = "script", sep = ";", subdir = "emf/dsp.3"
 
 #
 
-source("app/kev/nm_runner.r", chdir = TRUE)
+source("app/kev/algo/nmr/nm_runner.r", chdir = TRUE)
 
 nm.evaluation.runner(mode = "script", sep = ",", subdir = "nmr/dsn.1"
                      , eq.thr.type = "rel", eq.threshold = 1e-08

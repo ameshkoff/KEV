@@ -51,21 +51,21 @@ nm.evaluation.runner <- function(mode = c("api", "script", "app")
   dir.start <- ""
   
   if (mode %in% c("script", "api"))
-    dir.start <- "app/kev/"
+    dir.start <- "app/kev/algo/"
   
-  source(paste0(dir.start, "eq_data.r"), chdir = TRUE)
-  source(paste0(dir.start, "nm_data.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_data.r"), chdir = TRUE)
+  source(paste0(dir.start, "nmr/nm_data.r"), chdir = TRUE)
   
-  source(paste0(dir.start, "eq_preproc.r"), chdir = TRUE)
-  source(paste0(dir.start, "nm_preproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_preproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "nmr/nm_preproc.r"), chdir = TRUE)
 
-  source(paste0(dir.start, "eq_evaluator.r"), chdir = TRUE)
-  source(paste0(dir.start, "nm_evaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_evaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "nmr/nm_evaluator.r"), chdir = TRUE)
 
-  source(paste0(dir.start, "eq_postproc.r"), chdir = TRUE)
-  source(paste0(dir.start, "nm_postproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_postproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "nmr/nm_postproc.r"), chdir = TRUE)
 
-  source(paste0(dir.start, "nm_save.r"), chdir = TRUE)
+  source(paste0(dir.start, "nmr/nm_save.r"), chdir = TRUE)
   
   
   # load data ---------------- #

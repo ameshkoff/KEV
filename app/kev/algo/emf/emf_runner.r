@@ -51,21 +51,21 @@ emf.evaluation.runner <- function(mode = c("api", "script", "app")
   dir.start <- ""
   
   if (mode %in% c("script", "api"))
-    dir.start <- "app/kev/"
+    dir.start <- "app/kev/algo/"
   
-  source(paste0(dir.start, "eq_data.r"), chdir = TRUE)
-  source(paste0(dir.start, "emf_data.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_data.r"), chdir = TRUE)
+  source(paste0(dir.start, "emf/emf_data.r"), chdir = TRUE)
   
-  source(paste0(dir.start, "eq_preproc.r"), chdir = TRUE)
-  source(paste0(dir.start, "emf_preproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_preproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "emf/emf_preproc.r"), chdir = TRUE)
   
-  source(paste0(dir.start, "eq_evaluator.r"), chdir = TRUE)
-  source(paste0(dir.start, "emf_evaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_evaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "emf/emf_evaluator.r"), chdir = TRUE)
   
-  source(paste0(dir.start, "eq_postproc.r"), chdir = TRUE)
-  source(paste0(dir.start, "emf_postproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_postproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "emf/emf_postproc.r"), chdir = TRUE)
   
-  source(paste0(dir.start, "emf_save.r"), chdir = TRUE)
+  source(paste0(dir.start, "emf/emf_save.r"), chdir = TRUE)
   
   
   # load data ---------------- #
