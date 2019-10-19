@@ -50,8 +50,15 @@ nm.evaluation.runner <- function(mode = c("api", "script", "app")
   
   dir.start <- ""
   
-  if (mode %in% c("script", "api"))
+  if (mode %in% c("script", "api")) {
+    
     dir.start <- "app/kev/algo/"
+    
+  } else {
+    
+    dir.start <- "algo/"
+    
+  }
   
   source(paste0(dir.start, "concentrations/eq_data.r"), chdir = TRUE)
   source(paste0(dir.start, "nmr/nm_data.r"), chdir = TRUE)

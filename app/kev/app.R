@@ -60,12 +60,12 @@ cur.algorithms <- data.table(value = c("gaussnewton", "neldermead")
 
 # load algorithm
 
-source("eq_runner.r", chdir = TRUE)
-source("ab_runner.r", chdir = TRUE)
-source("sp_runner.r", chdir = TRUE)
-source("emf_runner.r", chdir = TRUE)
-source("nm_runner.r", chdir = TRUE)
-source("cur_runner.r", chdir = TRUE)
+source("algo/concentrations/eq_runner.r", chdir = TRUE)
+source("algo/spectrophotometry/ab_runner.r", chdir = TRUE)
+source("algo/molar.extinction.coefficients/sp_runner.r", chdir = TRUE)
+source("algo/emf/emf_runner.r", chdir = TRUE)
+source("algo/nmr/nm_runner.r", chdir = TRUE)
+source("algo/curves/cur_runner.r", chdir = TRUE)
 
 # load ui modules
 
