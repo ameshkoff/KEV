@@ -460,7 +460,7 @@ server_render_dt.conc <- function(module = c("eq", "ab", "emf", "nm")) {
       
       if (nrow(dt.conc) > 15) {
         
-        rhandsontable(eq.dt.conc, stretchH = "all", useTypes = FALSE, height = 300) %>%
+        rhandsontable(dt.conc, stretchH = "all", useTypes = FALSE, height = 300) %>%
           hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
         
       } else {
