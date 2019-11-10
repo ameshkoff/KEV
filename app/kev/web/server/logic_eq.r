@@ -194,9 +194,9 @@ bs.name.load <- reactive({
   
   # bulk input
   
-  if (nrow(as.data.table(input$file.eq.bulk.input)[name %like% "^part(icle)*_names(\\.csv|\\.txt)*"]) > 0){
+  if (nrow(as.data.table(input$file.eq.bulk.input)[name %like% "^(part(icle)*|component)_names*(\\.csv|\\.txt)*"]) > 0){
     
-    in.file <- as.data.table(input$file.eq.bulk.input)[name %like% "^part(icle)*_names(\\.csv|\\.txt)*"][1]
+    in.file <- as.data.table(input$file.eq.bulk.input)[name %like% "^(part(icle)*|component)_names*(\\.csv|\\.txt)*"][1]
     in.file <- as.data.frame(in.file)
     
   }
@@ -392,7 +392,7 @@ dt.err.data <- eventReactive(input$eq.conc.exec.btn, {
 
 eq.dt.conc.tot.data <- eventReactive(input$eq.conc.exec.btn, {
   
-  eval.data()$eq.dt.conc.tot
+  eval.data()$dt.conc.tot
   
 })
 

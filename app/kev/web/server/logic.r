@@ -650,7 +650,7 @@ server_render_cnst <- function(module = c("eq", "ab", "emf", "nm")) {
       cln <- colnames(cnst)
       setnames(cnst, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
       
-      validate(need(length(colnames(cnst)[colnames(cnst) %like% "^Constant$|^k_constants_log10$|^cnst$|^lg_k$"]) == 1
+      validate(need(length(colnames(cnst)[colnames(cnst) %like% "^Constant$|^k_constants_log10$|^cnst$|^lg_k$|log10"]) == 1
                     , "Check the column delimiter or content of your file"))
       
       
@@ -665,7 +665,7 @@ server_render_cnst <- function(module = c("eq", "ab", "emf", "nm")) {
       
       validate(
         need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
-          need(length(colnames(cnst)[colnames(cnst) %like% "^Constant$|^k_constants_log10$|^cnst$|^lg_k$"]) == 1
+          need(length(colnames(cnst)[colnames(cnst) %like% "^Constant$|^k_constants_log10$|^cnst$|^lg_k$|log10"]) == 1
                , "Check the column delimiter or content of your file")
       )
       
@@ -678,7 +678,7 @@ server_render_cnst <- function(module = c("eq", "ab", "emf", "nm")) {
     setDT(cnst)
     
     cln <- colnames(cnst)
-    cln <- cln[cln %like% "^Constant$|^k_constants*_log10$|^cnst$|^lg_k$"]
+    cln <- cln[cln %like% "^Constant$|^k_constants*_log10$|^cnst$|^lg_k$|log10"]
     
     cnst <- cnst[, cln, with = FALSE]
     
