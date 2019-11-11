@@ -38,12 +38,55 @@ if (length(fl.missed)) stop(paste("Missed stable files :", fl.missed))
 
 # ------------------------- test files ------------------------
 
-fl.stable <- fl.stable[fl.stable != "canary"]
+# functions
 
-for (fl in fl.stable) {
+tst.test.xlsx <- function(fl) {
   
   fl.stable.cur <- paste0("tests/data.gui/stable/", fl)
   fl.test.cur <- paste0("tests/data.gui/test/", fl)
+  
+  fl.sheets <- getSheetNames(fl.stable.cur)
+  
+  for (sh in fl.sheets) {
+    
+    dt.stable <- read.xlsx(fl.stable.cur, sheet = sh, detectDates = FALSE) %>% as.data.table(keep.rownames = FALSE)
+    dt.test <- read.xlsx(fl.test.cur, sheet = sh, detectDates = FALSE) %>% as.data.table(keep.rownames = FALSE)
+    
+    res <- all.equal(dt.test, dt.stable, check.attributes = FALSE)
+    
+    if (str_detect(fl, "^curves/") & str_detect(sh, "^output_(params*|area_under_curve)$")) {
+      
+      dt.stable <- dt.stable[, !c("name"), with = FALSE]
+      dt.test <- dt.stable[, !c("name"), with = FALSE]
+
+    }
+    
+    if (str_detect(fl, "^curves/")) res <- all.equal(dt.test, dt.stable, check.attributes = FALSE, tolerance = 1e-5)
+    
+    if (is.logical(res)) {
+      
+      print(paste(fl, sh, "OK", sep = " : "))
+      
+    } else {
+      
+      stop(paste(fl, sh, res, sep = " : "))
+      
+    }
+    
+  }
+  
+  return(0)
+  
+}
+
+
+# run
+
+fl.stable <- fl.stable[fl.stable != "canary"]
+
+fl.stable <- fl.stable[!(fl.stable %like% "\\bdsl\\.5\\b")]
+
+for (fl in fl.stable) {
   
   if (fl %like% "\\.zip$") {
     
@@ -52,28 +95,7 @@ for (fl in fl.stable) {
     
   } else if (fl %like% "\\.xlsx$") {
     
-    fl.sheets <- getSheetNames(fl.stable.cur)
-    
-    for (sh in fl.sheets) {
-      
-      dt.stable <- read.xlsx(fl.stable.cur, sheet = sh, detectDates = FALSE) %>% as.data.table(keep.rownames = FALSE)
-      dt.test <- read.xlsx(fl.test.cur, sheet = sh, detectDates = FALSE) %>% as.data.table(keep.rownames = FALSE)
-      
-      res <- all.equal(dt.test, dt.stable, check.attributes = FALSE)
-      
-      if (is.logical(res)) {
-        
-        print(paste(fl, sh, "OK", sep = " : "))
-        
-      } else {
-        
-        stop(paste(fl, sh, res, sep = " : "))
-        
-      }
-      
-    }
-    
-    
+    tst.test.xlsx(fl)
     
   } else {
     
