@@ -62,17 +62,31 @@ ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl
                      , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
                      , save.res = TRUE)
 
+ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl.8"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-7
+                     , save.res = TRUE
+)
+
+ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.9/csv.comma"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-7
+                     , save.res = TRUE
+)
+
 ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl.9/csv.semicolon"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , algorithm = "direct search", ab.mode = "base", method = "basic wls"
-                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
+                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-7
                      , save.res = TRUE
 )
 
 ab.evaluation.runner(mode = "script", sep = "tab", subdir = "spectrophotometry/dsl.9/txt.tab"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , algorithm = "direct search", ab.mode = "base", method = "basic wls"
-                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
+                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-7
                      , save.res = TRUE
 )
 
@@ -131,6 +145,13 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl
                      , search.density = 1, lrate.init = .0005, ab.threshold = 1e-7
                      , save.res = FALSE)
 
+
+ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.9/csv.comma"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
+                     , save.res = FALSE
+)
 
 ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl.9/csv.semicolon"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
