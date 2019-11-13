@@ -25,6 +25,77 @@ library(crayon)
 
 # ----------------------- functions --------------------------
 
+tst.test.worker <- function(fl, sh, dt.stable, dt.test, verbose) {
+  
+  # minor error warning
+  wrn <- NULL
+  
+  # ad hoc fixes for different data sets
+  
+  if (str_detect(fl, "^curves/") && str_detect(sh, "^output_params*$") && length(colnames(dt.stable)[colnames(dt.stable) == "name"]) > 0) {
+    
+    dt.stable[, value := as.numeric(value)]
+    dt.test[, value := as.numeric(value)]
+    
+    dt.stable <- dt.stable[, !c("name"), with = FALSE]
+    dt.test <- dt.test[, !c("name"), with = FALSE]
+    
+  }
+  
+  if (str_detect(fl, "^curves/") && str_detect(sh, "^output_area_under_curve$") && length(colnames(dt.stable)[colnames(dt.stable) == "name"]) > 0) {
+    
+    dt.stable <- dt.stable[, !c("name"), with = FALSE]
+    dt.test <- dt.test[, !c("name"), with = FALSE]
+    
+  }
+  
+  if (str_detect(sh, "^constants*_evaluated$")) {
+    
+    dt.stable[, Constant := as.numeric(Constant)]
+    dt.stable[, St.Deviation := as.numeric(St.Deviation)]
+    
+    dt.test[, Constant := as.numeric(Constant)]
+    dt.test[, St.Deviation := as.numeric(St.Deviation)]
+    
+  }
+  
+  # test itself
+  
+  if (str_detect(fl, "^curves/")) {
+    
+    res <- all.equal(dt.test, dt.stable, check.attributes = FALSE, tolerance = 1e-5)
+    
+  } else {
+    
+    res <- all.equal(dt.test, dt.stable, check.attributes = FALSE)  
+    
+  }
+  
+  # test postproc
+  
+  if (is.logical(res)) {
+    
+    if (verbose) print(paste(fl, sh, "OK", sep = " : "))
+    
+  } else if (str_detect(sh, "^constants*_evaluated$") && res %like% "\\bSt.Deviation\\b.*Mean relative difference"
+             && as.numeric(str_extract(res, "[0-9e\\-\\+\\.]+$")) < 1e-4) {
+    
+    wrn <- paste("WARNING", fl, sh, res, sep = " : ")
+    
+    if (verbose) paste0(wrn, "\n") %>% crayon::red() %>% cat()
+    
+  } else {
+    
+    stop(paste(fl, sh, res, sep = " : "))
+    
+  }
+  
+  # return warning (if exists)
+  
+  wrn
+  
+}
+
 tst.test.xlsx <- function(fl, verbose = FALSE) {
   
   fl.stable.cur <- paste0("tests/data.gui/stable/", fl)
@@ -39,60 +110,7 @@ tst.test.xlsx <- function(fl, verbose = FALSE) {
     dt.stable <- read.xlsx(fl.stable.cur, sheet = sh, detectDates = FALSE) %>% as.data.table(keep.rownames = FALSE)
     dt.test <- read.xlsx(fl.test.cur, sheet = sh, detectDates = FALSE) %>% as.data.table(keep.rownames = FALSE)
     
-    if (str_detect(fl, "^curves/") && str_detect(sh, "^output_params*$") && length(colnames(dt.stable)[colnames(dt.stable) == "name"]) > 0) {
-      
-      dt.stable[, value := as.numeric(value)]
-      dt.test[, value := as.numeric(value)]
-      
-      dt.stable <- dt.stable[, !c("name"), with = FALSE]
-      dt.test <- dt.test[, !c("name"), with = FALSE]
-      
-    }
-    
-    if (str_detect(fl, "^curves/") && str_detect(sh, "^output_area_under_curve$") && length(colnames(dt.stable)[colnames(dt.stable) == "name"]) > 0) {
-      
-      dt.stable <- dt.stable[, !c("name"), with = FALSE]
-      dt.test <- dt.test[, !c("name"), with = FALSE]
-
-    }
-    
-    if (str_detect(sh, "^constants*_evaluated$")) {
-      
-      dt.stable[, Constant := as.numeric(Constant)]
-      dt.stable[, St.Deviation := as.numeric(St.Deviation)]
-      
-      dt.test[, Constant := as.numeric(Constant)]
-      dt.test[, St.Deviation := as.numeric(St.Deviation)]
-      
-    }
-    
-    if (str_detect(fl, "^curves/")) {
-      
-      res <- all.equal(dt.test, dt.stable, check.attributes = FALSE, tolerance = 1e-5)
-      
-    } else {
-      
-      res <- all.equal(dt.test, dt.stable, check.attributes = FALSE)  
-      
-    }
-    
-    if (is.logical(res)) {
-      
-      if (verbose) print(paste(fl, sh, "OK", sep = " : "))
-      
-    } else if (str_detect(sh, "^constants*_evaluated$") && res %like% "\\bSt.Deviation\\b.*Mean relative difference"
-               && as.numeric(str_extract(res, "[0-9e\\-\\+\\.]+$")) < 1e-4) {
-      
-      wrn <- paste("WARNING", fl, sh, res, sep = " : ")
-      tst.warnings <- c(tst.warnings, wrn)
-      
-      if (verbose) paste0(wrn, "\n") %>% crayon::red() %>% cat()
-
-    } else {
-      
-      stop(paste(fl, sh, res, sep = " : "))
-      
-    }
+    tst.warnings <- c(tst.warnings, tst.test.worker(fl, sh, dt.stable, dt.test, verbose))
     
   }
   
