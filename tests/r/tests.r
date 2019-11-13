@@ -19,54 +19,75 @@ library(Hmisc)
 # strings
 library(stringi)
 library(stringr)
+# code
+library(crayon)
 
 
-# ---------------------- test files structure -----------------
+# ----------------------- functions --------------------------
 
-# read files structure
-
-fl.stable <- list.files(path = "tests/data.gui/stable", recursive = TRUE)
-fl.test <- list.files(path = "tests/data.gui/test", recursive = TRUE)
-
-fl.missed <- setdiff(fl.stable, fl.test)
-fl.missed <- fl.missed[!(fl.missed == "canary")]
-
-# check if some files of the stable set are missed in the test one
-
-if (length(fl.missed)) stop(paste("Missed stable files :", fl.missed))
-
-
-# ------------------------- test files ------------------------
-
-# functions
-
-tst.test.xlsx <- function(fl) {
+tst.test.xlsx <- function(fl, verbose = FALSE) {
   
   fl.stable.cur <- paste0("tests/data.gui/stable/", fl)
   fl.test.cur <- paste0("tests/data.gui/test/", fl)
   
   fl.sheets <- getSheetNames(fl.stable.cur)
   
+  tst.warnings <- c()
+  
   for (sh in fl.sheets) {
     
     dt.stable <- read.xlsx(fl.stable.cur, sheet = sh, detectDates = FALSE) %>% as.data.table(keep.rownames = FALSE)
     dt.test <- read.xlsx(fl.test.cur, sheet = sh, detectDates = FALSE) %>% as.data.table(keep.rownames = FALSE)
     
-    res <- all.equal(dt.test, dt.stable, check.attributes = FALSE)
-    
-    if (str_detect(fl, "^curves/") & str_detect(sh, "^output_(params*|area_under_curve)$")) {
+    if (str_detect(fl, "^curves/") && str_detect(sh, "^output_params*$") && length(colnames(dt.stable)[colnames(dt.stable) == "name"]) > 0) {
+      
+      dt.stable[, value := as.numeric(value)]
+      dt.test[, value := as.numeric(value)]
       
       dt.stable <- dt.stable[, !c("name"), with = FALSE]
-      dt.test <- dt.stable[, !c("name"), with = FALSE]
+      dt.test <- dt.test[, !c("name"), with = FALSE]
+      
+    }
+    
+    if (str_detect(fl, "^curves/") && str_detect(sh, "^output_area_under_curve$") && length(colnames(dt.stable)[colnames(dt.stable) == "name"]) > 0) {
+      
+      dt.stable <- dt.stable[, !c("name"), with = FALSE]
+      dt.test <- dt.test[, !c("name"), with = FALSE]
 
     }
     
-    if (str_detect(fl, "^curves/")) res <- all.equal(dt.test, dt.stable, check.attributes = FALSE, tolerance = 1e-5)
+    if (str_detect(sh, "^constants*_evaluated$")) {
+      
+      dt.stable[, Constant := as.numeric(Constant)]
+      dt.stable[, St.Deviation := as.numeric(St.Deviation)]
+      
+      dt.test[, Constant := as.numeric(Constant)]
+      dt.test[, St.Deviation := as.numeric(St.Deviation)]
+      
+    }
+    
+    if (str_detect(fl, "^curves/")) {
+      
+      res <- all.equal(dt.test, dt.stable, check.attributes = FALSE, tolerance = 1e-5)
+      
+    } else {
+      
+      res <- all.equal(dt.test, dt.stable, check.attributes = FALSE)  
+      
+    }
     
     if (is.logical(res)) {
       
-      print(paste(fl, sh, "OK", sep = " : "))
+      if (verbose) print(paste(fl, sh, "OK", sep = " : "))
       
+    } else if (str_detect(sh, "^constants*_evaluated$") && res %like% "\\bSt.Deviation\\b.*Mean relative difference"
+               && as.numeric(str_extract(res, "[0-9e\\-\\+\\.]+$")) < 1e-4) {
+      
+      wrn <- paste("WARNING", fl, sh, res, sep = " : ")
+      tst.warnings <- c(tst.warnings, wrn)
+      
+      if (verbose) paste0(wrn, "\n") %>% crayon::red() %>% cat()
+
     } else {
       
       stop(paste(fl, sh, res, sep = " : "))
@@ -75,37 +96,55 @@ tst.test.xlsx <- function(fl) {
     
   }
   
-  return(0)
+  return(tst.warnings)
   
 }
 
-
-# run
-
-fl.stable <- fl.stable[fl.stable != "canary"]
-
-fl.stable <- fl.stable[!(fl.stable %like% "\\bdsl\\.5\\b")]
-
-for (fl in fl.stable) {
+tst.test.gui <- function(verbose = FALSE) {
   
-  if (fl %like% "\\.zip$") {
+  # test files structure
+  
+  fl.stable <- list.files(path = "tests/data.gui/stable", recursive = TRUE)
+  fl.test <- list.files(path = "tests/data.gui/test", recursive = TRUE)
+  
+  fl.missed <- setdiff(fl.stable, fl.test)
+  if (length(fl.missed)) stop(paste("Missed stable files :", fl.missed))
+
+  # test files (GUI outputs)
+  
+  tst.warnings <- c()
+  
+  for (fl in fl.stable) {
     
-    
-    
-    
-  } else if (fl %like% "\\.xlsx$") {
-    
-    tst.test.xlsx(fl)
-    
-  } else {
-    
-    stop(paste("Unknown file type :", fl))
+    if (fl %like% "\\.zip$") {
+      
+      
+      
+      
+    } else if (fl %like% "\\.xlsx$") {
+      
+      tst.warnings <- c(tst.warnings, tst.test.xlsx(fl, verbose))
+      
+    } else {
+      
+      stop(paste("Unknown file type :", fl))
+      
+    }
     
   }
   
+  # print results
+  
+  paste("Tests succeded. Minor errors :", length(tst.warnings), "\n") %>% red %>% cat()
+  if (length(tst.warnings) > 0) print(tst.warnings)
+  
+  return(0)  
   
 }
 
+# -------------------------- run -----------------------------
+
+tst.test.gui(FALSE)
 
 
 
