@@ -32,7 +32,7 @@ tst.test.worker <- function(fl, sh, dt.stable, dt.test, verbose) {
   
   # ad hoc fixes for different data sets
   
-  if (str_detect(fl, "^curves/") && str_detect(sh, "^output_params*$") && length(colnames(dt.stable)[colnames(dt.stable) == "name"]) > 0) {
+  if (str_detect(fl, "^curves/") && str_detect(sh, "^output_params*(\\.(txt|csv))*$") && length(colnames(dt.stable)[colnames(dt.stable) == "name"]) > 0) {
     
     dt.stable[, value := as.numeric(value)]
     dt.test[, value := as.numeric(value)]
@@ -42,14 +42,14 @@ tst.test.worker <- function(fl, sh, dt.stable, dt.test, verbose) {
     
   }
   
-  if (str_detect(fl, "^curves/") && str_detect(sh, "^output_area_under_curve$") && length(colnames(dt.stable)[colnames(dt.stable) == "name"]) > 0) {
+  if (str_detect(fl, "^curves/") && str_detect(sh, "^output_area_under_curve(\\.(txt|csv))*$") && length(colnames(dt.stable)[colnames(dt.stable) == "name"]) > 0) {
     
     dt.stable <- dt.stable[, !c("name"), with = FALSE]
     dt.test <- dt.test[, !c("name"), with = FALSE]
     
   }
   
-  if (str_detect(sh, "^constants*_evaluated$")) {
+  if (str_detect(sh, "^constants*_evaluated(\\.(txt|csv))*$")) {
     
     dt.stable[, Constant := as.numeric(Constant)]
     dt.stable[, St.Deviation := as.numeric(St.Deviation)]
@@ -63,7 +63,7 @@ tst.test.worker <- function(fl, sh, dt.stable, dt.test, verbose) {
   
   if (str_detect(fl, "^curves/")) {
     
-    res <- all.equal(dt.test, dt.stable, check.attributes = FALSE, tolerance = 1e-5)
+    res <- all.equal(dt.test, dt.stable, check.attributes = FALSE, tolerance = 1e-4)
     
   } else {
     
@@ -93,6 +93,54 @@ tst.test.worker <- function(fl, sh, dt.stable, dt.test, verbose) {
   # return warning (if exists)
   
   wrn
+  
+}
+
+tst.test.zip <- function(fl, verbose = FALSE) {
+  
+  fl.stable.cur <- paste0("tests/data.gui/stable/", fl)
+  fl.test.cur <- paste0("tests/data.gui/test/", fl)
+  
+  fl.stable.cur.dir <- str_remove(fl.stable.cur, "\\.zip$")
+  fl.test.cur.dir <- str_remove(fl.test.cur, "\\.zip$")
+  
+  unzip(fl.stable.cur, exdir = fl.stable.cur.dir)
+  unzip(fl.test.cur, exdir = fl.test.cur.dir)
+
+  fl.sheets <- list.files(fl.stable.cur.dir, full.names = FALSE)
+  
+  tst.warnings <- c()
+  
+  for (sh in fl.sheets) {
+    
+    if (fl.stable.cur.dir %like% "(\\b|\\_)comma\\b") {
+      
+      dt.stable <- read.csv(paste0(fl.stable.cur.dir, "/", sh), stringsAsFactors = FALSE, check.names = FALSE) %>% as.data.table(keep.rownames = FALSE)
+      dt.test <- read.csv(paste0(fl.test.cur.dir, "/", sh), stringsAsFactors = FALSE, check.names = FALSE) %>% as.data.table(keep.rownames = FALSE)
+      
+    } else if (fl.stable.cur.dir %like% "(\\b|\\_)semicolon\\b") {
+      
+      dt.stable <- read.csv2(paste0(fl.stable.cur.dir, "/", sh), stringsAsFactors = FALSE, check.names = FALSE) %>% as.data.table(keep.rownames = FALSE)
+      dt.test <- read.csv2(paste0(fl.test.cur.dir, "/", sh), stringsAsFactors = FALSE, check.names = FALSE) %>% as.data.table(keep.rownames = FALSE)
+      
+    } else if (fl.stable.cur.dir %like% "(\\b|\\_)tab\\b") {
+      
+      dt.stable <- read.delim(paste0(fl.stable.cur.dir, "/", sh), stringsAsFactors = FALSE, check.names = FALSE) %>% as.data.table(keep.rownames = FALSE)
+      dt.test <- read.delim(paste0(fl.test.cur.dir, "/", sh), stringsAsFactors = FALSE, check.names = FALSE) %>% as.data.table(keep.rownames = FALSE)
+      
+    } else {
+      
+      unlink(c(fl.stable.cur.dir, fl.test.cur.dir), recursive = TRUE)
+      stop(paste("File format not defined", fl.stable.cur.dir, sh, sep = " : "))
+      
+    }
+
+    tst.warnings <- c(tst.warnings, tst.test.worker(fl, sh, dt.stable, dt.test, verbose))
+    
+  }
+  
+  unlink(c(fl.stable.cur.dir, fl.test.cur.dir), recursive = TRUE)
+  return(tst.warnings)
   
 }
 
@@ -136,8 +184,7 @@ tst.test.gui <- function(verbose = FALSE) {
     
     if (fl %like% "\\.zip$") {
       
-      
-      
+      tst.warnings <- c(tst.warnings, tst.test.zip(fl, verbose))
       
     } else if (fl %like% "\\.xlsx$") {
       
@@ -162,7 +209,7 @@ tst.test.gui <- function(verbose = FALSE) {
 
 # -------------------------- run -----------------------------
 
-tst.test.gui(FALSE)
+tst.test.gui(TRUE)
 
 
 
