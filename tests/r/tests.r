@@ -77,7 +77,7 @@ tst.test.worker <- function(fl, sh, dt.stable, dt.test, verbose) {
     
     if (verbose) print(paste(fl, sh, "OK", sep = " : "))
     
-  } else if (str_detect(sh, "^constants*_evaluated$") && res %like% "\\bSt.Deviation\\b.*Mean relative difference"
+  } else if (str_detect(sh, "^constants*_evaluated(\\.(txt|csv))*$") && res %like% "\\bSt.Deviation\\b.*Mean relative difference"
              && as.numeric(str_extract(res, "[0-9e\\-\\+\\.]+$")) < 1e-4) {
     
     wrn <- paste("WARNING", fl, sh, res, sep = " : ")
@@ -113,17 +113,17 @@ tst.test.zip <- function(fl, verbose = FALSE) {
   
   for (sh in fl.sheets) {
     
-    if (fl.stable.cur.dir %like% "(\\b|\\_)comma\\b") {
+    if (fl.stable.cur.dir %like% "(\\b|\\_)comma[0-9]*\\b") {
       
       dt.stable <- read.csv(paste0(fl.stable.cur.dir, "/", sh), stringsAsFactors = FALSE, check.names = FALSE) %>% as.data.table(keep.rownames = FALSE)
       dt.test <- read.csv(paste0(fl.test.cur.dir, "/", sh), stringsAsFactors = FALSE, check.names = FALSE) %>% as.data.table(keep.rownames = FALSE)
       
-    } else if (fl.stable.cur.dir %like% "(\\b|\\_)semicolon\\b") {
+    } else if (fl.stable.cur.dir %like% "(\\b|\\_)semicolon[0-9]*\\b") {
       
       dt.stable <- read.csv2(paste0(fl.stable.cur.dir, "/", sh), stringsAsFactors = FALSE, check.names = FALSE) %>% as.data.table(keep.rownames = FALSE)
       dt.test <- read.csv2(paste0(fl.test.cur.dir, "/", sh), stringsAsFactors = FALSE, check.names = FALSE) %>% as.data.table(keep.rownames = FALSE)
       
-    } else if (fl.stable.cur.dir %like% "(\\b|\\_)tab\\b") {
+    } else if (fl.stable.cur.dir %like% "(\\b|\\_)tab[0-9]*\\b") {
       
       dt.stable <- read.delim(paste0(fl.stable.cur.dir, "/", sh), stringsAsFactors = FALSE, check.names = FALSE) %>% as.data.table(keep.rownames = FALSE)
       dt.test <- read.delim(paste0(fl.test.cur.dir, "/", sh), stringsAsFactors = FALSE, check.names = FALSE) %>% as.data.table(keep.rownames = FALSE)
