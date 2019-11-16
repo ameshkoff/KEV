@@ -22,8 +22,10 @@ output$sp.dt.mol.full.csv <- downloadHandler(
     
     if (sp.sep() == ";") {
       write.csv2(sp.dt.mol.full.data(), file, row.names = FALSE)
-    } else {
+    } else if (sp.sep() == ",") {
       write.csv(sp.dt.mol.full.data(), file, row.names = FALSE)
+    } else if (sp.sep() == "tab") {
+      write.table(sp.dt.mol.full.data(), file, row.names = FALSE, sep = "\t")
     }
     
   }

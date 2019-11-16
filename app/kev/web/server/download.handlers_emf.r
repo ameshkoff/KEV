@@ -31,8 +31,10 @@ output$dt.emf.csv <- downloadHandler(
     
     if (emf.sep() == ";") {
       write.csv2(dt.emf.data(), file, row.names = FALSE)
-    } else {
+    } else if (emf.sep() == ",") {
       write.csv(dt.emf.data(), file, row.names = FALSE)
+    } else if (emf.sep() == "tab") {
+      write.table(dt.emf.data(), file, row.names = FALSE, sep = "\t")
     }
     
   }
@@ -69,8 +71,10 @@ output$emf.target.csv <- downloadHandler(
     
     if (emf.sep() == ";") {
       write.csv2(emf.target.data(), file, row.names = FALSE)
-    } else {
+    } else if (emf.sep() == ",") {
       write.csv(emf.target.data(), file, row.names = FALSE)
+    } else if (emf.sep() == "tab") {
+      write.table(emf.target.data(), file, row.names = FALSE, sep = "\t")
     }
     
   }
@@ -110,8 +114,10 @@ output$dt.emf.abs.csv <- downloadHandler(
     
     if (emf.sep() == ";") {
       write.csv2(dt.emf.abs.data(), file, row.names = FALSE)
-    } else {
+    } else if (emf.sep() == ",") {
       write.csv(dt.emf.abs.data(), file, row.names = FALSE)
+    } else if (emf.sep() == "tab") {
+      write.table(dt.emf.abs.data(), file, row.names = FALSE, sep = "\t")
     }
     
   }
@@ -148,8 +154,10 @@ output$dt.emf.rel.csv <- downloadHandler(
     
     if (emf.sep() == ";") {
       write.csv2(dt.emf.rel.data(), file, row.names = FALSE)
-    } else {
+    } else if (emf.sep() == ",") {
       write.csv(dt.emf.rel.data(), file, row.names = FALSE)
+    } else if (emf.sep() == "tab") {
+      write.table(dt.emf.rel.data(), file, row.names = FALSE, sep = "\t")
     }
     
   }
@@ -223,49 +231,30 @@ output$kev.emf.data.zip <- downloadHandler(
       dt <- NULL
       try(dt <- eval(expr = parse(text = paste0(names(data.files)[i], ".data()"))), silent = TRUE)
       
-      if (emf.sep() == ";") {
+      if (!is.null(dt)) {
         
-        if (!is.null(dt)) {
+        if (data.files[i] == "input_concentrations.csv") {
           
-          if (data.files[i] == "input_concentrations.csv") {
-            
-            dt <- emf.dt.conc.data()
-            dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
-            
-            setnames(dt, unlist(emf.part.eq.data()))
-            
-          }
+          dt <- emf.dt.conc.data()
+          dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
           
-          write.csv2(dt, data.files[i], row.names = FALSE)
-          
-        } else {
-          
-          data.files <- data.files[-i]
+          setnames(dt, unlist(emf.part.eq.data()))
           
         }
         
+        if (emf.sep() == ";") {
+          write.csv2(dt, data.files[i], row.names = FALSE)
+        } else if (emf.sep() == ",") {
+          write.csv(dt, data.files[i], row.names = FALSE)
+        } else if (emf.sep() == "tab") {
+          write.table(dt, data.files[i], row.names = FALSE, sep = "\t")
+        }
+
       } else {
         
-        if (!is.null(dt)) {
-          
-          if (data.files[i] == "input_concentrations.csv") {
-            
-            dt <- emf.dt.conc.data()
-            dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
-            
-            setnames(dt, unlist(emf.part.eq.data()))
-            
-          }
-          
-          write.csv(dt, data.files[i], row.names = FALSE)
-          
-        } else {
-          
-          data.files <- data.files[-i]
-          
-        }
+        data.files <- data.files[-i]
+        
       }
-      
     }
     
     # create zip

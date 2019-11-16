@@ -36,8 +36,10 @@ output$eq.dt.conc.tot.csv <- downloadHandler(
     
     if (eq.sep() == ";") {
       write.csv2(tmp, file, row.names = FALSE)
-    } else {
+    } else if (eq.sep() == ",") {
       write.csv(tmp, file, row.names = FALSE)
+    } else if (eq.sep() == "tab") {
+      write.table(tmp, file, row.names = FALSE, sep = "\t")
     }
     
   }
@@ -82,8 +84,10 @@ output$dt.frac.csv <- downloadHandler(
     
     if (eq.sep() == ";") {
       write.csv2(dt.frac.data(), file, row.names = FALSE)
-    } else {
+    } else if (eq.sep() == ",") {
       write.csv(dt.frac.data(), file, row.names = FALSE)
+    } else if (eq.sep() == "tab") {
+      write.table(dt.frac.data(), file, row.names = FALSE, sep = "\t")
     }
     
   }
@@ -120,8 +124,10 @@ output$dt.err.csv <- downloadHandler(
     
     if (eq.sep() == ";") {
       write.csv2(dt.err.data(), file, row.names = FALSE)
-    } else {
+    } else if (eq.sep() == ",") {
       write.csv(dt.err.data(), file, row.names = FALSE)
+    } else if (eq.sep() == "tab") {
+      write.table(dt.err.data(), file, row.names = FALSE, sep = "\t")
     }
     
   }
@@ -184,19 +190,19 @@ output$kev.eq.data.zip <- downloadHandler(
       dt <- NULL
       try(dt <- eval(expr = parse(text = paste0(names(data.files)[i], ".data()"))), silent = TRUE)
       
-      if (eq.sep() == ";") {
+      if (!is.null(dt)) {
         
-        if (!is.null(dt)) {
+        if (data.files[i] == "input_concentrations.csv") {
           
-          if (data.files[i] == "input_concentrations.csv") {
-            
-            dt <- eq.dt.conc.data()
-            dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
-            
-            setnames(dt, unlist(eq.part.eq.data()))
-            
-          }
+          dt <- eq.dt.conc.data()
+          dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
           
+          setnames(dt, unlist(eq.part.eq.data()))
+          
+        }
+        
+        if (eq.sep() == ";") {
+
           if ((data.files[i] %like% "(particle|component)_names(\\.csv|\\.txt)$")) {
             
             write.table(dt, data.files[i], sep = ";", dec = ",", row.names = FALSE, col.names = FALSE)
@@ -207,24 +213,7 @@ output$kev.eq.data.zip <- downloadHandler(
             
           }
           
-        } else {
-          
-          data.files <- data.files[-i]
-          
-        }
-        
-      } else {
-        
-        if (!is.null(dt)) {
-          
-          if (data.files[i] == "input_concentrations.csv") {
-            
-            dt <- eq.dt.conc.data()
-            dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
-            
-            setnames(dt, unlist(eq.part.eq.data()))
-            
-          }
+        } else if (eq.sep() == ",") {
           
           if ((data.files[i] %like% "(particle|component)_names(\\.csv|\\.txt)$")) {
             
@@ -236,13 +225,24 @@ output$kev.eq.data.zip <- downloadHandler(
             
           }
           
-        } else {
+        }  else if (eq.sep() == "tab") {
           
-          data.files <- data.files[-i]
-          
+          if ((data.files[i] %like% "(particle|component)_names(\\.csv|\\.txt)$")) {
+            
+            write.table(dt, data.files[i], sep = "\t", dec = ".", row.names = FALSE, col.names = FALSE)
+            
+          } else {
+            
+            write.table(dt, data.files[i], row.names = FALSE, sep = "\t")
+            
+          }
         }
+
+      } else {
+        
+        data.files <- data.files[-i]
+        
       }
-      
     }
     
     # create zip

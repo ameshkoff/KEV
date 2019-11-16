@@ -31,8 +31,10 @@ output$dt.ab.csv <- downloadHandler(
     
     if (ab.sep() == ";") {
       write.csv2(dt.ab.data(), file, row.names = FALSE)
-    } else {
+    } else if (ab.sep() == ",") {
       write.csv(dt.ab.data(), file, row.names = FALSE)
+    }else if (ab.sep() == "tab") {
+      write.table(dt.ab.data(), file, row.names = FALSE, sep = "\t")
     }
     
   }
@@ -69,8 +71,10 @@ output$dt.mol.csv <- downloadHandler(
     
     if (ab.sep() == ";") {
       write.csv2(dt.mol.data(), file, row.names = FALSE)
-    } else {
+    } else if (ab.sep() == ",") {
       write.csv(dt.mol.data(), file, row.names = FALSE)
+    } else if (ab.sep() == "tab") {
+      write.table(dt.mol.data(), file, row.names = FALSE, sep = "\t")
     }
     
   }
@@ -110,8 +114,10 @@ output$dt.ab.abs.csv <- downloadHandler(
     
     if (ab.sep() == ";") {
       write.csv2(dt.ab.abs.data(), file, row.names = FALSE)
-    } else {
+    } else if (ab.sep() == ",") {
       write.csv(dt.ab.abs.data(), file, row.names = FALSE)
+    } else if (ab.sep() == "tab") {
+      write.table(dt.ab.abs.data(), file, row.names = FALSE, sep = "\t")
     }
     
   }
@@ -148,8 +154,10 @@ output$dt.ab.rel.csv <- downloadHandler(
     
     if (ab.sep() == ";") {
       write.csv2(dt.ab.rel.data(), file, row.names = FALSE)
-    } else {
+    } else if (ab.sep() == ",") {
       write.csv(dt.ab.rel.data(), file, row.names = FALSE)
+    } else if (ab.sep() == "tab") {
+      write.table(dt.ab.rel.data(), file, row.names = FALSE, sep = "\t")
     }
     
   }
@@ -195,8 +203,10 @@ output$mol.coef.csv <- downloadHandler(
     
     if (ab.sep() == ";") {
       write.csv2(mol.coef.data(), file, row.names = FALSE)
-    } else {
+    } else if (ab.sep() == ",") {
       write.csv(mol.coef.data(), file, row.names = FALSE)
+    } else if (ab.sep() == "tab") {
+      write.table(mol.coef.data(), file, row.names = FALSE, sep = "\t")
     }
     
   }
@@ -264,49 +274,30 @@ output$kev.data.zip <- downloadHandler(
       dt <- NULL
       try(dt <- eval(expr = parse(text = paste0(names(data.files)[i], ".data()"))), silent = TRUE)
       
-      if (ab.sep() == ";") {
+      if (!is.null(dt)) {
         
-        if (!is.null(dt)) {
+        if (data.files[i] == "input_concentrations.csv") {
           
-          if (data.files[i] == "input_concentrations.csv") {
-            
-            dt <- ab.dt.conc.data()
-            dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
-            
-            setnames(dt, unlist(ab.part.eq.data()))
-            
-          }
+          dt <- ab.dt.conc.data()
+          dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
           
-          write.csv2(dt, data.files[i], row.names = FALSE)
-          
-        } else {
-          
-          data.files <- data.files[-i]
+          setnames(dt, unlist(ab.part.eq.data()))
           
         }
         
+        if (ab.sep() == ";"){
+          write.csv2(dt, data.files[i], row.names = FALSE)  
+        } else if (ab.sep() == ",") {
+          write.csv(dt, data.files[i], row.names = FALSE)
+        } else if (ab.sep() == "tab") {
+          write.table(dt, data.files[i], row.names = FALSE, sep = "\t")
+        }
+
       } else {
         
-        if (!is.null(dt)) {
-          
-          if (data.files[i] == "input_concentrations.csv") {
-            
-            dt <- ab.dt.conc.data()
-            dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
-            
-            setnames(dt, unlist(ab.part.eq.data()))
-            
-          }
-          
-          write.csv(dt, data.files[i], row.names = FALSE)
-          
-        } else {
-          
-          data.files <- data.files[-i]
-          
-        }
+        data.files <- data.files[-i]
+        
       }
-      
     }
     
     # create zip
