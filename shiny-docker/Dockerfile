@@ -1,4 +1,4 @@
-FROM nuest/mro:3.5.0
+FROM nuest/mro:3.5.3
 
 MAINTAINER KEV
 
@@ -25,8 +25,8 @@ RUN wget --no-verbose https://download3.rstudio.org/ubuntu-14.04/x86_64/VERSION 
     gdebi -n ss-latest.deb && \
     rm -f version.txt ss-latest.deb && \
     . /etc/environment && \
-    R -e "install.packages(c('shiny', 'rmarkdown', 'openxlsx', 'data.table', 'stringr', 'rhandsontable', 'Hmisc', 'dplyr', 'httr', 'plotly', 'RcppRoll', 'nloptr'), repos='https://mran.microsoft.com/snapshot/2018-08-01')" && \
-    cp -R /opt/microsoft/ropen/3.5.0/lib64/R/library/shiny/examples/* /srv/shiny-server/ \
+    R -e "install.packages(c('shiny', 'rmarkdown', 'openxlsx', 'data.table', 'stringr', 'rhandsontable', 'Hmisc', 'dplyr', 'httr', 'plotly', 'RcppRoll', 'nloptr'), repos='https://mran.microsoft.com/snapshot/2019-04-15')" && \
+    cp -R /opt/microsoft/ropen/3.5.3/lib64/R/library/shiny/examples/* /srv/shiny-server/ \
 	&& rm -rf /var/lib/apt/lists/*
 
 EXPOSE 3838
