@@ -84,6 +84,14 @@ ui_cur <- function(cur.task.list, cur.curves.list, cur.algorithms) {
                , wellPanel(
                  fluidRow(column(4
                                  , fluidRow(column(6
+                                                   , textInput("cur.plot.labels"
+                                                               , NULL
+                                                               , value = "X Axis Label"))
+                                            , column(6
+                                                     , textInput("cur.plot.values"
+                                                                 , NULL
+                                                                 , value = "Y Axis Label")))
+                                 , fluidRow(column(6
                                                    , numericInput("cur.window.left"
                                                                   , "Left Bound"
                                                                   , 0))
