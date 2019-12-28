@@ -104,6 +104,8 @@ library(stringr)
   if (is.null(cmp.tune))
     cmp.tune <- dt.ttl[["cmp.tune"]]
   
+  calorimeter.type <- dt.ttl[["calorimeter.type"]]
+  init.vol <- dt.ttl[["init.vol"]]
   
   # preproc data --------------- #
   

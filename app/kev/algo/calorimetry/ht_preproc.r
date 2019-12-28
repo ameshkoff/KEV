@@ -9,19 +9,14 @@
 
 
 
-ht.preproc <- function(dt.heat, dt.enth, cmp.tune = NULL) {
+ht.preproc <- function(dt.heat, dt.enth, dt.coef, cmp.tune = NULL) {
   
-  # backward compatibility
-  
-  cln <- colnames(dt.heat)
-  if (length(cln[cln == "wave.length"]) > 0)
-    setnames(dt.heat, "wave.length", "wavelength")
+  # enthalpies
   
   if (is.data.table(dt.enth)) {
     
     cln <- colnames(dt.enth)
-    if (length(cln[cln == "wave.length"]) > 0)
-      setnames(dt.enth, "wave.length", "wavelength")
+    setnames(dt.enth, str_to_lower(cln))
     
     # remove standard errors (if output of the previously calculations loaded)
     
@@ -29,51 +24,31 @@ ht.preproc <- function(dt.heat, dt.enth, cmp.tune = NULL) {
     if (length(cln[cln %like% "adj\\.r\\.squared"]) > 0)
       dt.enth <- dt.enth[, !(cln[cln %like% "adj\\.r\\.squared"]), with = FALSE]
     
-    # wavelengths consistence again
-    # after first check : to preserve wavelength vector to keep consistence for second use of the dataset
-    
-    if (is.character(dt.heat[, wavelength])){
+    if (is.character(dt.enth[, value])){
       
-      dt.heat[, wavelength := str_replace(wavelength, "\\,", ".")]
-      dt.heat[, wavelength := str_replace(wavelength, " ", "")]
-      
-    }
-    
-    if (is.character(dt.enth[, wavelength])){
-      
-      dt.enth[, wavelength := str_replace(wavelength, "\\,", ".")]
-      dt.enth[, wavelength := str_replace(wavelength, " ", "")]
+      dt.enth[, value := str_replace(value, "\\,", ".")]
+      dt.enth[, value := str_replace(value, " ", "")]
+      dt.enth[, value := as.numeric(value)]
       
     }
     
     # check consistence
     
-    ht.w <- dt.heat[data %like% "^obs", wavelength]
-    mol.w <- dt.enth[, wavelength]
+    enth.nm <- dt.enth[, reaction] %>% unique()
+    coef.nm <- dt.coef[, name]
     
-    if (length(mol.w) != length(mol.w %in% ht.w)) {
+    if (length(enth.nm) > 0 && length(setdiff(enth.nm, coef.nm)) > 0) {
       
-      stop("Absorbance data is inconsistent with molar extinction coefficients")
-      
-    }
-    
-    # remove uncalculatable absorbance
-    
-    dt.heat <- dt.heat[wavelength %in% mol.w]
-    
-  } else {
-    
-    # after first check : to preserve wavelength vector to keep consistence for second use of the dataset
-    
-    if (is.character(dt.heat[, wavelength])){
-      
-      dt.heat[, wavelength := str_replace(wavelength, "\\,", ".")]
-      dt.heat[, wavelength := str_replace(wavelength, " ", "")]
+      stop("Enthalpies reaction names are inconsistent with the component and product names provided with the stechiometric coefficients data")
       
     }
     
   }
   
+  ############################### HERE
+  
+  
+  # heats
   
   ht.w <- dt.heat[data %like% "^obs", wavelength]
   

@@ -34,6 +34,7 @@ ht.scripts.load.csv <- function(sep, subdir, tbl) {
   dt.heat.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*heats*(\\.csv|\\.txt)*"][1])
   dt.enth.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*enth*alp(y|ie)s*(\\.csv|\\.txt)*"][1])
   trg.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*(targets*|constants*\\_names*)(\\.csv|\\.txt)*"][1])
+  setup.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*setup(\\.csv|\\.txt)*"][1])
   
   if (sep == ";") {
     
@@ -46,6 +47,9 @@ ht.scripts.load.csv <- function(sep, subdir, tbl) {
       tbl[["trg"]] <- as.data.table(read.delim(trg.fl, stringsAsFactors = FALSE, colClasses = "character"
                                       , check.names = FALSE, sep = sep, dec = ",", header = FALSE)
                            , keep.rownames = FALSE)
+    tbl[["setup"]] <- as.data.table(read.delim(setup.fl, stringsAsFactors = FALSE, colClasses = "character"
+                                             , check.names = FALSE, sep = sep, dec = ",", header = FALSE)
+                                  , keep.rownames = FALSE)
     
     
   } else if (sep == ",") {
@@ -59,6 +63,9 @@ ht.scripts.load.csv <- function(sep, subdir, tbl) {
       tbl[["trg"]] <- as.data.table(read.delim(trg.fl, stringsAsFactors = FALSE, colClasses = "character"
                                       , check.names = FALSE, sep = sep, dec = ".", header = FALSE)
                            , keep.rownames = FALSE)
+    tbl[["setup"]] <- as.data.table(read.delim(setup.fl, stringsAsFactors = FALSE, colClasses = "character"
+                                               , check.names = FALSE, sep = sep, dec = ".", header = FALSE)
+                                    , keep.rownames = FALSE)
     
   } else if (sep == "tab") {
     
@@ -71,6 +78,9 @@ ht.scripts.load.csv <- function(sep, subdir, tbl) {
       tbl[["trg"]] <- as.data.table(read.delim(trg.fl, stringsAsFactors = FALSE, colClasses = "character"
                                       , check.names = FALSE, sep = "\t", dec = ".", header = FALSE)
                            , keep.rownames = FALSE)
+    tbl[["setup"]] <- as.data.table(read.delim(setup.fl, stringsAsFactors = FALSE, colClasses = "character"
+                                               , check.names = FALSE, sep = "\t", dec = ".", header = FALSE)
+                                    , keep.rownames = FALSE)
     
   }
   
@@ -114,7 +124,8 @@ ht.scripts.load.xlsx <- function(sep, subdir, filename, tbl) {
   tbl[["dt.heat"]] <- read.xlsx(filename, sheet = sort(shts[shts %like% "^(input\\_)*heats*"])[1])
   tbl[["dt.enth"]] <- read.xlsx(filename, sheet = sort(shts[shts %like% "^(input\\_)*enth*alp(y|ie)s*"])[1])
   tbl[["trg"]] <- read.xlsx(filename, sheet = sort(shts[shts %like% "^(input\\_)*(targets*|constants*\\_names*)"])[1], colNames = FALSE)
-
+  tbl[["setup"]] <- read.xlsx(filename, sheet = sort(shts[shts %like% "^(input\\_)*setup"])[1], colNames = FALSE)
+  
   for (i in 1:length(tbl))
     tbl[[i]] <- as.data.table(tbl[[i]])
   
@@ -126,7 +137,7 @@ ht.scripts.load.xlsx <- function(sep, subdir, filename, tbl) {
 
 ht.scripts.load <- function(sep = ";", subdir = "", filename = NULL) {
   
-  tbl <- list("dt.heat" = NA, "dt.enth" = NA, "trg" = NA)
+  tbl <- list("dt.heat" = NA, "dt.enth" = NA, "setup" = NA, "trg" = NA)
   
   if (subdir != "")
     subdir <- paste0("/", subdir, "/")
@@ -157,17 +168,6 @@ ht.scripts.load <- function(sep = ";", subdir = "", filename = NULL) {
     }
     
     tbl[["trg"]][, X1 := str_trim(X1)]
-    
-    if (nrow(tbl[["trg"]][X1 %like% "^components*$"]) > 0) {
-      
-      tbl[["cmp.tune"]] <- tbl[["trg"]][X1 %like% "^components*$"][, !"X1", with = FALSE]
-      tbl[["cmp.tune"]] <- unlist(tbl[["cmp.tune"]])
-      tbl[["cmp.tune"]] <- tbl[["cmp.tune"]][!is.na(tbl[["cmp.tune"]]) & tbl[["cmp.tune"]] != ""]
-      
-      tbl[["cmp.tune"]] <- unlist(tbl[["cmp.tune"]])
-      
-    }
-    
     tbl[["cnst.tune"]] <- tbl[["trg"]]
     
     if (nrow(tbl[["cnst.tune"]][X1 %like% "^constants*$"]) > 0) {
@@ -182,9 +182,55 @@ ht.scripts.load <- function(sep = ";", subdir = "", filename = NULL) {
     
   }
   
+  if (is.data.table(tbl[["setup"]]) && nrow(tbl[["setup"]]) > 0) {
+    
+    cln <- colnames(tbl[["setup"]])
+    
+    if (length(cln[cln == "V1"]) > 0) {
+      
+      tbl[["setup"]][1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), "")]
+      setnames(tbl[["setup"]], "V1", "X1")
+      
+    }
+    
+    tbl[["setup"]][, X1 := str_to_lower(str_trim(X1))]
+    
+    if (nrow(tbl[["setup"]][X1 %like% "^components*$"]) > 0) {
+      
+      tbl[["cmp.tune"]] <- tbl[["setup"]][X1 %like% "^components*$"][, !"X1", with = FALSE]
+      tbl[["cmp.tune"]] <- unlist(tbl[["cmp.tune"]])
+      tbl[["cmp.tune"]] <- tbl[["cmp.tune"]][!is.na(tbl[["cmp.tune"]]) & tbl[["cmp.tune"]] != ""]
+      
+      tbl[["cmp.tune"]] <- unlist(tbl[["cmp.tune"]])
+      
+    }
+
+    if (nrow(tbl[["setup"]][X1 %like% "^calorimeter$"]) > 0) {
+      
+      tbl[["calorimeter.type"]] <- tbl[["setup"]][X1 %like% "^calorimeter*$"][, !"X1", with = FALSE]
+      tbl[["calorimeter.type"]] <- unlist(tbl[["calorimeter.type"]])
+      tbl[["calorimeter.type"]] <- tbl[["calorimeter.type"]][!is.na(tbl[["calorimeter.type"]]) & tbl[["calorimeter.type"]] != ""]
+      
+      tbl[["calorimeter.type"]] <- unlist(tbl[["calorimeter.type"]])
+      
+    }
+    
+    if (nrow(tbl[["setup"]][X1 %like% "^initial.*volumes*$"]) > 0) {
+      
+      tbl[["init.vol"]] <- tbl[["setup"]][X1 %like% "^initial.*volumes*$"][, !"X1", with = FALSE]
+      tbl[["init.vol"]] <- unlist(tbl[["init.vol"]])
+      tbl[["init.vol"]] <- tbl[["init.vol"]][!is.na(tbl[["init.vol"]]) & tbl[["init.vol"]] != ""]
+      
+      tbl[["init.vol"]] <- unlist(tbl[["init.vol"]])
+      
+    }
+    
+    
+  }
+  
   # return
   
-  tbl[names(tbl) != "trg"]
+  tbl[!(names(tbl) %in% c("trg", "setup"))]
   
 }
 
