@@ -34,6 +34,20 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
   
   setnames(dt.coef, cln)
   
+  # split series if exist
+  
+  conc.series <- NULL
+  
+  cln <- colnames(dt.conc)
+  cl <- cln[cln %like% "^[sS]eries$"]
+  
+  if (length(cl) > 0) {
+    
+    conc.series <- dt.conc[, cl, with = FALSE]
+    dt.conc[, eval(cl) := NULL]
+    
+  }
+  
   # matrices
   
   for (j in tbl) {
@@ -99,7 +113,8 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
        , "cnst.m" = cnst.m
        , "part.eq" = part.eq
        , "reac.nm" = reac.nm
-       , "part.nm" = part.nm)
+       , "part.nm" = part.nm
+       , "conc.series" = conc.series)
 
 }
 

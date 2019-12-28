@@ -40,6 +40,9 @@ eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.
 eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.long"
                      , bs.name = "PO4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE, filename = "example_eq_conc_calc.xlsx")
 
+eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.series/csv.comma"
+                     , bs.name = "M", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
+
 
 
 #

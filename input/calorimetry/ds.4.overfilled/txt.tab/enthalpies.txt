@@ -1,0 +1,4 @@
+"Reaction"	"Value"
+"H2L"	15.593
+"HOH"	0
+"HOHD"	0
