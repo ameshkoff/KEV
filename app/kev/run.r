@@ -8,7 +8,7 @@
 
 
 
-source("app/KEV/eq_runner.r", chdir = TRUE)
+source("app/kev/algo/concentrations/eq_runner.r", chdir = TRUE)
 
 eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.2p"
                      , bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = TRUE)
@@ -27,13 +27,27 @@ eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.5p"
                      , bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
 eq.evaluation.runner(mode = "script", sep = "tab", subdir = "concentrations/ds.5p.tab"
                      , bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
-eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.2eq"
+eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.3p.2eq"
                      , bs.name = "L", thr.type = c("rel"), threshold = 1e-08, save.res = FALSE)
+
+eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.2p"
+                     , bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
+eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.2p.1eq/xlsx"
+                     , bs.name = "L", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE, filename = "data.xlsx")
+
+eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.long/csv.comma"
+                     , bs.name = "PO4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
+eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.long"
+                     , bs.name = "PO4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE, filename = "example_eq_conc_calc.xlsx")
+
+eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.series/csv.comma"
+                     , bs.name = "M", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
+
 
 
 #
 
-source("app/KEV/ab_runner.r", chdir = TRUE)
+source("app/kev/algo/spectrophotometry/ab_runner.r", chdir = TRUE)
 
 ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.1"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
@@ -62,17 +76,31 @@ ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl
                      , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
                      , save.res = TRUE)
 
+ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl.8"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-7
+                     , save.res = TRUE
+)
+
+ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.9/csv.comma"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-7
+                     , save.res = TRUE
+)
+
 ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl.9/csv.semicolon"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , algorithm = "direct search", ab.mode = "base", method = "basic wls"
-                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
+                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-7
                      , save.res = TRUE
 )
 
 ab.evaluation.runner(mode = "script", sep = "tab", subdir = "spectrophotometry/dsl.9/txt.tab"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , algorithm = "direct search", ab.mode = "base", method = "basic wls"
-                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
+                     , search.density = 1, lrate.init = .5, ab.threshold = 1e-7
                      , save.res = TRUE
 )
 
@@ -132,6 +160,13 @@ ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl
                      , save.res = FALSE)
 
 
+ab.evaluation.runner(mode = "script", sep = ",", subdir = "spectrophotometry/dsl.9/csv.comma"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", ab.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ab.threshold = 5e-7
+                     , save.res = FALSE
+)
+
 ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl.9/csv.semicolon"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , algorithm = "direct search", ab.mode = "base", method = "basic wls"
@@ -157,14 +192,14 @@ ab.evaluation.runner(mode = "script", sep = ";", subdir = "spectrophotometry/dsl
 
 
 
-source("app/kev/sp_runner.r", chdir = TRUE)
+source("app/kev/algo/molar.extinction.coefficients/sp_runner.r", chdir = TRUE)
 
 sp.evaluation.runner(mode = "script", sep = "tab", subdir = "molar.extinction.coefficients/dsl.4", save.res = TRUE)
 
 
 #
 
-source("app/KEV/emf_runner.r", chdir = TRUE)
+source("app/kev/algo/emf/emf_runner.r", chdir = TRUE)
 
 emf.evaluation.runner(mode = "script", sep = ";", subdir = "emf/dsp.1/csv.semicolon"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
@@ -182,7 +217,7 @@ emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.2"
 
 #
 
-emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.1/comma"
+emf.evaluation.runner(mode = "script", sep = ",", subdir = "emf/dsp.1/csv.comma"
                       , eq.thr.type = "rel", eq.threshold = 1e-08
                       , cnst.tune = c("HL")
                       , algorithm = "direct search", emf.mode = "base", method = "basic wls"
@@ -204,7 +239,7 @@ emf.evaluation.runner(mode = "script", sep = ";", subdir = "emf/dsp.3"
 
 #
 
-source("app/KEV/nm_runner.r", chdir = TRUE)
+source("app/kev/algo/nmr/nm_runner.r", chdir = TRUE)
 
 nm.evaluation.runner(mode = "script", sep = ",", subdir = "nmr/dsn.1"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
