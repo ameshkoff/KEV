@@ -30,6 +30,17 @@ eq.evaluation.runner(mode = "script", sep = "tab", subdir = "concentrations/ds.5
 eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.3p.2eq"
                      , bs.name = "L", thr.type = c("rel"), threshold = 1e-08, save.res = FALSE)
 
+eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.2p"
+                     , bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
+eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.2p.1eq/xlsx"
+                     , bs.name = "L", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE, filename = "data.xlsx")
+
+eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.long/csv.comma"
+                     , bs.name = "PO4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
+eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.long"
+                     , bs.name = "PO4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE, filename = "example_eq_conc_calc.xlsx")
+
+
 
 #
 
