@@ -43,7 +43,7 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
   
   if (length(cl) > 0) {
     
-    conc.series <- dt.conc[, cl, with = FALSE]
+    conc.series <- dt.conc[, eval(as.name(cl))]
     dt.conc[, eval(cl) := NULL]
     
   }

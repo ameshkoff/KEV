@@ -28,7 +28,7 @@ library(stringr)
 # ht.evaluation.runner <- function(
                                    mode = "script" #c("api", "script", "app")
                                   sep = "," #";"
-                                  subdir = "calorimetry/ds.1.dsc"
+                                  subdir = "calorimetry/ds.3.ampoule"
                                   eq.thr.type = c("rel", "abs")
                                   eq.threshold = 1e-08
                                   cnst.tune = NULL
@@ -41,7 +41,7 @@ library(stringr)
                                   ht.threshold = 5e-7
                                   save.res = TRUE
                                   dt.list = NULL
-                                  filename = "test_1.xlsx"#) {
+                                  filename = "data.xlsx"#) {
   
   #
   
@@ -65,16 +65,16 @@ library(stringr)
   source(paste0(dir.start, "concentrations/eq_data.r"), chdir = TRUE)
   source(paste0(dir.start, "calorimetry/ht_data.r"), chdir = TRUE)
   
-  # source(paste0(dir.start, "concentrations/eq_preproc.r"), chdir = TRUE)
-  # source(paste0(dir.start, "spectrophotometry/ht_preproc.r"), chdir = TRUE)
-  # 
+  source(paste0(dir.start, "concentrations/eq_preproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "calorimetry/ht_preproc.r"), chdir = TRUE)
+   
   # source(paste0(dir.start, "concentrations/eq_evaluator.r"), chdir = TRUE)
-  # source(paste0(dir.start, "spectrophotometry/ht_evaluator.r"), chdir = TRUE)
+  # source(paste0(dir.start, "calorimetry/ht_evaluator.r"), chdir = TRUE)
   # 
   # source(paste0(dir.start, "concentrations/eq_postproc.r"), chdir = TRUE)
-  # source(paste0(dir.start, "spectrophotometry/ht_postproc.r"), chdir = TRUE)
+  # source(paste0(dir.start, "calorimetry/ht_postproc.r"), chdir = TRUE)
   # 
-  # source(paste0(dir.start, "spectrophotometry/ht_save.r"), chdir = TRUE)
+  # source(paste0(dir.start, "calorimetry/ht_save.r"), chdir = TRUE)
   
   
   # load data ---------------- #
@@ -94,7 +94,7 @@ library(stringr)
   dt.conc <- dt.ttl[["dt.conc"]]
   cnst <- dt.ttl[["cnst"]]
   part.eq <- dt.ttl[["part.eq"]]
-  
+
   dt.heat <- dt.ttl[["dt.heat"]]
   dt.enth <- dt.ttl[["dt.enth"]]
   
@@ -107,7 +107,27 @@ library(stringr)
   calorimeter.type <- dt.ttl[["calorimeter.type"]]
   init.vol <- dt.ttl[["init.vol"]]
   
+  
   # preproc data --------------- #
+  
+  dt.ttl <- eq.preproc(dt.coef, cnst, dt.conc, part.eq)
+  
+  dt.coef <- dt.ttl[["dt.coef"]]
+  dt.conc <- dt.ttl[["dt.conc"]]
+  cnst.m <- dt.ttl[["cnst.m"]]
+  part.eq <- dt.ttl[["part.eq"]]
+  dt.coef.m <- dt.ttl[["dt.coef.m"]]
+  dt.conc.m <- dt.ttl[["dt.conc.m"]]
+  reac.nm <- dt.ttl[["reac.nm"]]
+  part.nm <- dt.ttl[["part.nm"]]
+  conc.series <- dt.ttl[["conc.series"]]
+  
+  dt.ttl <- c(dt.ttl, ht.preproc(dt.heat, dt.enth, dt.coef, conc.series, cmp.tune))
+  
+  dt.heat <- dt.ttl[["dt.heat"]]
+  dt.enth <- dt.ttl[["dt.enth"]]
+
+  cnst.tune.nm <- which(dt.coef[, name] %in% cnst.tune)
   
   
   
