@@ -185,9 +185,9 @@ ht.scripts.load <- function(sep = ";", subdir = "", filename = NULL) {
       
     }
     
-    if (nrow(tbl[["setup"]][X1 %like% "^initial.*volumes*$"]) > 0) {
+    if (nrow(tbl[["setup"]][X1 %like% "^(initial|active*).*volumes*$"]) > 0) {
       
-      tbl[["init.vol"]] <- tbl[["setup"]][X1 %like% "^initial.*volumes*$"][, !"X1", with = FALSE]
+      tbl[["init.vol"]] <- tbl[["setup"]][X1 %like% "^(initial|active*).*volumes*$"][, !"X1", with = FALSE]
       tbl[["init.vol"]] <- unlist(tbl[["init.vol"]])
       tbl[["init.vol"]] <- tbl[["init.vol"]][!is.na(tbl[["init.vol"]]) & tbl[["init.vol"]] != ""]
       

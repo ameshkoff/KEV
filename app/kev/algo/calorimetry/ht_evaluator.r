@@ -366,7 +366,7 @@ kev.direct.search <- function(values.init
 
 # objective function --------------------------------------- #
 
-ht.objective.function <- function() {
+ht.objective.function <- function(cost.fn = "mse", mode = c("iterator", "return", "debug", "postproc")) {
   
   work.fn <- function(values.tuned, method, objective.fn.args) {
     
@@ -389,9 +389,63 @@ ht.objective.function <- function() {
     
     #  run partial molar properties evaluator
     
+    mol.coef <- data.table()
+    dt.ab.calc <- data.table()
     
+    for (i in 1:ncol(dt.ab.m)) {
+      
+      y.raw <- dt.ab.m[, i, drop = FALSE]
+      
+      # weights for linear model
+      wght <- sum((dt.ab.err.m[, i] ^ 2)) / ((dt.ab.err.m[, i] ^ 2) * length(dt.ab.err.m[, i]))
+      
+      # if some molar coefficients are already known
+      
+      if (is.matrix(dt.mol.m)) {
+        x.known <- dt.mol.m[i, ]
+      } else {
+        x.known <- NULL
+      }
+      
+      rtrn <- ht.enth.evaluator(x.known, y.raw, dt.res.m, wght, method)
+      
+      mol.coef <- rbind(mol.coef, as.data.table(as.list(rtrn$mol.coef)))
+      dt.ab.calc <- rbind(dt.ab.calc, as.data.table(as.list(rtrn$y.calc)))
+      
+    }
     
+    dt.ab.calc <- data.table(t(dt.ab.calc))
     
+    # evaluate cost function
+    
+    observed <- dt.heat[, observation]
+    predicted <- dt.heat.calc[, observation]
+    
+    wght <- sum(dt.heat[, deviation] ^ 2) / ((dt.heat[, deviation] ^ 2) * nrow(dt.heat))
+    
+    if (cost.fn == "mse") {
+      err <- sum(((observed - predicted) ^ 2) * wght)  
+    }
+    
+    # return
+    
+    if (mode[1] == "iterator") {
+      
+      list(err = err)
+      
+    } else if (mode[1] == "return") {
+      
+      list(err = err, mol.coef = mol.coef, dt.heat.calc = dt.heat.calc)
+      
+    } else if (mode[1] == "debug") {
+      
+      list(err = err, mol.coef = mol.coef, dt.heat.calc = dt.heat.calc, err.v = (predicted - observed))
+      
+    } else if (mode[1] == "postproc") {
+      
+      list(err = err, mol.coef = mol.coef, dt.heat.calc = dt.heat.calc, err.v = (predicted - observed))
+      
+    }
     
   }
   
@@ -400,9 +454,128 @@ ht.objective.function <- function() {
 
 # enthalpies evaluator ------------------------------------- #
 
-ht.enth.evaluator <- function() {
+ht.enth.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = c("lm", "basic wls"), mode = c("base", "posptroc")) {
+  
+  # if some molar coefficients already known
+  
+  if (!is.null(x.known)) {
+    
+    cln.known <- names(x.known)
+    
+    # subtract already known from y
+    
+    x.known.v <- dt.res.m[, cln.known, drop = FALSE] %*% x.known
+    y <- as.vector(y.raw - x.known.v)
+    
+    if (length(cln.known) == ncol(dt.res.m)) {
+      
+      x.known.v <- as.vector(x.known.v)
+      
+      if (mode[1] == "postproc") {
+        
+        return(list(enth = x.known, y.calc = x.known.v, enth.dev = NULL))
+        
+      } else {
+        
+        return(list(enth = x.known, y.calc = x.known.v))
+        
+      }
+      
+    }
+    
+  } else {
+    
+    cln.known <- ""
+    y <- as.vector(y.raw)
+    x.known.v <- rep(0, length(y))
+    
+  }
   
   
+  # prepare data set from updated y and still unknown molar ext. coeff-s
+  
+  cln.unknown <- colnames(dt.res.m)
+  cln.unknown <- setdiff(cln.unknown, cln.known)
+  
+  cln.unknown <- colSums(dt.res.m[, cln.unknown, drop = FALSE])
+  cln.unknown <- cln.unknown[cln.unknown > 0]
+  cln.unknown <- names(cln.unknown)
+  
+  # run linear model and get coefficients from it
+  
+  if (method[1] == "lm") {
+    
+    # classic R (weighted) lm linear model
+    
+    dt <- data.table(y = y, dt.res.m[, cln.unknown, drop = FALSE])
+    
+    frm <- paste("y ~ 0 +", paste(paste0("`", cln.unknown, "`"), collapse = "+"))
+    frm <- as.formula(frm)
+    
+    md <- lm(frm, dt, weights = wght)
+    
+    enth.new <- md$coefficients
+    names(enth.new) <- str_replace_all(names(enth.new), "`", "")
+    
+    y.calc <- predict(md) + x.known.v
+    
+    if (mode[1] == "postproc") {
+      
+      enth.dev <- summary(md)$coef[, "Std. Error"]
+      
+    }
+    
+  } else if (method[1] == "basic wls") {
+    
+    # basic (weighted) least squares
+    
+    # if (length(colnames(dt.res.m)[colnames(dt.res.m) %in% cln.unknown]) == 0)
+    #   browser()
+    
+    dt.m <- dt.res.m[, cln.unknown, drop = FALSE]
+    
+    enth.new <- ginv((t(dt.m) %*% diag(wght)) %*% dt.m, tol = 0) %*% ((t(dt.m) %*% diag(wght)) %*% y)
+    
+    enth.new <- as.vector(enth.new)
+    names(enth.new) <- cln.unknown
+    
+    y.calc <- as.vector(dt.res.m[, cln.unknown, drop = FALSE] %*% enth.new + x.known.v)
+    
+    if (mode[1] == "postproc") {
+      
+      enth.dev <- (diag(sum((y.raw - y.calc) ^ 2)/(length(y) - length(cln.unknown)) * ginv((t(dt.m)) %*% diag(wght) %*% dt.m, tol = 0))) ^ .5
+      
+    }
+  }
+  
+  # fill NAs (0 actually)
+  
+  enth.new[is.na(enth.new)] <- 0
+  
+  # now the trick to place them all in the original order (too dirty maybe)
+  
+  enth <- rep(1, ncol(dt.res.m))
+  names(enth) <- colnames(dt.res.m)
+  
+  if (!is.null(x.known)) {
+    
+    for (j in names(x.known))
+      enth[names(enth) == j] <- x.known[names(x.known) == j]
+    
+  }
+  
+  for (j in names(enth.new))
+    enth[names(enth) == j] <- enth.new[names(enth.new) == j]
+  
+  if (mode[1] == "postproc") {
+    
+    list(enth = enth, y.calc = y.calc, enth.dev = enth.dev)
+    
+  } else {
+    
+    list(enth = enth, y.calc = y.calc) 
+    
+  }
   
 }
 

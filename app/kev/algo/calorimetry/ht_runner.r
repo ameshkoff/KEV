@@ -122,10 +122,11 @@ library(stringr)
   part.nm <- dt.ttl[["part.nm"]]
   conc.series <- dt.ttl[["conc.series"]]
   
-  dt.ttl <- c(dt.ttl, ht.preproc(dt.heat, dt.enth, dt.coef, conc.series, cmp.tune))
+  dt.ttl <- c(dt.ttl, ht.preproc(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, calorimeter.type, cmp.tune))
   
   dt.heat <- dt.ttl[["dt.heat"]]
   dt.enth <- dt.ttl[["dt.enth"]]
+  calorimeter.type.coef <- dt.ttl[["calorimeter.type.coef"]]
 
   cnst.tune.nm <- which(dt.coef[, name] %in% cnst.tune)
   
