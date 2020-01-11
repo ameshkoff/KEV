@@ -126,6 +126,7 @@ library(stringr)
   
   dt.heat <- dt.ttl[["dt.heat"]]
   dt.enth <- dt.ttl[["dt.enth"]]
+  calorimeter.type <- dt.ttl[["calorimeter.type"]]
   calorimeter.type.coef <- dt.ttl[["calorimeter.type.coef"]]
 
   cnst.tune.nm <- which(dt.coef[, name] %in% cnst.tune)

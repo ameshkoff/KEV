@@ -47,7 +47,7 @@ kev.direct.search <- function(values.init
                               , objective.fn.args = list()
                               ) {
   
-  kev.direct.search.work <- function() {
+  work.fn <- function() {
     
     values.opt.ind <- seq_along(values.init)
     
@@ -377,7 +377,7 @@ ht.objective.function <- function(cost.fn = "mse", mode = c("iterator", "return"
     
     cnst.m[values.tuned.ind] <- values.tuned
     
-    # run equilibrium evaluator
+    # run equilibrium evaluator ------------------------- #
     
     dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, eq.thr.type[1], eq.threshold)
     colnames(dt.res.m) <- dt.coef[, name]
@@ -387,7 +387,48 @@ ht.objective.function <- function(cost.fn = "mse", mode = c("iterator", "return"
     
     cnst.tune.nm <- which(colnames(dt.res.m) %in% cnst.tune)
     
-    #  run partial molar properties evaluator
+    #  run partial molar properties evaluator ----------- #
+    
+    conc.series <- objective.fn.args$conc.series
+
+    # diff concentrations
+    
+    volumes.exp <- dt.heat[, volumes]
+    if (calorimeter.type %in% c("dsc", "ampoule")) volumes.exp <- c(init.vol, volumes.exp)
+    
+    dt.res.diff <- dt.res.m
+    
+    for (i in seq_along(conc.series)) {
+      
+      if (i > 1 && conc.series[i] == conc.series[i - 1]) {
+        
+        if (calorimeter.type %in% "overfilled") {
+          
+          ser.ind <- which(unique(conc.series) == conc.series[i])
+          dt.res.diff[i, ] <- dt.res.diff[i, ] * init.vol - dt.res.diff[i - 1, ] * (init.vol - volumes.exp[i - ser.ind])
+          
+        } else if (calorimeter.type %in% c("dsc", "ampoule")) {
+          
+          dt.res.diff[i, ] <- dt.res.diff[i, ] - dt.res.diff[i - 1, ] * volumes.exp[i - 1] / volumes.exp[i]
+          
+        }
+        
+      }
+      
+    }
+    
+    dt.res.diff <- dt.res.diff[which(conc.series == shift(conc.series))]
+    
+    #
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     mol.coef <- data.table()
     dt.ab.calc <- data.table()

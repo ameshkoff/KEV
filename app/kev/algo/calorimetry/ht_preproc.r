@@ -12,7 +12,9 @@
 ht.preproc <- function(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, calorimeter.type, cmp.tune = NULL) {
   
   if (is.null(cmp.tune)) cmp.tune <- colnames(dt.coef)[1]
-  if (is.null(conc.series)) conc.series <- ""
+  if (is.null(conc.series)) conc.series <- rep("", nrow(dt.conc.m))
+  
+  calorimeter.type <- str_to_lower(calorimeter.type)
   
   # enthalpies ---------------------------------- #
   
@@ -72,13 +74,15 @@ ht.preproc <- function(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, calori
   if ((length(cln[cln == "series"]) > 0 && (sort(unique(conc.series)) != sort(dt.heat[, series]))) && (nrow(dt.heat) != nrow(dt.conc.m)))
     stop("Input concentrations are inconsistent with the heats data. Heats should correspond either to the series or the experiments in the concentrations data")
   
+  if (length(cln[cln == "volumes"]) == 0) dt.heat[, volumes := 1]
+  
   # calorimeter type coefficients
   
   calorimeter.type.coef <- data.table(dt.conc.m, series = conc.series)
   calorimeter.type.coef <- calorimeter.type.coef[, .SD[2:.N], by = series]
   calorimeter.type.coef <- calorimeter.type.coef[, eval(as.name(cmp.tune))]
 
-  if (str_to_lower(calorimeter.type) %in% c("dsc", "overfilled")) {
+  if (calorimeter.type %in% c("dsc", "overfilled")) {
     
     calorimeter.type.coef <- rep(1, times = length(calorimeter.type.coef))
     
@@ -92,6 +96,7 @@ ht.preproc <- function(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, calori
   
   list("dt.heat" = dt.heat
        , "dt.enth" = dt.enth
+       , "calorimeter.type" = calorimeter.type
        , "calorimeter.type.coef" = calorimeter.type.coef
        )
   
