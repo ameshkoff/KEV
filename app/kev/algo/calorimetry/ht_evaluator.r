@@ -19,15 +19,46 @@ kev.constant.optimizer <- function(objective.fn = ht.objective.function
                                                              , hardstop = 100
                                                              , lrate.init = .5
                                                              , search.density = 1
-                                                             , const.threshold = 5e-5
+                                                             , value.threshold = 5e-5
                                                              , eq.threshold = 1e-08
                                                              , eq.thr.type = c("rel", "abs"))
                                   , metrics = "mse"
                                   , mode = c("base", "grid", "debug")
                                   , verbose = TRUE) {
   
+  if (algorithm.options$algorithm == "direct search") {
+    
+    algorithm.options$cnst.m <- dt.list$cnst.m
+    algorithm.options$values.tuned.ind <- dt.list$values.tuned.ind
+    
+    if (!is.null(dt.list$conc.series)) algorithm.options[["conc.series"]] <- dt.list$conc.series
+    
+    objective.fn <- objective.fn(metrics = metrics, mode = "iterator", dt.list = dt.list)
+    
+    kev.optimizer <- kev.direct.search(values.init
+                                       , lower.bound = -Inf
+                                       , upper.bound = Inf
+                                       , objective.fn = objective.fn
+                                       , hardstop = algorithm.options$hardstop
+                                       , mode = mode
+                                       , method = "basic wls"
+                                       , algorithm = algorithm.options$algorithm
+                                       , lrate.init = algorithm.options$lrate.init
+                                       , objective.fn.args = algorithm.options
+    )
+    
+    rtrn <- kev.optimizer()
+    
+    # values.tuned <- rtrn$values.tuned
+    # grid.opt <- rtrn$grid.opt
+    # lrate.fin <- rtrn$lrate.fin
+    
+    # list(grid.opt = grid.opt, values.tuned = values.init, lrate.fin = lrate.init)
+    
+    
+  }
   
-  
+  rtrn
   
 }
 
@@ -129,7 +160,7 @@ kev.direct.search <- function(values.init
         dt.step <- data.table(value = value.back, err = err.base)
         
         
-        for (i in 1:(search.density * 2)) {
+        for (i in 1:(objective.fn.args$search.density * 2)) {
           
           sgn <- i %% 2
           if (sgn == 0) sgn <- -1
@@ -199,7 +230,7 @@ kev.direct.search <- function(values.init
         
         value.tune.wrk <- as.integer(str_extract(unlist(tmp[, variable]), "^[0-9]+"))
         
-        if (lrate.init < const.threshold)
+        if (lrate.init < objective.fn.args$value.threshold)
           value.tune.wrk <- numeric()
         
         if (length(value.tune.wrk) > 0) {
@@ -307,7 +338,7 @@ kev.direct.search <- function(values.init
         
         value.tune.wrk <- as.integer(str_extract(unlist(tmp[, variable]), "^[0-9]+"))
         
-        if (lrate.init < const.threshold)
+        if (lrate.init < objective.fn.args$value.threshold)
           value.tune.wrk <- numeric()
         
         
@@ -366,7 +397,7 @@ kev.direct.search <- function(values.init
 
 # objective function --------------------------------------- #
 
-ht.objective.function <- function(cost.fn = "mse", mode = c("iterator", "return", "debug", "postproc")) {
+ht.objective.function <- function(metrics = "mse", mode = c("iterator", "return", "debug", "postproc"), dt.list = list()) {
   
   work.fn <- function(values.tuned, method, objective.fn.args) {
     
@@ -379,8 +410,9 @@ ht.objective.function <- function(cost.fn = "mse", mode = c("iterator", "return"
     
     # run equilibrium evaluator ------------------------- #
     
-    dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, eq.thr.type[1], eq.threshold)
-    colnames(dt.res.m) <- dt.coef[, name]
+    dt.res.m <- newton.wrapper(cnst.m, dt.list$dt.coef.m, dt.list$dt.conc.m, dt.list$part.eq, dt.list$reac.nm
+                               , objective.fn.args$eq.thr.type[1], objective.fn.args$eq.threshold)
+    colnames(dt.res.m) <- dt.list$dt.coef[, name]
     
     if (any(is.na(dt.res.m)))
       return(list(err = 1e+12))
@@ -393,23 +425,24 @@ ht.objective.function <- function(cost.fn = "mse", mode = c("iterator", "return"
 
     # diff concentrations
     
-    volumes.exp <- dt.heat[, volumes]
-    if (calorimeter.type %in% c("dsc", "ampoule")) volumes.exp <- c(init.vol, volumes.exp)
+    volumes.exp <- dt.list$dt.heat[, volumes]
+    if (calorimeter.type %in% c("dsc", "ampoule")) volumes.exp <- c(dt.list$init.vol, volumes.exp)
     
     dt.res.diff <- dt.res.m
     
     for (i in seq_along(conc.series)) {
       
       if (i > 1 && conc.series[i] == conc.series[i - 1]) {
+
+        ser.ind <- which(unique(conc.series) == conc.series[i])
         
         if (calorimeter.type %in% "overfilled") {
           
-          ser.ind <- which(unique(conc.series) == conc.series[i])
-          dt.res.diff[i, ] <- dt.res.diff[i, ] * init.vol - dt.res.diff[i - 1, ] * (init.vol - volumes.exp[i - ser.ind])
+          dt.res.diff[i, ] <- dt.res.m[i, ] * init.vol - dt.res.m[i - 1, ] * (init.vol - volumes.exp[i - ser.ind])
           
         } else if (calorimeter.type %in% c("dsc", "ampoule")) {
           
-          dt.res.diff[i, ] <- dt.res.diff[i, ] - dt.res.diff[i - 1, ] * volumes.exp[i - 1] / volumes.exp[i]
+          dt.res.diff[i, ] <- dt.res.m[i, ] - dt.res.m[i - 1, ] * volumes.exp[i - ser.ind] / volumes.exp[i - ser.ind + 1]
           
         }
         
@@ -417,74 +450,54 @@ ht.objective.function <- function(cost.fn = "mse", mode = c("iterator", "return"
       
     }
     
-    dt.res.diff <- dt.res.diff[which(conc.series == shift(conc.series))]
+    dt.res.diff <- dt.res.diff[which(conc.series == shift(conc.series)), ]
     
-    #
+    dt.res.diff <- dt.res.diff * calorimeter.type.coef
+    if (calorimeter.type %in% c("dsc", "ampoule")) dt.res.diff <- dt.res.diff * dt.heat[, volumes]
     
+    # input for lm evaluator
     
+    y.raw <- dt.heat[, heats]
     
+    x.known <- dt.enth[, value]
+    names(x.known) <- dt.enth[, reaction]
     
+    wght <- sum((dt.heat[, deviation] ^ 2)) / ((dt.heat[, deviation] ^ 2) * length(dt.heat[, deviation]))
     
+    # run lm evaluator
     
+    rtrn <- ht.enth.evaluator(x.known, y.raw, dt.res.diff, wght, method)
     
+    dt.enth.calc <- as.data.table(rtrn$enth)
+    setnames(dt.enth.calc, "value")
+    dt.enth.calc[, reaction := names(rtrn$enth)]
     
-    
-    
-    mol.coef <- data.table()
-    dt.ab.calc <- data.table()
-    
-    for (i in 1:ncol(dt.ab.m)) {
-      
-      y.raw <- dt.ab.m[, i, drop = FALSE]
-      
-      # weights for linear model
-      wght <- sum((dt.ab.err.m[, i] ^ 2)) / ((dt.ab.err.m[, i] ^ 2) * length(dt.ab.err.m[, i]))
-      
-      # if some molar coefficients are already known
-      
-      if (is.matrix(dt.mol.m)) {
-        x.known <- dt.mol.m[i, ]
-      } else {
-        x.known <- NULL
-      }
-      
-      rtrn <- ht.enth.evaluator(x.known, y.raw, dt.res.m, wght, method)
-      
-      mol.coef <- rbind(mol.coef, as.data.table(as.list(rtrn$mol.coef)))
-      dt.ab.calc <- rbind(dt.ab.calc, as.data.table(as.list(rtrn$y.calc)))
-      
-    }
-    
-    dt.ab.calc <- data.table(t(dt.ab.calc))
+    dt.heat.calc <- as.data.table(rtrn$y.calc)
+    setnames(dt.heat.calc, "heats")
     
     # evaluate cost function
-    
-    observed <- dt.heat[, observation]
-    predicted <- dt.heat.calc[, observation]
-    
-    wght <- sum(dt.heat[, deviation] ^ 2) / ((dt.heat[, deviation] ^ 2) * nrow(dt.heat))
-    
-    if (cost.fn == "mse") {
-      err <- sum(((observed - predicted) ^ 2) * wght)  
+    # browser()
+    if (metrics == "mse") {
+      err <- sum(((dt.heat[, heats] - dt.heat.calc[, heats]) ^ 2) * wght)
     }
     
     # return
     
     if (mode[1] == "iterator") {
       
-      list(err = err)
+      err
       
     } else if (mode[1] == "return") {
       
-      list(err = err, mol.coef = mol.coef, dt.heat.calc = dt.heat.calc)
+      list(err = err, dt.enth.calc = dt.enth.calc, dt.heat.calc = dt.heat.calc)
       
     } else if (mode[1] == "debug") {
       
-      list(err = err, mol.coef = mol.coef, dt.heat.calc = dt.heat.calc, err.v = (predicted - observed))
+      list(err = err, dt.enth.calc = dt.enth.calc, dt.heat.calc = dt.heat.calc, err.v = (dt.heat.calc[, heats] - dt.heat[, heats]))
       
     } else if (mode[1] == "postproc") {
       
-      list(err = err, mol.coef = mol.coef, dt.heat.calc = dt.heat.calc, err.v = (predicted - observed))
+      list(err = err, dt.enth.calc = dt.enth.calc, dt.heat.calc = dt.heat.calc, err.v = (dt.heat.calc[, heats] - dt.heat[, heats]))
       
     }
     
@@ -495,7 +508,7 @@ ht.objective.function <- function(cost.fn = "mse", mode = c("iterator", "return"
 
 # enthalpies evaluator ------------------------------------- #
 
-ht.enth.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = c("lm", "basic wls"), mode = c("base", "posptroc")) {
+ht.enth.evaluator <- function(x.known = NULL, y.raw, dt.x, wght, method = c("lm", "basic wls"), mode = c("base", "posptroc")) {
   
   # if some molar coefficients already known
   
@@ -505,10 +518,10 @@ ht.enth.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = c(
     
     # subtract already known from y
     
-    x.known.v <- dt.res.m[, cln.known, drop = FALSE] %*% x.known
+    x.known.v <- dt.x[, cln.known, drop = FALSE] %*% x.known
     y <- as.vector(y.raw - x.known.v)
     
-    if (length(cln.known) == ncol(dt.res.m)) {
+    if (length(cln.known) == ncol(dt.x)) {
       
       x.known.v <- as.vector(x.known.v)
       
@@ -531,14 +544,14 @@ ht.enth.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = c(
     x.known.v <- rep(0, length(y))
     
   }
-  
+
   
   # prepare data set from updated y and still unknown molar ext. coeff-s
   
-  cln.unknown <- colnames(dt.res.m)
+  cln.unknown <- colnames(dt.x)
   cln.unknown <- setdiff(cln.unknown, cln.known)
   
-  cln.unknown <- colSums(dt.res.m[, cln.unknown, drop = FALSE])
+  cln.unknown <- colSums(dt.x[, cln.unknown, drop = FALSE])
   cln.unknown <- cln.unknown[cln.unknown > 0]
   cln.unknown <- names(cln.unknown)
   
@@ -548,7 +561,7 @@ ht.enth.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = c(
     
     # classic R (weighted) lm linear model
     
-    dt <- data.table(y = y, dt.res.m[, cln.unknown, drop = FALSE])
+    dt <- data.table(y = y, dt.x[, cln.unknown, drop = FALSE])
     
     frm <- paste("y ~ 0 +", paste(paste0("`", cln.unknown, "`"), collapse = "+"))
     frm <- as.formula(frm)
@@ -570,17 +583,17 @@ ht.enth.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = c(
     
     # basic (weighted) least squares
     
-    # if (length(colnames(dt.res.m)[colnames(dt.res.m) %in% cln.unknown]) == 0)
+    # if (length(colnames(dt.x)[colnames(dt.x) %in% cln.unknown]) == 0)
     #   browser()
     
-    dt.m <- dt.res.m[, cln.unknown, drop = FALSE]
+    dt.m <- dt.x[, cln.unknown, drop = FALSE]
     
     enth.new <- ginv((t(dt.m) %*% diag(wght)) %*% dt.m, tol = 0) %*% ((t(dt.m) %*% diag(wght)) %*% y)
     
     enth.new <- as.vector(enth.new)
     names(enth.new) <- cln.unknown
     
-    y.calc <- as.vector(dt.res.m[, cln.unknown, drop = FALSE] %*% enth.new + x.known.v)
+    y.calc <- as.vector(dt.x[, cln.unknown, drop = FALSE] %*% enth.new + x.known.v)
     
     if (mode[1] == "postproc") {
       
@@ -595,8 +608,8 @@ ht.enth.evaluator <- function(x.known = NULL, y.raw, dt.res.m, wght, method = c(
   
   # now the trick to place them all in the original order (too dirty maybe)
   
-  enth <- rep(1, ncol(dt.res.m))
-  names(enth) <- colnames(dt.res.m)
+  enth <- rep(1, ncol(dt.x))
+  names(enth) <- colnames(dt.x)
   
   if (!is.null(x.known)) {
     

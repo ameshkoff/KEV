@@ -9,12 +9,18 @@
 
 
 
-ht.preproc <- function(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, calorimeter.type, cmp.tune = NULL) {
+ht.preproc <- function(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, init.vol, calorimeter.type, cmp.tune = NULL) {
+  
+  # misc --------------------------------------- #
   
   if (is.null(cmp.tune)) cmp.tune <- colnames(dt.coef)[1]
   if (is.null(conc.series)) conc.series <- rep("", nrow(dt.conc.m))
   
   calorimeter.type <- str_to_lower(calorimeter.type)
+  
+  init.vol <- str_replace_all(init.vol, "\\,", ".")
+  init.vol <- str_replace_all(init.vol, " ", "")
+  init.vol <- as.numeric(init.vol)
   
   # enthalpies ---------------------------------- #
   
@@ -76,6 +82,8 @@ ht.preproc <- function(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, calori
   
   if (length(cln[cln == "volumes"]) == 0) dt.heat[, volumes := 1]
   
+  dt.heat[, heats := observation - dilution]
+  
   # calorimeter type coefficients
   
   calorimeter.type.coef <- data.table(dt.conc.m, series = conc.series)
@@ -96,8 +104,10 @@ ht.preproc <- function(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, calori
   
   list("dt.heat" = dt.heat
        , "dt.enth" = dt.enth
+       , "init.vol" = init.vol
        , "calorimeter.type" = calorimeter.type
        , "calorimeter.type.coef" = calorimeter.type.coef
+       , "conc.series" = conc.series
        )
   
 }
