@@ -28,7 +28,7 @@ library(stringr)
 # ht.evaluation.runner <- function(
                                    mode = "script" #c("api", "script", "app")
                                   sep = "," #";"
-                                  subdir = "calorimetry/ds.1.dsc"
+                                  subdir = "calorimetry/ds.4.cut.overfilled"
                                   eq.thr.type = c("rel", "abs")
                                   eq.threshold = 1e-08
                                   cnst.tune = NULL
@@ -161,22 +161,26 @@ library(stringr)
                             , eq.threshold = 1e-08
                             , eq.thr.type = "rel")
   
-  exec.time <- system.time(
-    dt.ttl <- kev.constant.optimizer(objective.fn = ht.objective.function
-                                     , evaluation.fn = ht.enth.evaluator
-                                     , values.init = cnst.m[cnst.tune.ind]
-                                     , lower.bound = -Inf
-                                     , upper.bound = Inf
-                                     , dt.list = dt.list
-                                     , algorithm.options = algorithm.options
-                                     , metrics = "mse"
-                                     , mode = c("base", "grid", "debug")
-                                     , verbose = TRUE))[3]
+  if (length(cnst.tune.ind) > 0) {
+    
+    exec.time <- system.time(
+      dt.ttl <- kev.constant.optimizer(objective.fn = ht.objective.function
+                                       , evaluation.fn = ht.enth.evaluator
+                                       , values.init = cnst.m[cnst.tune.ind]
+                                       , lower.bound = -Inf
+                                       , upper.bound = Inf
+                                       , dt.list = dt.list
+                                       , algorithm.options = algorithm.options
+                                       , metrics = "mse"
+                                       , mode = c("base", "grid", "debug")
+                                       , verbose = TRUE))[3]
+    
+    cnst.m[cnst.tune.ind] <- dt.ttl[["values.tuned"]]
+    grid.opt <- dt.ttl[["grid.opt"]]
+    lrate.fin <- dt.ttl[["lrate.fin"]]
+    
+  }
   
-  cnst.m[cnst.tune.ind] <- dt.ttl[["values.tuned"]]
-  cnst.m.10 <- log(exp(cnst.m), 10)
-  grid.opt <- dt.ttl[["grid.opt"]]
-  lrate.fin <- dt.ttl[["lrate.fin"]]
   
   # postprocessing -------------- #
   
@@ -189,6 +193,8 @@ library(stringr)
 
   objective.fn <- ht.objective.function(metrics = "mse", mode = "postproc", dt.list = dt.list)
   dt.ttl <- objective.fn(cnst.m[cnst.tune.ind], method = "basic wls", algorithm.options)
+  
+  cnst.m.10 <- log(exp(cnst.m), 10)
   
   
   

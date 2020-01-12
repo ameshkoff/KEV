@@ -439,6 +439,8 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "return"
         if (calorimeter.type %in% "overfilled") {
           
           dt.res.diff[i, ] <- dt.res.m[i, ] * init.vol - dt.res.m[i - 1, ] * (init.vol - volumes.exp[i - ser.ind])
+          # dt.res.diff[i, ] <- init.vol * (dt.res.m[i, ] - dt.res.m[i - 1, ]) + dt.res.m[i - 1, ] * volumes.exp[i - ser.ind]
+          # dt.res.diff[i, ] <- init.vol * (dt.res.m[i, ] - dt.res.m[i - 1, ]) + dt.res.m[i - 1, ] * volumes.exp[i - ser.ind]
           
         } else if (calorimeter.type %in% c("dsc", "ampoule")) {
           
@@ -466,7 +468,7 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "return"
     
     # run lm evaluator
     
-    rtrn <- ht.enth.evaluator(x.known, y.raw, dt.res.diff, wght, method)
+    rtrn <- ht.enth.evaluator(x.known, y.raw, dt.res.diff, wght, method, mode)
     
     dt.enth.calc <- as.data.table(rtrn$enth)
     setnames(dt.enth.calc, "value")
@@ -497,6 +499,7 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "return"
       
     } else if (mode[1] == "postproc") {
       
+      dt.enth.calc[, dev := rtrn$enth.dev]
       list(err = err, dt.enth.calc = dt.enth.calc, dt.heat.calc = dt.heat.calc, err.v = (dt.heat.calc[, heats] - dt.heat[, heats]))
       
     }
@@ -605,6 +608,7 @@ ht.enth.evaluator <- function(x.known = NULL, y.raw, dt.x, wght, method = c("lm"
   # fill NAs (0 actually)
   
   enth.new[is.na(enth.new)] <- 0
+  enth.new <- -enth.new
   
   # now the trick to place them all in the original order (too dirty maybe)
   
@@ -623,7 +627,14 @@ ht.enth.evaluator <- function(x.known = NULL, y.raw, dt.x, wght, method = c("lm"
   
   if (mode[1] == "postproc") {
     
-    list(enth = enth, y.calc = y.calc, enth.dev = enth.dev)
+    enth.dev.full <- rep(0, length(enth))
+    names(enth.dev.full) <- colnames(dt.x)
+    
+    names(enth.dev) <- cln.unknown
+    for (j in names(enth.dev))
+      enth.dev.full[names(enth.dev.full) == j] <- enth.dev[names(enth.dev) == j]
+    
+    list(enth = enth, y.calc = y.calc, enth.dev = enth.dev.full)
     
   } else {
     
