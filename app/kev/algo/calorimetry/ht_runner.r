@@ -28,7 +28,7 @@ library(stringr)
 # ht.evaluation.runner <- function(
                                    mode = "script" #c("api", "script", "app")
                                   sep = "," #";"
-                                  subdir = "calorimetry/ds.4.cut.overfilled"
+                                  subdir = "calorimetry/ds.4.overfilled"
                                   eq.thr.type = c("rel", "abs")
                                   eq.threshold = 1e-08
                                   cnst.tune = NULL
@@ -71,8 +71,8 @@ library(stringr)
   source(paste0(dir.start, "concentrations/eq_evaluator.r"), chdir = TRUE)
   source(paste0(dir.start, "calorimetry/ht_evaluator.r"), chdir = TRUE)
   # 
-  # source(paste0(dir.start, "concentrations/eq_postproc.r"), chdir = TRUE)
-  # source(paste0(dir.start, "calorimetry/ht_postproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_postproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "calorimetry/ht_postproc.r"), chdir = TRUE)
   # 
   # source(paste0(dir.start, "calorimetry/ht_save.r"), chdir = TRUE)
   
@@ -184,6 +184,8 @@ library(stringr)
   
   # postprocessing -------------- #
   
+  # partial molar properties
+  
   dt.list$cnst.m <- cnst.m
   
   algorithm.options$cnst.m <- dt.list$cnst.m
@@ -193,6 +195,52 @@ library(stringr)
 
   objective.fn <- ht.objective.function(metrics = "mse", mode = "postproc", dt.list = dt.list)
   dt.ttl <- objective.fn(cnst.m[cnst.tune.ind], method = "basic wls", algorithm.options)
+  
+  heat.err <- dt.ttl[["err"]]
+  dt.enth.calc <- dt.ttl[["dt.enth.calc"]]
+  dt.heat.calc <- dt.ttl[["dt.heat.calc"]]
+  
+  # concentrations
+  
+  dt.res.m <- newton.wrapper(cnst.m, dt.coef.m, dt.conc.m, part.eq, reac.nm, eq.thr.type[1], eq.threshold)
+  colnames(dt.res.m) <- dt.coef[, name]
+  
+  dt.res <- data.table(dt.res.m)
+  
+  dt.conc.calc <- eq.tot.conc.calc(dt.res, cnst.m, dt.coef.m, part.nm)
+  dt.conc.err <- eq.residuals(dt.conc.m, dt.conc.calc, part.eq)
+  
+  dt.conc.tot <- copy(dt.conc.m)
+  dt.conc.tot[, part.eq] <- dt.conc.calc[, part.eq]
+  
+  # covariance matrix
+  
+  cov.m <- ht.cov(heat.err
+                  , cnst.m
+                  , cnst.tune.ind
+                  , dt.heat.calc
+                  , objective.fn
+                  , algorithm.options
+                  , method, ht.threshold)
+  
+  err.diff <- cov.m$err.diff
+  cor.m <- cov.m$cor.m
+  cov.m <- cov.m$cov.m
+  
+  
+  # constants with deviations
+  
+  cnst.dev <- constant.validation(dt.coef, cnst.m, cnst.tune
+                                  , dt.heat, dt.heat.calc, dt.enth.calc
+                                  , dt.coef.m, dt.conc.m, part.eq, reac.nm
+                                  , lrate.fin
+                                  , ht.threshold
+                                  , eq.threshold
+                                  , eq.thr.type
+                                  , cov.m
+                                  , method)
+  
+  
   
   cnst.m.10 <- log(exp(cnst.m), 10)
   

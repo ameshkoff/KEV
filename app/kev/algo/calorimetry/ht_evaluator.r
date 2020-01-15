@@ -49,13 +49,6 @@ kev.constant.optimizer <- function(objective.fn = ht.objective.function
     
     rtrn <- kev.optimizer()
     
-    # values.tuned <- rtrn$values.tuned
-    # grid.opt <- rtrn$grid.opt
-    # lrate.fin <- rtrn$lrate.fin
-    
-    # list(grid.opt = grid.opt, values.tuned = values.init, lrate.fin = lrate.init)
-    
-    
   }
   
   rtrn
@@ -397,7 +390,7 @@ kev.direct.search <- function(values.init
 
 # objective function --------------------------------------- #
 
-ht.objective.function <- function(metrics = "mse", mode = c("iterator", "return", "debug", "postproc"), dt.list = list()) {
+ht.objective.function <- function(metrics = "mse", mode = c("iterator", "debug", "postproc"), dt.list = list()) {
   
   work.fn <- function(values.tuned, method, objective.fn.args) {
     
@@ -478,7 +471,7 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "return"
     setnames(dt.heat.calc, "heats")
     
     # evaluate cost function
-    # browser()
+    
     if (metrics == "mse") {
       err <- sum(((dt.heat[, heats] - dt.heat.calc[, heats]) ^ 2) * wght)
     }
@@ -489,18 +482,16 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "return"
       
       err
       
-    } else if (mode[1] == "return") {
-      
-      list(err = err, dt.enth.calc = dt.enth.calc, dt.heat.calc = dt.heat.calc)
-      
     } else if (mode[1] == "debug") {
       
-      list(err = err, dt.enth.calc = dt.enth.calc, dt.heat.calc = dt.heat.calc, err.v = (dt.heat.calc[, heats] - dt.heat[, heats]))
+      list(err = err, dt.enth.calc = dt.enth.calc, dt.heat.calc = dt.heat.calc)
       
     } else if (mode[1] == "postproc") {
       
       dt.enth.calc[, dev := rtrn$enth.dev]
-      list(err = err, dt.enth.calc = dt.enth.calc, dt.heat.calc = dt.heat.calc, err.v = (dt.heat.calc[, heats] - dt.heat[, heats]))
+      dt.heat.calc[, error := heats - dt.heat[, heats]]
+      
+      list(err = err, dt.enth.calc = dt.enth.calc, dt.heat.calc = dt.heat.calc)
       
     }
     
