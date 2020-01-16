@@ -15,7 +15,7 @@ ht.cov <- function(ht.err
                    , dt.heat.calc
                    , objective.fn = function(){1}
                    , algorithm.options
-                   , method = c("lm", "basic wls")
+                   , method
                    , ht.threshold) {
   
   fr.degr <- nrow(dt.heat.calc) - length(cnst.tune.ind)
@@ -41,7 +41,7 @@ ht.cov <- function(ht.err
     
     algorithm.options$cnst.m <- cnst.grid[, i]
     
-    rtrn <- objective.fn(algorithm.options$cnst.m[cnst.tune.ind], method = "basic wls", algorithm.options)
+    rtrn <- objective.fn(algorithm.options$cnst.m[cnst.tune.ind], method = method, algorithm.options)
     
     err <- c(err, rtrn$err)
     dt.heat.diff <- cbind(dt.heat.diff, rtrn$dt.heat.calc[, error])
@@ -66,40 +66,43 @@ ht.cov <- function(ht.err
 
 # constants validity and standard deviations ------------------ #
 
-constant.validation <- function(dt.coef, cnst.m, cnst.tune
-                            , dt.ab.m, dt.ab.err.m, dt.mol.m
-                            , dt.coef.m, dt.conc.m, part.eq, reac.nm
-                            , lrate.fin
-                            , ht.threshold = 5e-5
-                            , eq.threshold = 1e-08
-                            , eq.thr.type = c("rel", "abs")
-                            , method = c("lm", "basic wls")) {
+constant.validation <- function(cnst.m
+                                , cnst.tune
+                                , objective.fn = function(){1}
+                                , evaluation.fn = function(){1}
+                                , algorithm.options
+                                , metrics
+                                , dt.list
+                                , ht.threshold
+                                , lrate.fin
+                                , method) {
   
   # get iterations number
   
-  hardstop <- 2 * length(cnst.tune)
-  
-  lrate.fin <- lrate.fin * 2
+  algorithm.options$hardstop <- 2 * length(cnst.tune)
+  algorithm.options$lrate.init <- lrate.fin * 2
+  algorithm.options$algorithm <- "basic search"
+  algorithm.options$value.threshold <- algorithm.options$value.threshold * .5
   
   # update cnst (1 step minus)
   
-  cnst.tune.nm <- which(unlist(dt.coef[, name]) %in% cnst.tune)
-  cnst.m[cnst.tune.nm] <- cnst.m[cnst.tune.nm] - cnst.m[cnst.tune.nm] * lrate.fin
+  cnst.m.iter <- cnst.m
+  
+  cnst.tune.ind <- which(unlist(dt.coef[, name]) %in% cnst.tune)
+  cnst.m.iter[cnst.tune.ind] <- cnst.m[cnst.tune.ind] - cnst.m[cnst.tune.ind] * lrate.fin
   
   # calculate
   
-  grid.opt <- constant.optimizer(dt.coef, cnst.m, cnst.tune
-                                 , dt.ab.m, dt.ab.err.m, dt.mol.m
-                                 , dt.coef.m, dt.conc.m, part.eq, reac.nm
-                                 , hardstop
-                                 , lrate.init = lrate.fin
-                                 , search.density = 1
-                                 , ab.threshold * .5
-                                 , eq.threshold
-                                 , eq.thr.type
-                                 , mode = "grid"
-                                 , method
-                                 , algorithm = "basic search")$grid.opt
+  grid.opt <- kev.constant.optimizer(objective.fn = objective.fn
+                                     , evaluation.fn = evaluation.fn
+                                     , values.init = cnst.m.iter[cnst.tune.ind]
+                                     , lower.bound = -Inf
+                                     , upper.bound = Inf
+                                     , dt.list = dt.list
+                                     , algorithm.options = algorithm.options
+                                     , metrics = metrics
+                                     , mode = "grid"
+                                     , verbose = TRUE)$grid.opt
   
   # remove garbage
   
@@ -137,21 +140,23 @@ constant.validation <- function(dt.coef, cnst.m, cnst.tune
   cnst.vld <- dcast.data.table(cnst.vld, cnst.nm ~ dir, value.var = "dlt", fun.aggregate = sum, na.rm = TRUE, fill = 0)
   
   cnst.vld[, validity := "OK"]
-  cnst.vld[v.left <= 1e-20 || v.right <= 1e-20, validity := "Non-Sensitive"]
-  cnst.vld[(v.left < 0 && v.right >= 0), validity := "-Inf"]
-  cnst.vld[(v.left >= 0 && v.right < 0), validity := "Inf"]
+  cnst.vld[v.left <= 1e-20 | v.right <= 1e-20, validity := "Non-Sensitive"]
+  cnst.vld[v.left < 0 & v.right >= 0, validity := "-Inf"]
+  cnst.vld[v.left >= 0 & v.right < 0, validity := "Inf"]
   
   #
   
   cnst.dev <- cbind(cnst = as.vector(log(exp(cnst.m), 10)), dev = rep(0, length(cnst.m)), validity = rep("OK", length(cnst.m)))
   
-  cnst.dev[cnst.tune.nm, "dev"] <- cov.m[row(cov.m) == col(cov.m)] ^ .5
+  cnst.dev[cnst.tune.ind, "dev"] <- cov.m[row(cov.m) == col(cov.m)] ^ .5
   
-  cnst.dev[cnst.tune.nm, "validity"] <- cnst.valid[order(cnst.nm)][, validity]
+  cnst.dev[cnst.tune.ind, "validity"] <- cnst.vld[order(cnst.nm)][, validity]
   
   cnst.dev <- as.data.table(cnst.dev)
   
   cnst.dev[validity == "OK" & as.numeric(dev) / abs(as.numeric(cnst)) > .1, validity := "Insignificant"]
+  
+  # return
   
   cnst.dev
   

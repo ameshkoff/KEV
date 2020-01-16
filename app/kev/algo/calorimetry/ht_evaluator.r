@@ -26,7 +26,7 @@ kev.constant.optimizer <- function(objective.fn = ht.objective.function
                                   , mode = c("base", "grid", "debug")
                                   , verbose = TRUE) {
   
-  if (algorithm.options$algorithm == "direct search") {
+  if (algorithm.options$algorithm %in% c("basic search", "direct search")) {
     
     algorithm.options$cnst.m <- dt.list$cnst.m
     algorithm.options$values.tuned.ind <- dt.list$values.tuned.ind
@@ -119,7 +119,6 @@ kev.direct.search <- function(values.init
         
         grid.opt <- rbind(grid.opt, list(step.id = step.iter, step.type = "xpl", closed = 0, lrate = lrate.init), use.names = TRUE, fill = TRUE)
         
-        # browser()
         if (grid.opt[step.success, step.type] != "ptrn" & step.iter > 2 & algorithm[1] == "direct search"){
           
           step.success.xpl.prev <- tail(which(grid.opt[!is.na(err), step.type] != "ptrn"), 2)[1]

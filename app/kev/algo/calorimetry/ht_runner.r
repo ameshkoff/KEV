@@ -35,6 +35,7 @@ library(stringr)
                                   cmp.tune = NULL
                                   algorithm = "direct search"
                                   method = "basic wls"
+                                  metrics = "mse"
                                   ht.mode = c("base", "grid", "debug")
                                   search.density = 1
                                   lrate.init = .5
@@ -171,7 +172,7 @@ library(stringr)
                                        , upper.bound = Inf
                                        , dt.list = dt.list
                                        , algorithm.options = algorithm.options
-                                       , metrics = "mse"
+                                       , metrics = metrics
                                        , mode = c("base", "grid", "debug")
                                        , verbose = TRUE))[3]
     
@@ -221,7 +222,8 @@ library(stringr)
                   , dt.heat.calc
                   , objective.fn
                   , algorithm.options
-                  , method, ht.threshold)
+                  , method
+                  , ht.threshold)
   
   err.diff <- cov.m$err.diff
   cor.m <- cov.m$cor.m
@@ -230,20 +232,18 @@ library(stringr)
   
   # constants with deviations
   
-  cnst.dev <- constant.validation(dt.coef, cnst.m, cnst.tune
-                                  , dt.heat, dt.heat.calc, dt.enth.calc
-                                  , dt.coef.m, dt.conc.m, part.eq, reac.nm
-                                  , lrate.fin
+  cnst.dev <- constant.validation(cnst.m
+                                  , cnst.tune
+                                  , objective.fn = ht.objective.function
+                                  , evaluation.fn = ht.enth.evaluator
+                                  , algorithm.options
+                                  , metrics = metrics
+                                  , dt.list
                                   , ht.threshold
-                                  , eq.threshold
-                                  , eq.thr.type
-                                  , cov.m
+                                  , lrate.fin
                                   , method)
   
-  
-  
-  cnst.m.10 <- log(exp(cnst.m), 10)
-  
+
   
   
   
