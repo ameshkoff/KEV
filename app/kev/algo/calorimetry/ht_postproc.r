@@ -140,7 +140,7 @@ constant.validation <- function(cnst.m
   cnst.vld <- dcast.data.table(cnst.vld, cnst.nm ~ dir, value.var = "dlt", fun.aggregate = sum, na.rm = TRUE, fill = 0)
   
   cnst.vld[, validity := "OK"]
-  cnst.vld[v.left <= 1e-20 | v.right <= 1e-20, validity := "Non-Sensitive"]
+  cnst.vld[abs(v.left) <= 1e-20 | abs(v.right) <= 1e-20, validity := "Non-Sensitive"]
   cnst.vld[v.left < 0 & v.right >= 0, validity := "-Inf"]
   cnst.vld[v.left >= 0 & v.right < 0, validity := "Inf"]
   

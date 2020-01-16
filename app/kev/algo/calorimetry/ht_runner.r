@@ -26,9 +26,9 @@ library(stringr)
 # runner -------------------------------------------- #
 
 # ht.evaluation.runner <- function(
-                                   mode = "script" #c("api", "script", "app")
+                                  mode = "script" #c("api", "script", "app")
                                   sep = "," #";"
-                                  subdir = "calorimetry/ds.4.overfilled"
+                                  subdir = "calorimetry/ds.1.dsc"
                                   eq.thr.type = c("rel", "abs")
                                   eq.threshold = 1e-08
                                   cnst.tune = NULL
@@ -68,13 +68,13 @@ library(stringr)
   
   source(paste0(dir.start, "concentrations/eq_preproc.r"), chdir = TRUE)
   source(paste0(dir.start, "calorimetry/ht_preproc.r"), chdir = TRUE)
-   
+  
   source(paste0(dir.start, "concentrations/eq_evaluator.r"), chdir = TRUE)
   source(paste0(dir.start, "calorimetry/ht_evaluator.r"), chdir = TRUE)
-  # 
+  
   source(paste0(dir.start, "concentrations/eq_postproc.r"), chdir = TRUE)
   source(paste0(dir.start, "calorimetry/ht_postproc.r"), chdir = TRUE)
-  # 
+  
   # source(paste0(dir.start, "calorimetry/ht_save.r"), chdir = TRUE)
   
   
@@ -154,13 +154,13 @@ library(stringr)
                   , reac.nm = reac.nm
                   , conc.series = conc.series)
   
-  algorithm.options <- list(algorithm = "direct search"
+  algorithm.options <- list(algorithm = algorithm
                             , hardstop = 100
-                            , lrate.init = .5
-                            , search.density = 1
-                            , value.threshold = 5e-5
-                            , eq.threshold = 1e-08
-                            , eq.thr.type = "rel")
+                            , lrate.init = lrate.init
+                            , search.density = search.density
+                            , value.threshold = ht.threshold
+                            , eq.threshold = eq.threshold
+                            , eq.thr.type = eq.thr.type)
   
   if (length(cnst.tune.ind) > 0) {
     
@@ -243,6 +243,7 @@ library(stringr)
                                   , lrate.fin
                                   , method)
   
+  # enthalpies with deviations
 
   
   
