@@ -576,9 +576,6 @@ ht.enth.evaluator <- function(x.known = NULL, y.raw, dt.x, wght, method = c("lm"
     
     # basic (weighted) least squares
     
-    # if (length(colnames(dt.x)[colnames(dt.x) %in% cln.unknown]) == 0)
-    #   browser()
-    
     dt.m <- dt.x[, cln.unknown, drop = FALSE]
     
     enth.new <- ginv((t(dt.m) %*% diag(wght)) %*% dt.m, tol = 0) %*% ((t(dt.m) %*% diag(wght)) %*% y)

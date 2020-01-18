@@ -162,3 +162,24 @@ constant.validation <- function(cnst.m
   
 }
 
+
+# heats residuals --------------------------------------- #
+
+heat.residuals <- function(dt.heat, dt.heat.calc, dt.enth.calc, dt.enth) {
+  
+  dt.heat.calc <- copy(dt.heat.calc)
+  
+  x.length <- nrow(dt.enth.calc) - nrow(dt.enth)
+  
+  dt.heat.calc[, res.rel := error / dt.heat[, heats]]
+  setnames(dt.heat.calc, "error", "res.abs")
+
+  adj.r.squared <- 1 - (sum((dt.heat[, heats] - dt.heat.calc[, heats]) ^ 2) / (nrow(dt.heat) - x.length)) / var(dt.heat[, heats])
+  
+  list(dt.heat.calc = dt.heat.calc, adj.r.squared = adj.r.squared)
+  
+}
+
+
+
+

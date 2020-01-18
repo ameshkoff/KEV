@@ -243,8 +243,18 @@ library(stringr)
                                   , lrate.fin
                                   , method)
   
-  # enthalpies with deviations
-
+  # heats: restore observations, calculate residuals and r^2
+  
+  # rewrite
+  dt.ttl <- heat.residuals(dt.heat, dt.heat.calc, dt.enth.calc, dt.enth)
+  
+  dt.enth.calc <- dt.ttl[["dt.enth.calc"]]
+  adj.r.squared <- dt.ttl[["adj.r.squared"]]
+  
+  
+  # prepare data to return (transpose heats)
+  
+  
   
   
   
