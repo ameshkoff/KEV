@@ -20,7 +20,10 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
   
   reac.nm <- nrow(dt.coef) + part.nm
   
-  cnst <- rbind(rep(0, part.nm), cnst, use.names = FALSE)
+  cln <- colnames(cnst)
+  cln <- cln[!(cln %like% "^(dev|valid|vld)")]
+  
+  cnst <- rbind(rep(0, part.nm), cnst[, cln, with = FALSE], use.names = FALSE)
   
   # complete coefficients data table
   

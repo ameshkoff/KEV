@@ -32,8 +32,8 @@ ht.preproc <- function(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, init.v
     # remove standard errors (if output of the previously calculations loaded)
     
     cln <- colnames(dt.enth)
-    if (length(cln[cln %like% "adj\\.r\\.squared"]) > 0)
-      dt.enth <- dt.enth[, !(cln[cln %like% "adj\\.r\\.squared"]), with = FALSE]
+    if (length(cln[cln %like% "^dev"]) > 0)
+      dt.enth <- dt.enth[, !(cln[cln %like% "^dev"]), with = FALSE]
     
     if (is.character(dt.enth[, value])){
       
@@ -70,11 +70,21 @@ ht.preproc <- function(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, init.v
   
   # heats --------------------------------------- #
 
-  cln <- dt.heat[, data]
-  dt.heat <- transpose(dt.heat[, !"data", with = FALSE])
-  setnames(dt.heat, cln)
+  cln <- colnames(dt.heat)
+
+  if (length(cln[cln %like% "^observ"]) == 0) {
+    
+    cln <- dt.heat[, data]
+    dt.heat <- transpose(dt.heat[, !"data", with = FALSE])
+    setnames(dt.heat, cln)
+    
+  }
   
-  for(cl in cln[cln != "series"])
+  cln.remove <- cln[cln %like% "^(res|heats)"]
+  if (length(cln.remove) > 0)
+    dt.heat <- dt.heat[, !cln.remove, with = FALSE]
+  
+  for(cl in cln[!(cln %in% c("series", cln.remove))])
     dt.heat[, eval(cl) := as.numeric(str_replace(str_replace_all(eval(as.name(cl)), " ", ""), "\\,", "."))]
   
   if ((length(cln[cln == "series"]) > 0 && (sort(unique(conc.series)) != sort(dt.heat[, series]))) && (nrow(dt.heat) != nrow(dt.conc.m)))

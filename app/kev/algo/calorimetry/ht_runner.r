@@ -198,7 +198,7 @@ library(stringr)
   dt.ttl <- objective.fn(cnst.m[cnst.tune.ind], method = "basic wls", algorithm.options)
   
   heat.err <- dt.ttl[["err"]]
-  dt.enth.calc <- dt.ttl[["dt.enth.calc"]]
+  dt.enth.calc <- dt.ttl[["dt.enth.calc"]][, .(reaction, value, dev)]
   dt.heat.calc <- dt.ttl[["dt.heat.calc"]]
   
   # concentrations
@@ -243,17 +243,15 @@ library(stringr)
                                   , lrate.fin
                                   , method)
   
-  # heats: restore observations, calculate residuals and r^2
+  # heats: calculate residuals and r^2
   
   # rewrite
   dt.ttl <- heat.residuals(dt.heat, dt.heat.calc, dt.enth.calc, dt.enth)
   
-  dt.enth.calc <- dt.ttl[["dt.enth.calc"]]
+  dt.heat.calc <- dt.ttl[["dt.heat.calc"]]
   adj.r.squared <- dt.ttl[["adj.r.squared"]]
   
-  
-  # prepare data to return (transpose heats)
-  
+
   
   
   
