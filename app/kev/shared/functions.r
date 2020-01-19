@@ -24,16 +24,45 @@ library(stringr)
 
 # ------------------------------------------------------------
 
+# https://stackoverflow.com/a/27347397
+
+CJ.dt = function(X, Y) {
+  
+  stopifnot(is.data.table(X), is.data.table(Y))
+  k = NULL
+  
+  X = X[, c(k = 1, .SD)]
+  setkey(X, k)
+  
+  Y = Y[, c(k = 1, .SD)]
+  setkey(Y, NULL)
+  
+  X[Y, allow.cartesian = TRUE][, k := NULL][]
+  
+}
+
+#
+
 xlsx.to.csv <- function(xlsx.file
+                        , target.dir = ""
                         , sep = c(",", ";", "tab")
                         , delim = c("default", ".", ",")
-                        , target.dir = ""
-                        , subdir = "default") {
+                        , subdir = c("default", "")
+                        , overwrite = TRUE
+                        , verbose = FALSE) {
+  
+  sep <- sep[1]
+  delim <- delim[1]
+  subdir <- subdir[1]
   
   if (is.character(xlsx.file)) {
     
-    target.dir <- xlsx.file
-    target.dir <- str_extract(target.dir, "^.*(\\/|\\\\)")
+    if (target.dir == "") {
+
+      target.dir <- xlsx.file
+      target.dir <- dirname(target.dir)
+      
+    }
     
     xlsx.file <- loadWorkbook(file = xlsx.file)
 
@@ -62,6 +91,7 @@ xlsx.to.csv <- function(xlsx.file
 
   if (delim == "default" && sep == ",") delim <- "."
   if (delim == "default" && sep == ";") delim <- ","
+  if (delim == "default") delim <- "."
   
   ext <- ".csv"
   if (sep == "tab") ext <- ".txt"
@@ -69,8 +99,14 @@ xlsx.to.csv <- function(xlsx.file
   for (sh in sheets(xlsx.file)) {
     
     dt <- readWorkbook(xlsxFile = xlsx.file, sheet = sh, fillMergedCells = TRUE)
+    fl <- paste0(target.dir, sh, ext)
     
-    write.table(dt, file = paste0(target.dir, sh, ext), sep = sep, dec = delim, row.names = FALSE)
+    if (!file.exists(fl) || overwrite) {
+      
+      write.table(dt, file = fl, sep = sep, dec = delim, row.names = FALSE)
+      if (verbose) print(fl)
+      
+    }
     
   }
   
@@ -78,6 +114,56 @@ xlsx.to.csv <- function(xlsx.file
 
 }
 
+xlsx.to.csv.dir <- function(target.dir
+                            , sep = c("all", ",", ";", "tab")
+                            , delim = c("default", ".", ",")
+                            , subdir = "default"
+                            , ignore.pattern = ""
+                            , overwrite = TRUE) {
+  
+  fls <- list.files(target.dir, pattern = "\\.xlsx$", full.names = TRUE, recursive = TRUE)
+  fls <- fls[!(fls %like% "^\\~\\.lock\\.|^\\~\\$")]
+  
+  if (ignore.pattern != "") fls <- fls[!(fls %like% ignore.pattern)]
+  
+  fls <- data.table(file = fls, dir = dirname(fls))
+  
+  # get duplicates
+  
+  fls[, ln := .N, dir]
+  fls[ln > 1, dir := paste0(dir, "/", str_remove(basename(file), "\\.xlsx"))]
+  
+  lapply(fls[, dir], dir.create, showWarnings = FALSE)
+  
+  # populate
+  
+  if (sep[1] == "all") {
+    
+    fls <- CJ.dt(fls, data.table(sep = c(",", ";", "\t")))
+    
+  } else {
+    
+    fls[, sep := sep[1]]
+    
+  }
+  
+  # run
+  
+  for (i in 1:nrow(fls)) {
+    
+    xlsx.to.csv(xlsx.file = fls[i, file]
+                , target.dir = fls[i, dir]
+                , sep = fls[i, sep]
+                , delim = delim[1]
+                , subdir = subdir
+                , overwrite = overwrite
+                , verbose = TRUE)
+    
+  }
+  
+  0
+  
+}
 
 
 
