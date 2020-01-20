@@ -11,6 +11,7 @@
 
 ht.cov <- function(ht.err
                    , cnst.m
+                   , cnst.tune
                    , cnst.tune.ind
                    , dt.heat.calc
                    , objective.fn = function(){1}
@@ -59,7 +60,19 @@ ht.cov <- function(ht.err
   
   cov.m <- (ht.err / fr.degr) * ginv(t(dt.heat.diff) %*% diag(wght) %*% dt.heat.diff, tol = 0)
   
-  list(cov.m = cov.m, cor.m = cov.m / ((diag(cov.m) ^ 0.5) %*% t(diag(cov.m) ^ 0.5)), err.diff = err.diff)
+  # correlation matrix
+  
+  cor.m <- cov.m / ((diag(cov.m) ^ 0.5) %*% t(diag(cov.m) ^ 0.5))
+  
+  cor.m <- as.data.table(cor.m)
+  setnames(cor.m, cnst.tune)
+  
+  cor.m <- as.data.frame(cor.m)
+  rownames(cor.m) <- cnst.tune
+  
+  # return
+  
+  list(cov.m = cov.m, cor.m = cor.m, err.diff = err.diff)
   
 }
 
@@ -73,6 +86,7 @@ constant.validation <- function(cnst.m
                                 , algorithm.options
                                 , metrics
                                 , dt.list
+                                , cov.m
                                 , ht.threshold
                                 , lrate.fin
                                 , method) {
@@ -88,7 +102,7 @@ constant.validation <- function(cnst.m
   
   cnst.m.iter <- cnst.m
   
-  cnst.tune.ind <- which(unlist(dt.coef[, name]) %in% cnst.tune)
+  cnst.tune.ind <- which(unlist(dt.list$dt.coef[, name]) %in% cnst.tune)
   cnst.m.iter[cnst.tune.ind] <- cnst.m[cnst.tune.ind] - cnst.m[cnst.tune.ind] * lrate.fin
   
   # calculate

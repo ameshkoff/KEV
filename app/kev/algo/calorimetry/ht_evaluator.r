@@ -409,8 +409,6 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "debug",
     if (any(is.na(dt.res.m)))
       return(list(err = 1e+12))
     
-    cnst.tune.nm <- which(colnames(dt.res.m) %in% cnst.tune)
-    
     #  run partial molar properties evaluator ----------- #
     
     conc.series <- objective.fn.args$conc.series
@@ -418,7 +416,7 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "debug",
     # diff concentrations
     
     volumes.exp <- dt.list$dt.heat[, volumes]
-    if (calorimeter.type %in% c("dsc", "ampoule")) volumes.exp <- c(dt.list$init.vol, volumes.exp)
+    if (dt.list$calorimeter.type %in% c("dsc", "ampoule")) volumes.exp <- c(dt.list$init.vol, volumes.exp)
     
     dt.res.diff <- dt.res.m
     
@@ -428,13 +426,13 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "debug",
 
         ser.ind <- which(unique(conc.series) == conc.series[i])
         
-        if (calorimeter.type %in% "overfilled") {
+        if (dt.list$calorimeter.type %in% "overfilled") {
           
-          dt.res.diff[i, ] <- dt.res.m[i, ] * init.vol - dt.res.m[i - 1, ] * (init.vol - volumes.exp[i - ser.ind])
+          dt.res.diff[i, ] <- dt.res.m[i, ] * dt.list$init.vol - dt.res.m[i - 1, ] * (dt.list$init.vol - volumes.exp[i - ser.ind])
           # dt.res.diff[i, ] <- init.vol * (dt.res.m[i, ] - dt.res.m[i - 1, ]) + dt.res.m[i - 1, ] * volumes.exp[i - ser.ind]
           # dt.res.diff[i, ] <- init.vol * (dt.res.m[i, ] - dt.res.m[i - 1, ]) + dt.res.m[i - 1, ] * volumes.exp[i - ser.ind]
           
-        } else if (calorimeter.type %in% c("dsc", "ampoule")) {
+        } else if (dt.list$calorimeter.type %in% c("dsc", "ampoule")) {
           
           dt.res.diff[i, ] <- dt.res.m[i, ] - dt.res.m[i - 1, ] * volumes.exp[i - ser.ind] / volumes.exp[i - ser.ind + 1]
           
@@ -446,17 +444,17 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "debug",
     
     dt.res.diff <- dt.res.diff[which(conc.series == shift(conc.series)), ]
     
-    dt.res.diff <- dt.res.diff * calorimeter.type.coef
-    if (calorimeter.type %in% c("dsc", "ampoule")) dt.res.diff <- dt.res.diff * dt.heat[, volumes]
+    dt.res.diff <- dt.res.diff * dt.list$calorimeter.type.coef
+    if (dt.list$calorimeter.type %in% c("dsc", "ampoule")) dt.res.diff <- dt.res.diff * dt.list$dt.heat[, volumes]
     
     # input for lm evaluator
     
-    y.raw <- dt.heat[, heats]
+    y.raw <- dt.list$dt.heat[, heats]
     
-    x.known <- dt.enth[, value]
-    names(x.known) <- dt.enth[, reaction]
+    x.known <- dt.list$dt.enth[, value]
+    names(x.known) <- dt.list$dt.enth[, reaction]
     
-    wght <- sum((dt.heat[, deviation] ^ 2)) / ((dt.heat[, deviation] ^ 2) * length(dt.heat[, deviation]))
+    wght <- sum((dt.list$dt.heat[, deviation] ^ 2)) / ((dt.list$dt.heat[, deviation] ^ 2) * length(dt.list$dt.heat[, deviation]))
     
     # run lm evaluator
     
@@ -472,7 +470,7 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "debug",
     # evaluate cost function
     
     if (metrics == "mse") {
-      err <- sum(((dt.heat[, heats] - dt.heat.calc[, heats]) ^ 2) * wght)
+      err <- sum(((dt.list$dt.heat[, heats] - dt.heat.calc[, heats]) ^ 2) * wght)
     }
     
     # return
@@ -488,7 +486,7 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "debug",
     } else if (mode[1] == "postproc") {
       
       dt.enth.calc[, dev := rtrn$enth.dev]
-      dt.heat.calc[, error := heats - dt.heat[, heats]]
+      dt.heat.calc[, error := heats - dt.list$dt.heat[, heats]]
       
       list(err = err, dt.enth.calc = dt.enth.calc, dt.heat.calc = dt.heat.calc)
       

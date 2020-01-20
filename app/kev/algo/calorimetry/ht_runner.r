@@ -25,24 +25,22 @@ library(stringr)
 
 # runner -------------------------------------------- #
 
-# ht.evaluation.runner <- function(
-                                  mode = "script" #c("api", "script", "app")
-                                  sep = "," #";"
-                                  subdir = "calorimetry/ds.1.dsc"
-                                  eq.thr.type = c("rel", "abs")
-                                  eq.threshold = 1e-08
-                                  cnst.tune = NULL
-                                  cmp.tune = NULL
-                                  algorithm = "direct search"
-                                  method = "basic wls"
-                                  metrics = "mse"
-                                  ht.mode = c("base", "grid", "debug")
-                                  search.density = 1
-                                  lrate.init = .5
-                                  ht.threshold = 5e-7
-                                  save.res = TRUE
-                                  dt.list = NULL
-                                  filename = "data.xlsx"#) {
+ht.evaluation.runner <- function(mode = "script"
+                                 , sep = ";"
+                                 , subdir = ""
+                                 , eq.thr.type = c("rel", "abs")
+                                 , eq.threshold = 1e-08
+                                 , cnst.tune = NULL
+                                 , cmp.tune = NULL
+                                 , algorithm = "direct search"
+                                 , method = "basic wls"
+                                 , metrics = "mse"
+                                 , ht.mode = c("base", "grid", "debug")
+                                 , search.density = 1
+                                 , lrate.init = .5
+                                 , ht.threshold = 5e-7
+                                 , dt.list = NULL
+                                 , filename = NULL) {
   
   #
   
@@ -74,9 +72,7 @@ library(stringr)
   
   source(paste0(dir.start, "concentrations/eq_postproc.r"), chdir = TRUE)
   source(paste0(dir.start, "calorimetry/ht_postproc.r"), chdir = TRUE)
-  
-  # source(paste0(dir.start, "calorimetry/ht_save.r"), chdir = TRUE)
-  
+
   
   # load data ---------------- #
   
@@ -160,7 +156,7 @@ library(stringr)
                             , search.density = search.density
                             , value.threshold = ht.threshold
                             , eq.threshold = eq.threshold
-                            , eq.thr.type = eq.thr.type)
+                            , eq.thr.type = eq.thr.type[1])
   
   if (length(cnst.tune.ind) > 0) {
     
@@ -173,7 +169,7 @@ library(stringr)
                                        , dt.list = dt.list
                                        , algorithm.options = algorithm.options
                                        , metrics = metrics
-                                       , mode = c("base", "grid", "debug")
+                                       , mode = ht.mode[1]
                                        , verbose = TRUE))[3]
     
     cnst.m[cnst.tune.ind] <- dt.ttl[["values.tuned"]]
@@ -218,6 +214,7 @@ library(stringr)
   
   cov.m <- ht.cov(heat.err
                   , cnst.m
+                  , cnst.tune
                   , cnst.tune.ind
                   , dt.heat.calc
                   , objective.fn
@@ -239,6 +236,7 @@ library(stringr)
                                   , algorithm.options
                                   , metrics = metrics
                                   , dt.list
+                                  , cov.m
                                   , ht.threshold
                                   , lrate.fin
                                   , method)
@@ -251,7 +249,32 @@ library(stringr)
   dt.heat.calc <- dt.ttl[["dt.heat.calc"]]
   adj.r.squared <- dt.ttl[["adj.r.squared"]]
   
-
+  # `save` module moved to the fully independent function
+  
+  # return
+  
+  list("dt.eq.conc" = dt.res
+       , "dt.heat.calc" = dt.heat.calc
+       , "cnst.dev" = cnst.dev
+       , "cor.m" = cor.m
+       , "dt.enth.calc" = dt.enth.calc
+       , "err.diff" = err.diff
+       , "cnst.tune" = cnst.tune
+       , "lrate.fin" = lrate.fin
+       , "adj.r.squared" = adj.r.squared
+       , "dt.coef.input" = dt.coef
+       , "dt.conc.input" = dt.conc
+       , "cnst.input" = cnst
+       , "part.eq.input" = part.eq
+       , "dt.heat.input" = dt.heat
+       , "dt.enth.input" = dt.enth
+       , "cnst.tune.input" = cnst.tune
+       , "cmp.tune.input" = cmp.tune
+       , "calorimeter.type.input" = calorimeter.type
+       , "init.vol.input" = init.vol
+  )
+  
+}
   
   
   
