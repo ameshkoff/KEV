@@ -2,7 +2,7 @@
 #                                                            #
 # Name: KEV:Constant Evaluator                               #
 # Author: AMeshkov                                           #
-# Date: 2018                                                 #
+# Date: 2019                                                 #
 #                                                            #
 # ########################################################## #
 
@@ -98,8 +98,8 @@ tst.test.worker <- function(fl, sh, dt.stable, dt.test, verbose) {
 
 tst.test.zip <- function(fl, verbose = FALSE) {
   
-  fl.stable.cur <- paste0("tests/data.gui/stable/", fl)
-  fl.test.cur <- paste0("tests/data.gui/test/", fl)
+  fl.stable.cur <- paste0("tests/gui.tests/data.gui/stable/", fl)
+  fl.test.cur <- paste0("tests/gui.tests/data.gui/test/", fl)
   
   fl.stable.cur.dir <- str_remove(fl.stable.cur, "\\.zip$")
   fl.test.cur.dir <- str_remove(fl.test.cur, "\\.zip$")
@@ -146,8 +146,8 @@ tst.test.zip <- function(fl, verbose = FALSE) {
 
 tst.test.xlsx <- function(fl, verbose = FALSE) {
   
-  fl.stable.cur <- paste0("tests/data.gui/stable/", fl)
-  fl.test.cur <- paste0("tests/data.gui/test/", fl)
+  fl.stable.cur <- paste0("tests/gui.tests/data.gui/stable/", fl)
+  fl.test.cur <- paste0("tests/gui.tests/data.gui/test/", fl)
   
   fl.sheets <- getSheetNames(fl.stable.cur)
   
@@ -170,8 +170,8 @@ tst.test.gui <- function(verbose = FALSE) {
   
   # test files structure
   
-  fl.stable <- list.files(path = "tests/data.gui/stable", recursive = TRUE)
-  fl.test <- list.files(path = "tests/data.gui/test", recursive = TRUE)
+  fl.stable <- list.files(path = "tests/gui.tests/data.gui/stable", recursive = TRUE)
+  fl.test <- list.files(path = "tests/gui.tests/data.gui/test", recursive = TRUE)
   
   fl.missed <- setdiff(fl.stable, fl.test)
   if (length(fl.missed)) stop(paste("Missed stable files :", fl.missed))

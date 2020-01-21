@@ -76,12 +76,12 @@ ht.evaluation.runner <- function(mode = "script"
   
   # load data ---------------- #
   
-  if (mode[1] == "script") {
+  if (mode[1] %in% c("script")) {
     
     dt.ttl <- c(eq.scripts.load(sep, subdir, filename)
                 , ht.scripts.load(sep, subdir, filename))
     
-  } else if (mode %in% c("app", "api")) {
+  } else if (mode[1] %in% c("app", "api")) {
     
     dt.ttl <- dt.list
     
@@ -268,7 +268,6 @@ ht.evaluation.runner <- function(mode = "script"
        , "part.eq.input" = part.eq
        , "dt.heat.input" = dt.heat
        , "dt.enth.input" = dt.enth
-       , "cnst.tune.input" = cnst.tune
        , "cmp.tune.input" = cmp.tune
        , "calorimeter.type.input" = calorimeter.type
        , "init.vol.input" = init.vol

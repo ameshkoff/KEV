@@ -1,0 +1,4 @@
+dir	sep
+csv.comma	,
+csv.semicolon	;
+txt.tab	tab

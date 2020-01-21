@@ -2,7 +2,7 @@
 #                                                            #
 # Name: KEV:Constant Evaluator                               #
 # Author: AMeshkov                                           #
-# Date: 2018                                                 #
+# Date: 2018-2020                                            #
 #                                                            #
 # ########################################################## #
 
