@@ -12,9 +12,6 @@
 
 library(testthat)
 
-# ------------------------ functions --------------------------
-
-
 
 # -------------------------- tests ----------------------------
 
@@ -22,7 +19,7 @@ library(testthat)
 
 context("Calorimetry")
 
-source("app/kev/algo/calorimetry/ht_runner.r", chdir = TRUE)
+# source("../../../app/kev/algo/calorimetry/ht_runner.r", chdir = TRUE)
 
 test_that("calorimetry_output_formal", {
   
