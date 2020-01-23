@@ -8,31 +8,23 @@
 
 
 
-# -------------------- load libraries -------------------------
+# -------------------- load libraries ------------------------
 
 library(testthat)
 
+context(kev.context)
 
-# -------------------------- tests ----------------------------
 
-# calorimetry ---------------------
+# --------------------- formal tests -------------------------
 
-context("Calorimetry")
-
-# source("../../../app/kev/algo/calorimetry/ht_runner.r", chdir = TRUE)
-
-test_that("calorimetry_output_formal", {
-  
-  # formal
+test_that("calorimetry_output_is.full.list", {
   
   expect_type(rtrn, "list")
   expect_length(rtrn, 18)
   
 })
 
-test_that("calorimetry_output_data", {
-  
-  # data
+test_that("calorimetry_output_non.empty.elements", {
   
   expect_gt(nrow(rtrn$dt.eq.conc), 0)
   expect_gt(nrow(rtrn$dt.heat.calc), 0)
@@ -56,12 +48,14 @@ test_that("calorimetry_output_data", {
 })
 
 
+# -------------------- content tests -------------------------
 
 
 
 
 
-# --------------------------- run ----------------------------
+
+
 
 
 

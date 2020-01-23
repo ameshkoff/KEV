@@ -10,6 +10,10 @@
 
 #----------------- load libraries & data ----------------------
 
+library(testthat)
+
+#
+
 source("app/kev/algo/calorimetry/ht_runner.r", chdir = TRUE)
 test.dict <- read.delim("tests/unit.tests/dict.csv", stringsAsFactors = FALSE) %>% as.data.table()
 
@@ -17,7 +21,8 @@ test.dict <- read.delim("tests/unit.tests/dict.csv", stringsAsFactors = FALSE) %
 # ------------------------ functions --------------------------
 
 kev.test.run <- function(target.dir
-                         , run.fn = function(){1}
+                         , getdata.fn = function(){1}
+                         , test.formal.fn = function(){1}
                          , ignore.pattern = "") {
 
   fls <- list.files(target.dir, pattern = "\\.xlsx$", full.names = TRUE, recursive = TRUE)
@@ -37,12 +42,16 @@ kev.test.run <- function(target.dir
   
   for (dr in drs) {
     
-    rtrn <<- run.fn(dr
+    rtrn <<- getdata.fn(dr
                    , sep = test.dict[dir == basename(dr), sep]
                    , filename = NULL)
-    print(dr)
-    test_file("tests/unit.tests/tests/tests.r")
+    dt.test.list[[dr]] <<- rtrn
+    kev.context <<- dr
+
+    test.formal.fn()
+    
     rtrn <<- NULL
+    kev.context <<- NULL
     
   }
   
@@ -50,7 +59,7 @@ kev.test.run <- function(target.dir
 
 }
 
-test.ht.run <- function(dr, sep, filename) {
+ht.test.getdata <- function(dr, sep, filename) {
   
   rtrn <- ht.evaluation.runner(mode = "script"
                                , sep = sep
@@ -69,21 +78,22 @@ test.ht.run <- function(dr, sep, filename) {
 
 }
 
+ht.test.formal <- function() { test_file("tests/unit.tests/tests/ht_tests.r") }
+
+
+
 
 # ------------------------ calorimetry --------------------------
 
+dt.test.list <- list()
+
 kev.test.run(target.dir = "input/calorimetry"
-             , run.fn = test.ht.run
+             , getdata.fn = ht.test.getdata
+             , test.formal.fn = ht.test.formal
              , ignore.pattern = "")
 
 
 
-
-
-
-
-
-# test_file("tests/unit.tests/tests/tests.r")
 
 
 

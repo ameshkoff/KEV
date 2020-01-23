@@ -171,7 +171,7 @@ ht.scripts.load <- function(sep = ";", subdir = "", filename = NULL) {
       tbl[["cmp.tune"]] <- unlist(tbl[["cmp.tune"]])
       tbl[["cmp.tune"]] <- tbl[["cmp.tune"]][!is.na(tbl[["cmp.tune"]]) & tbl[["cmp.tune"]] != ""]
       
-      tbl[["cmp.tune"]] <- unlist(tbl[["cmp.tune"]])
+      tbl[["cmp.tune"]] <- unlist(tbl[["cmp.tune"]])[1]
       
     }
 
@@ -181,7 +181,7 @@ ht.scripts.load <- function(sep = ";", subdir = "", filename = NULL) {
       tbl[["calorimeter.type"]] <- unlist(tbl[["calorimeter.type"]])
       tbl[["calorimeter.type"]] <- tbl[["calorimeter.type"]][!is.na(tbl[["calorimeter.type"]]) & tbl[["calorimeter.type"]] != ""]
       
-      tbl[["calorimeter.type"]] <- unlist(tbl[["calorimeter.type"]])
+      tbl[["calorimeter.type"]] <- unlist(tbl[["calorimeter.type"]])[1]
       
     }
     
@@ -191,7 +191,7 @@ ht.scripts.load <- function(sep = ";", subdir = "", filename = NULL) {
       tbl[["init.vol"]] <- unlist(tbl[["init.vol"]])
       tbl[["init.vol"]] <- tbl[["init.vol"]][!is.na(tbl[["init.vol"]]) & tbl[["init.vol"]] != ""]
       
-      tbl[["init.vol"]] <- unlist(tbl[["init.vol"]])
+      tbl[["init.vol"]] <- unlist(tbl[["init.vol"]])[1]
       
     }
     
