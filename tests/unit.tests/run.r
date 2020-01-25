@@ -20,11 +20,14 @@ test.dict <- read.delim("tests/unit.tests/dict.csv", stringsAsFactors = FALSE) %
 
 # ------------------------ functions --------------------------
 
-kev.test.run <- function(target.dir
-                         , getdata.fn = function(){1}
-                         , test.formal.fn = function(){1}
-                         , ignore.pattern = "") {
+# get output data to test
 
+kev.test.getdata.all <- function(target.dir
+                                 , getdata.fn = function(){1}
+                                 , ignore.pattern = "") {
+
+  # list files and dirs to load
+  
   fls <- list.files(target.dir, pattern = "\\.xlsx$", full.names = TRUE, recursive = TRUE)
   fls <- fls[!(fls %like% "^\\~\\.lock\\.|^\\~\\$")]
   fls <- str_remove(fls, "^(.*/kev/)*input/")
@@ -40,47 +43,33 @@ kev.test.run <- function(target.dir
     
   }
   
-  kev.test.env <- new.env(parent = parent.frame())
+  dt.test.list <- list()
   
-  # plain files
+  # load plain files
   
   for (dr in drs) {
     
-    assign("rtrn"
-           , getdata.fn(dr
-                        , sep = test.dict[dir == basename(dr), sep]
-                        , filename = NULL)
-           , envir = kev.test.env)
-    dt.test.list[[dr]] <<- get("rtrn", envir = kev.test.env)
-    assign("kev.context", dr, envir = kev.test.env)
+    dt.test.list[[dr]] <- getdata.fn(dr
+                                     , sep = test.dict[dir == basename(dr), sep]
+                                     , filename = NULL)
+    print(paste(dr, "loaded"))
 
-    test.formal.fn(kev.test.env)
-    
-    assign("rtrn", NULL, envir = kev.test.env)
-    assign("kev.context", NULL, envir = kev.test.env)
-    
   }
 
-  # xlsx
+  # load xlsx
   
   for (fl in fls) {
     
-    assign("rtrn"
-           , getdata.fn(dirname(fl)
-                        , sep = test.dict[dir == basename(fl), sep]
-                        , filename = basename(fl))
-           , envir = kev.test.env)
-    dt.test.list[[fl]] <<- get("rtrn", envir = kev.test.env)
-    assign("kev.context", fl, envir = kev.test.env)
-    
-    test.formal.fn(kev.test.env)
-    
-    assign("rtrn", NULL, envir = kev.test.env)
-    assign("kev.context", NULL, envir = kev.test.env)
+    dt.test.list[[fl]] <- getdata.fn(dirname(fl)
+                                     , sep = test.dict[dir == basename(fl), sep]
+                                     , filename = basename(fl))
+    print(paste(fl, "loaded"))
     
   }
   
-  0
+  # return
+  
+  dt.test.list
 
 }
 
@@ -103,6 +92,29 @@ ht.test.getdata <- function(dr, sep, filename) {
 
 }
 
+# formal tests
+
+kev.test.formal <- function(dt.test.list = list(data.table(fake = character(0)))
+                           , test.formal.fn = function(){1}) {
+  
+  kev.test.env <- new.env(parent = parent.frame())
+  
+  for (dt.name in names(dt.test.list)) {
+    
+    assign("rtrn"
+           , dt.test.list[[dt.name]]
+           , envir = kev.test.env)
+    assign("kev.context", dt.name, envir = kev.test.env)
+    
+    test.formal.fn(kev.test.env)
+    
+    assign("rtrn", NULL, envir = kev.test.env)
+    assign("kev.context", NULL, envir = kev.test.env)
+
+  }
+  
+}
+
 ht.test.formal <- function(env) { test_file("tests/unit.tests/tests/ht_formal.r", env = env) }
 
 
@@ -110,14 +122,12 @@ ht.test.formal <- function(env) { test_file("tests/unit.tests/tests/ht_formal.r"
 
 # ------------------------ calorimetry --------------------------
 
-dt.test.list <- list()
+dt.test.list <- kev.test.getdata.all(target.dir = "input/calorimetry"
+                                     , getdata.fn = ht.test.getdata
+                                     , ignore.pattern = "(\\b|\\_)old\\b|DEPR")
 
-kev.test.run(target.dir = "input/calorimetry"
-             , getdata.fn = ht.test.getdata
-             , test.formal.fn = ht.test.formal
-             , ignore.pattern = "(\\b|\\_)old\\b|DEPR")
-
-
+kev.test.formal(dt.test.list = dt.test.list
+                , test.formal.fn = ht.test.formal)
 
 
 

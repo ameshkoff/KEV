@@ -11,7 +11,7 @@
 # -------------------- load libraries ------------------------
 
 library(testthat)
-# browser()
+
 context(kev.context)
 
 
