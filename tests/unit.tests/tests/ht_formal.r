@@ -11,7 +11,7 @@
 # -------------------- load libraries ------------------------
 
 library(testthat)
-
+# browser()
 context(kev.context)
 
 
@@ -46,9 +46,6 @@ test_that("calorimetry_output_non.empty.elements", {
   expect_gt(length(rtrn$init.vol.input), 0)
   
 })
-
-
-# -------------------- content tests -------------------------
 
 
 

@@ -40,18 +40,43 @@ kev.test.run <- function(target.dir
     
   }
   
+  kev.test.env <- new.env(parent = parent.frame())
+  
+  # plain files
+  
   for (dr in drs) {
     
-    rtrn <<- getdata.fn(dr
-                   , sep = test.dict[dir == basename(dr), sep]
-                   , filename = NULL)
-    dt.test.list[[dr]] <<- rtrn
-    kev.context <<- dr
+    assign("rtrn"
+           , getdata.fn(dr
+                        , sep = test.dict[dir == basename(dr), sep]
+                        , filename = NULL)
+           , envir = kev.test.env)
+    dt.test.list[[dr]] <<- get("rtrn", envir = kev.test.env)
+    assign("kev.context", dr, envir = kev.test.env)
 
-    test.formal.fn()
+    test.formal.fn(kev.test.env)
     
-    rtrn <<- NULL
-    kev.context <<- NULL
+    assign("rtrn", NULL, envir = kev.test.env)
+    assign("kev.context", NULL, envir = kev.test.env)
+    
+  }
+
+  # xlsx
+  
+  for (fl in fls) {
+    
+    assign("rtrn"
+           , getdata.fn(dirname(fl)
+                        , sep = test.dict[dir == basename(fl), sep]
+                        , filename = basename(fl))
+           , envir = kev.test.env)
+    dt.test.list[[fl]] <<- get("rtrn", envir = kev.test.env)
+    assign("kev.context", fl, envir = kev.test.env)
+    
+    test.formal.fn(kev.test.env)
+    
+    assign("rtrn", NULL, envir = kev.test.env)
+    assign("kev.context", NULL, envir = kev.test.env)
     
   }
   
@@ -78,7 +103,7 @@ ht.test.getdata <- function(dr, sep, filename) {
 
 }
 
-ht.test.formal <- function() { test_file("tests/unit.tests/tests/ht_tests.r") }
+ht.test.formal <- function(env) { test_file("tests/unit.tests/tests/ht_formal.r", env = env) }
 
 
 
@@ -90,7 +115,7 @@ dt.test.list <- list()
 kev.test.run(target.dir = "input/calorimetry"
              , getdata.fn = ht.test.getdata
              , test.formal.fn = ht.test.formal
-             , ignore.pattern = "")
+             , ignore.pattern = "(\\b|\\_)old\\b|DEPR")
 
 
 
