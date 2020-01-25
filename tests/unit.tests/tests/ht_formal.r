@@ -15,7 +15,7 @@ library(testthat)
 context(kev.context)
 
 
-# --------------------- formal tests -------------------------
+# ----------------------- run tests --------------------------
 
 test_that("calorimetry_output_is.full.list", {
   
@@ -46,11 +46,6 @@ test_that("calorimetry_output_non.empty.elements", {
   expect_gt(length(rtrn$init.vol.input), 0)
   
 })
-
-
-
-
-
 
 
 
