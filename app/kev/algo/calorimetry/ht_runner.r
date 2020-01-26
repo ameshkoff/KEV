@@ -210,36 +210,48 @@ ht.evaluation.runner <- function(mode = "script"
   dt.conc.tot <- copy(dt.conc.m)
   dt.conc.tot[, part.eq] <- dt.conc.calc[, part.eq]
   
-  # covariance matrix
-  
-  cov.m <- ht.cov(heat.err
-                  , cnst.m
-                  , cnst.tune
-                  , cnst.tune.ind
-                  , dt.heat.calc
-                  , objective.fn
-                  , algorithm.options
-                  , method
-                  , ht.threshold)
-  
-  err.diff <- cov.m$err.diff
-  cor.m <- cov.m$cor.m
-  cov.m <- cov.m$cov.m
-  
-  
-  # constants with deviations
-  
-  cnst.dev <- constant.validation(cnst.m
-                                  , cnst.tune
-                                  , objective.fn = ht.objective.function
-                                  , evaluation.fn = ht.enth.evaluator
-                                  , algorithm.options
-                                  , metrics = metrics
-                                  , dt.list
-                                  , cov.m
-                                  , ht.threshold
-                                  , lrate.fin
-                                  , method)
+  if (length(cnst.tune.ind) > 0) {
+    
+    # covariance matrix
+    
+    cov.m <- ht.cov(heat.err
+                    , cnst.m
+                    , cnst.tune
+                    , cnst.tune.ind
+                    , dt.heat.calc
+                    , objective.fn
+                    , algorithm.options
+                    , method
+                    , ht.threshold)
+    
+    err.diff <- cov.m$err.diff
+    cor.m <- cov.m$cor.m
+    cov.m <- cov.m$cov.m
+    
+    
+    # constants with deviations
+    
+    cnst.dev <- constant.validation(cnst.m
+                                    , cnst.tune
+                                    , objective.fn = ht.objective.function
+                                    , evaluation.fn = ht.enth.evaluator
+                                    , algorithm.options
+                                    , metrics = metrics
+                                    , dt.list
+                                    , cov.m
+                                    , ht.threshold
+                                    , lrate.fin
+                                    , method)
+    
+  } else {
+    
+    err.diff <- NULL
+    cor.m <- NULL
+    cov.m <- NULL
+    cnst.dev <- NULL
+    lrate.fin <- NULL
+    
+  }
   
   # heats: calculate residuals and r^2
   

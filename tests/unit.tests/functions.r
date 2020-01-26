@@ -104,7 +104,7 @@ kev.test.formal <- function(dt.test.list = list(data.table(fake = character(0)))
     assign("rtrn"
            , dt.test.list[[dt.name]]
            , envir = kev.test.env)
-    assign("kev.context", paste("Consistence :", dt.name), envir = kev.test.env)
+    assign("kev.context", paste("Formal :", dt.name), envir = kev.test.env)
     
     test.fn(kev.test.env)
     
@@ -118,14 +118,48 @@ kev.test.formal <- function(dt.test.list = list(data.table(fake = character(0)))
 ht.test.formal <- function(env) {
   
   cat("\n")
-  test_file("tests/unit.tests/tests/ht_formal.r", env = env)
+  test_file("tests/unit.tests/tests/ht_formal.r", env = env, reporter = c("progress", "fail"))
   
 }
 
 
 # statistics tests
 
-kev.test.stat <- function() {}
+kev.test.stat <- function(dt.test.list = list(data.table(fake = character(0)))
+                          , test.fn = function(){1}
+                          , stop.on.fail = TRUE) {
+  
+  kev.test.env <- new.env(parent = parent.frame())
+  
+  for (dt.name in names(dt.test.list)) {
+    
+    assign("rtrn"
+           , dt.test.list[[dt.name]]
+           , envir = kev.test.env)
+    assign("kev.context", paste("Stat :", dt.name), envir = kev.test.env)
+    
+    test.fn(kev.test.env, stop.on.fail)
+    
+    assign("rtrn", NULL, envir = kev.test.env)
+    assign("kev.context", NULL, envir = kev.test.env)
+    
+  }
+  
+}
+
+ht.test.stat <- function(env, stop.on.fail) {
+  
+  cat("\n")
+  
+  if (stop.on.fail) {
+    test_file("tests/unit.tests/tests/ht_stat.r", env = env, reporter = c("progress", "fail"))
+  } else {
+    test_file("tests/unit.tests/tests/ht_stat.r", env = env, reporter = "progress")
+  }
+  
+  
+}
+
 
 
 # consistency tests
@@ -173,8 +207,7 @@ kev.test.consistent.data <- function(dt.test.list) {
         x <- str_replace(x, "\\,", ".")
         x <- str_replace(x, " ", "")
         
-        x.tmp <- as.numeric(x)
-        if (length(x.tmp[!is.na(x.tmp)]) == length(x[!is.na(x)])) x <- as.numeric(x)
+        if (length(x[!is.na(as.numeric(x))]) == length(x[!is.na(x)])) x <- as.numeric(x)
         
       }
       
@@ -208,7 +241,7 @@ kev.test.consistent.data <- function(dt.test.list) {
 ht.test.consistent <- function(env) {
   
   cat("\n")
-  test_file("tests/unit.tests/tests/ht_consistent.r", env = env)
+  test_file("tests/unit.tests/tests/ht_consistent.r", env = env, reporter = c("progress", "fail"))
   
 }
 
