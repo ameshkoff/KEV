@@ -12,7 +12,7 @@
 
 library(testthat)
 
-test.dict <- read.delim("tests/unit.tests/dict.csv", stringsAsFactors = FALSE) %>% as.data.table()
+test.dict <- read.delim("tests/tests.script/dict.csv", stringsAsFactors = FALSE) %>% as.data.table()
 
 
 
@@ -118,7 +118,7 @@ kev.test.formal <- function(dt.test.list = list(data.table(fake = character(0)))
 ht.test.formal <- function(env) {
   
   cat("\n")
-  test_file("tests/unit.tests/tests/ht_formal.r", env = env, reporter = c("progress", "fail"))
+  test_file("tests/tests.script/tests/ht_formal.r", env = env, reporter = c("progress", "fail"))
   
 }
 
@@ -152,9 +152,9 @@ ht.test.stat <- function(env, stop.on.fail) {
   cat("\n")
   
   if (stop.on.fail) {
-    test_file("tests/unit.tests/tests/ht_stat.r", env = env, reporter = c("progress", "fail"))
+    test_file("tests/tests.script/tests/ht_stat.r", env = env, reporter = c("progress", "fail"))
   } else {
-    test_file("tests/unit.tests/tests/ht_stat.r", env = env, reporter = "progress")
+    test_file("tests/tests.script/tests/ht_stat.r", env = env, reporter = "progress")
   }
   
   
@@ -241,7 +241,7 @@ kev.test.consistent.data <- function(dt.test.list) {
 ht.test.consistent <- function(env) {
   
   cat("\n")
-  test_file("tests/unit.tests/tests/ht_consistent.r", env = env, reporter = c("progress", "fail"))
+  test_file("tests/tests.script/tests/ht_consistent.r", env = env, reporter = c("progress", "fail"))
   
 }
 

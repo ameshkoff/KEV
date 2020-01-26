@@ -8,19 +8,10 @@
 
 
 
-ht.save <- function(subdir
-                    , sep
-                    , dt.res
-                    , dt.ht.calc
-                    , dt.heat.calc
-                    , cnst.dev
-                    , cor.m
-                    , dt.enth.calc
-                    , err.diff
-                    , cnst.tune
-                    , cmp.tune
-                    , calorimeter.type
-                    , init.vol) {
+ht.save <- function(subdir = ""
+                    , sep = ";"
+                    , dt.ttl = list()
+                    , filename = NULL) {
   
   if (subdir != "")
     subdir <- paste0("/", subdir, "/")

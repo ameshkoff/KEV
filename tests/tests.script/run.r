@@ -15,7 +15,7 @@ library(testthat)
 #
 
 source("app/kev/algo/calorimetry/ht_runner.r", chdir = TRUE)
-source("tests/unit.tests/functions.r")
+source("tests/tests.script/functions.r")
 
 
 
