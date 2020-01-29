@@ -292,18 +292,20 @@ nm.evaluation.runner(mode = "script", sep = "tab", subdir = "nmr/dsn.3"
 source("app/kev/algo/calorimetry/ht_runner.r", chdir = TRUE)
 source("app/kev/algo/calorimetry/ht_save.r", chdir = TRUE, local = TRUE)
 
-ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.3.ampoule.bad.no.opt"
-                     , eq.thr.type = "rel", eq.threshold = 1e-08
-                     , algorithm = "direct search", ht.mode = "base", method = "basic wls"
-                     , search.density = 1, lrate.init = .5, ht.threshold = 5e-7
-                     , filename = "data.xlsx")
+dt.ttl <- ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.3.ampoule.bad.no.opt"
+                               , eq.thr.type = "rel", eq.threshold = 1e-08
+                               , algorithm = "direct search", ht.mode = "base", method = "basic wls"
+                               , search.density = 1, lrate.init = .5, ht.threshold = 5e-7
+                               , filename = "data.xlsx")
 
-ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.4.overfilled/data"
-                     , eq.thr.type = "rel", eq.threshold = 1e-08
-                     , algorithm = "direct search", ht.mode = "base", method = "basic wls"
-                     , search.density = 1, lrate.init = .5, ht.threshold = 5e-7
-                     , filename = "data.xlsx")
+ht.save(dt.ttl, path = "output/tmp", sep = ";", filename = "kev.output.xlsx")
 
+
+dt.ttl <- ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.4.overfilled/data"
+                               , eq.thr.type = "rel", eq.threshold = 1e-08
+                               , algorithm = "direct search", ht.mode = "base", method = "basic wls"
+                               , search.density = 1, lrate.init = .5, ht.threshold = 5e-7
+                               , filename = "data.xlsx")
 
 
 

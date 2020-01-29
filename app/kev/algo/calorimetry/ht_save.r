@@ -14,15 +14,43 @@ ht.save.prepare.data <- function(dt.ttl = list(), dt.dict = data.table()) {
   
   # create setup, input concentrations etc.
   
+  # setup
+  
   dt.nms <- names(dt.ttl)
-  dt.nms <- dt.nms[dt.nms %in% c()]
+  dt.nms <- dt.nms[dt.nms %in% c("cnst.tune", "cmp.tune.input", "calorimeter.type.input", "init.vol.input")]
   
+  dt.setup <- lapply(dt.nms, function(cl) { dt.ttl[[cl]] })
+  names(dt.setup) <- dt.nms
+
+  dt.setup <- Filter(Negate(is.null), dt.setup)
   
-  dt.setup <- data.table(tmp = character())
+  max.l <- max(sapply(dt.setup, length))
+  dt.setup <- lapply(dt.setup, function(x) { x <- c(x, rep(NA, max.l - length(x))) })
   
-  # for (dt.nm in dt.nms)
+  dt.setup <- as.data.table(t(as.data.frame(dt.setup)), keep.rownames = TRUE)
   
+  dt.setup <- merge(dt.dict[, .(rn = dt, file)], dt.setup, by = "rn")
+  dt.setup[, rn := NULL]
   
+  dt.setup[, file := str_remove(file, "\\_setup$")]
+  
+  dt.ttl[["setup"]] <- dt.setup
+  
+  # input concentrations
+  
+  part.eq.input <- rep("tot", ncol(dt.ttl$dt.conc.input))
+  part.eq.input[dt.ttl$part.eq.input] <- "eq"
+  
+  dt.ttl$dt.conc.input <- rbind(as.list(part.eq.input)
+                                , as.list(colnames(dt.ttl$dt.conc.input))
+                                , dt.ttl$dt.conc.input, use.names = FALSE)
+
+  # remove garbage
+  
+  dt.ttl <- dt.ttl[!(names(dt.ttl) %in% c(dt.nms, "part.eq.input"))]
+  
+  dt.ttl
+    
 }
 
 
@@ -31,10 +59,9 @@ ht.save <- function() {
   
   dt.dict <- fread("dt.dict.csv")
   
-  function(mode = "script"
+  function(dt.ttl = list()
            , path = ""
            , sep = ";"
-           , dt.ttl = list()
            , filename = NULL) {
     
     # if (subdir != "")
@@ -46,6 +73,7 @@ ht.save <- function() {
     
     dt.ttl <- ht.save.prepare.data(dt.ttl, dt.dict)
     
+    browser()
     
     if (sep == ";") {
       

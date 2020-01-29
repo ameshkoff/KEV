@@ -15,3 +15,4 @@ dt.enth.input input_enthalpies
 cmp.tune.input       component_setup
 calorimeter.type.input      calorimeter_setup
 init.vol.input       "initial volume_setup"
+setup    setup
