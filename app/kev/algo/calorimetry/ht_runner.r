@@ -22,7 +22,6 @@ library(stringi)
 library(stringr)
 
 
-
 # runner -------------------------------------------- #
 
 ht.evaluation.runner <- function(mode = "script"
@@ -61,17 +60,17 @@ ht.evaluation.runner <- function(mode = "script"
     
   }
   
-  source(paste0(dir.start, "concentrations/eq_data.r"), chdir = TRUE)
-  source(paste0(dir.start, "calorimetry/ht_data.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_data.r"), chdir = TRUE, local = TRUE)
+  source(paste0(dir.start, "calorimetry/ht_data.r"), chdir = TRUE, local = TRUE)
   
-  source(paste0(dir.start, "concentrations/eq_preproc.r"), chdir = TRUE)
-  source(paste0(dir.start, "calorimetry/ht_preproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_preproc.r"), chdir = TRUE, local = TRUE)
+  source(paste0(dir.start, "calorimetry/ht_preproc.r"), chdir = TRUE, local = TRUE)
   
-  source(paste0(dir.start, "concentrations/eq_evaluator.r"), chdir = TRUE)
-  source(paste0(dir.start, "calorimetry/ht_evaluator.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_evaluator.r"), chdir = TRUE, local = TRUE)
+  source(paste0(dir.start, "calorimetry/ht_evaluator.r"), chdir = TRUE, local = TRUE)
   
-  source(paste0(dir.start, "concentrations/eq_postproc.r"), chdir = TRUE)
-  source(paste0(dir.start, "calorimetry/ht_postproc.r"), chdir = TRUE)
+  source(paste0(dir.start, "concentrations/eq_postproc.r"), chdir = TRUE, local = TRUE)
+  source(paste0(dir.start, "calorimetry/ht_postproc.r"), chdir = TRUE, local = TRUE)
 
   
   # load data ---------------- #
