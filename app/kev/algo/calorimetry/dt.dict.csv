@@ -7,7 +7,7 @@ dt.enth.calc  enthalpies_calculated
 cnst.tune     constants_setup
 adj.r.squared adj_r_squared
 dt.coef.input input_stoich_coefficients
-dt.conc.input input_k_constants_log10
+dt.conc.input input_concentrations
 cnst.input    input_k_constants_log10
 part.eq.input input_part.eq
 dt.heat.input input_heats

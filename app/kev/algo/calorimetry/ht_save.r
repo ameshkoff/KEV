@@ -9,10 +9,7 @@
 library(data.table)
 
 
-
 ht.save.prepare.data <- function(dt.ttl = list(), dt.dict = data.table()) {
-  
-  # create setup, input concentrations etc.
   
   # setup
   
@@ -34,6 +31,10 @@ ht.save.prepare.data <- function(dt.ttl = list(), dt.dict = data.table()) {
   
   dt.setup[, file := str_remove(file, "\\_setup$")]
   
+  cln <- unlist(dt.setup[1])
+  dt.setup <- dt.setup[2:nrow(dt.setup)]
+  setnames(dt.setup, cln)
+  
   dt.ttl[["setup"]] <- dt.setup
   
   # input concentrations
@@ -41,10 +42,15 @@ ht.save.prepare.data <- function(dt.ttl = list(), dt.dict = data.table()) {
   part.eq.input <- rep("tot", ncol(dt.ttl$dt.conc.input))
   part.eq.input[dt.ttl$part.eq.input] <- "eq"
   
-  dt.ttl$dt.conc.input <- rbind(as.list(part.eq.input)
-                                , as.list(colnames(dt.ttl$dt.conc.input))
+  dt.ttl$dt.conc.input <- rbind(as.list(colnames(dt.ttl$dt.conc.input))
                                 , dt.ttl$dt.conc.input, use.names = FALSE)
 
+  setnames(dt.ttl$dt.conc.input, part.eq.input)
+  
+  # correlation matrix
+  
+  dt.ttl$cor.m <- as.data.table(dt.ttl$cor.m, keep.rownames = "")
+  
   # remove garbage
   
   dt.ttl <- dt.ttl[!(names(dt.ttl) %in% c(dt.nms, "part.eq.input"))]
@@ -52,7 +58,6 @@ ht.save.prepare.data <- function(dt.ttl = list(), dt.dict = data.table()) {
   dt.ttl
     
 }
-
 
 
 ht.save <- function() {
@@ -64,54 +69,51 @@ ht.save <- function() {
            , sep = ";"
            , filename = NULL) {
     
-    # if (subdir != "")
-    #   subdir <- paste0("/", subdir, "/")
-    # 
+    if (path != "")
+      path <- paste0(path, "/")
+    path <- str_replace_all(path, "\\/\\/", "/")
+
     # dir.create(file.path(paste0("output", subdir)), showWarnings = FALSE)
     
     dir.create(path, showWarnings = FALSE)
     
     dt.ttl <- ht.save.prepare.data(dt.ttl, dt.dict)
+    dt.ttl <- Filter(Negate(is.null), dt.ttl)
     
-    browser()
+    dt.dict.work <- copy(dt.dict)
+    dt.dict.work <- dt.dict.work[(dt %in% names(dt.ttl))]
     
-    if (sep == ";") {
+    if (is.null(filename)) {
       
-      write.csv2(dt.res, file = paste0("output", subdir, "equilibrium_concentrations.csv"), row.names = FALSE)
-      write.csv2(dt.ht.calc, file = paste0("output", subdir, "absorbance.csv"), row.names = FALSE)
-      write.csv2(ht.res.abs, file = paste0("output", subdir, "absorbance_st_deviations_absolute.csv"), row.names = FALSE)
-      write.csv2(ht.res.rel, file = paste0("output", subdir, "absorbance_st_deviations_relative.csv"), row.names = FALSE)
-      write.csv2(cnst.dev, file = paste0("output", subdir, "constants_with_st_deviations.csv"), row.names = FALSE)
-      write.csv2(cor.m, file = paste0("output", subdir, "correlation_matrix.csv"), row.names = FALSE)
-      write.csv2(mol.coef, file = paste0("output", subdir, "molar_extinction_coefficients.csv"), row.names = FALSE)
-      write.table(target, file = paste0("output", subdir, "target.csv"), sep = sep, dec = ",", row.names = FALSE, col.names = FALSE)
+      for (i in dt.dict.work[, dt]) {
+        
+        save.header <- TRUE
+        if (i %in% c("adj.r.squared")) save.header <- FALSE
+        
+        if (sep == ";"){
+          write.table(dt.ttl[[i]], dt.dict.work[dt == i, paste0(path, file, ".csv")], row.names = FALSE, sep = ";", dec = ",", col.names = save.header)
+        } else if (sep == ",") {
+          write.table(dt.ttl[[i]], dt.dict.work[dt == i, paste0(path, file, ".csv")], row.names = FALSE, sep = ",", dec = ".", col.names = save.header)
+        } else if (sep %in% c("tab", "\t")) {
+          write.table(dt.ttl[[i]], dt.dict.work[dt == i, paste0(path, file, ".txt")], row.names = FALSE, sep = "\t", col.names = save.header)
+        }
+        
+      }
       
-    } else if (sep == ",") {
+    } else {
       
-      write.csv(dt.res, file = paste0("output", subdir, "equilibrium_concentrations.csv"), row.names = FALSE)
-      write.csv(dt.ht.calc, file = paste0("output", subdir, "absorbance.csv"), row.names = FALSE)
-      write.csv(ht.res.abs, file = paste0("output", subdir, "absorbance_st_deviations_absolute.csv"), row.names = FALSE)
-      write.csv(ht.res.rel, file = paste0("output", subdir, "absorbance_st_deviations_relative.csv"), row.names = FALSE)
-      write.csv(cnst.dev, file = paste0("output", subdir, "constants_with_st_deviations.csv"), row.names = FALSE)
-      write.csv(cor.m, file = paste0("output", subdir, "correlation_matrix.csv"), row.names = FALSE)
-      write.csv(mol.coef, file = paste0("output", subdir, "molar_extinction_coefficients.csv"), row.names = FALSE)
-      write.table(target, file = paste0("output", subdir, "target.csv"), sep = sep, dec = ".", row.names = FALSE, col.names = FALSE)
+      dt.ttl <- dt.ttl[names(dt.ttl) %in% dt.dict.work[, dt]]
+      dt.dict.work <- dt.dict.work[match(names(dt.ttl), dt)]
+      names(dt.ttl) <- dt.dict.work[, file]
       
-    } else if (sep == "tab") {
-      
-      write.table(dt.res, file = paste0("output", subdir, "equilibrium_concentrations.csv"), sep = "\t", row.names = FALSE)
-      write.table(dt.ht.calc, file = paste0("output", subdir, "absorbance.csv"), sep = "\t", row.names = FALSE)
-      write.table(ht.res.abs, file = paste0("output", subdir, "absorbance_st_deviations_absolute.csv"), sep = "\t", row.names = FALSE)
-      write.table(ht.res.rel, file = paste0("output", subdir, "absorbance_st_deviations_relative.csv"), sep = "\t", row.names = FALSE)
-      write.table(cnst.dev, file = paste0("output", subdir, "constants_with_st_deviations.csv"), sep = "\t", row.names = FALSE)
-      write.table(cor.m, file = paste0("output", subdir, "correlation_matrix.csv"), sep = "\t", row.names = FALSE)
-      write.table(mol.coef, file = paste0("output", subdir, "molar_extinction_coefficients.csv"), sep = "\t", row.names = FALSE)
-      write.table(target, file = paste0("output", subdir, "target.csv"), sep = "\t", row.names = FALSE, col.names = FALSE)
+      write.xlsx(dt.ttl, paste0(path, filename))
       
     }
     
+    0
+    
   }
-  
+
 }
 
 ht.save <- ht.save()

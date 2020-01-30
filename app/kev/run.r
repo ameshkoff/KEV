@@ -299,6 +299,7 @@ dt.ttl <- ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimet
                                , filename = "data.xlsx")
 
 ht.save(dt.ttl, path = "output/tmp", sep = ";", filename = "kev.output.xlsx")
+ht.save(dt.ttl, path = "output/tmp", sep = ";", filename = NULL)
 
 
 dt.ttl <- ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.4.overfilled/data"
