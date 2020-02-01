@@ -38,6 +38,7 @@ ht.evaluation.runner <- function(mode = "script"
                                  , search.density = 1
                                  , lrate.init = .5
                                  , ht.threshold = 5e-7
+                                 , save.res = FALSE
                                  , dt.list = NULL
                                  , filename = NULL) {
   
@@ -264,25 +265,35 @@ ht.evaluation.runner <- function(mode = "script"
   
   # return
   
-  list("dt.eq.conc" = dt.res
-       , "dt.heat.calc" = dt.heat.calc
-       , "cnst.dev" = cnst.dev
-       , "cor.m" = cor.m
-       , "dt.enth.calc" = dt.enth.calc
-       , "err.diff" = err.diff
-       , "cnst.tune" = cnst.tune
-       , "lrate.fin" = lrate.fin
-       , "adj.r.squared" = adj.r.squared
-       , "dt.coef.input" = dt.coef
-       , "dt.conc.input" = dt.conc
-       , "cnst.input" = cnst
-       , "part.eq.input" = part.eq
-       , "dt.heat.input" = dt.heat
-       , "dt.enth.input" = dt.enth
-       , "cmp.tune.input" = cmp.tune
-       , "calorimeter.type.input" = calorimeter.type
-       , "init.vol.input" = init.vol
-  )
+  rtrn <- list("dt.eq.conc" = dt.res
+               , "dt.heat.calc" = dt.heat.calc
+               , "cnst.dev" = cnst.dev
+               , "cor.m" = cor.m
+               , "dt.enth.calc" = dt.enth.calc
+               , "err.diff" = err.diff
+               , "cnst.tune" = cnst.tune
+               , "lrate.fin" = lrate.fin
+               , "adj.r.squared" = adj.r.squared
+               , "dt.coef.input" = dt.coef
+               , "dt.conc.input" = dt.conc
+               , "cnst.input" = cnst
+               , "part.eq.input" = part.eq
+               , "dt.heat.input" = dt.heat
+               , "dt.enth.input" = dt.enth
+               , "cmp.tune.input" = cmp.tune
+               , "calorimeter.type.input" = calorimeter.type
+               , "init.vol.input" = init.vol
+               )
+  
+  if (save.res) {
+    
+    source(paste0(dir.start, "calorimetry/ht_save.r"), chdir = TRUE, local = TRUE)
+    
+    ht.save(rtrn, path = str_replace(paste0("output/", subdir), "\\/\\/", "/"), sep = sep, filename = filename)
+    
+  }
+  
+  rtrn
   
 }
   
