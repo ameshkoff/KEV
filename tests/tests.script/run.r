@@ -14,7 +14,8 @@ library(testthat)
 
 #
 
-source("app/kev/algo/calorimetry/ht_runner.r", chdir = TRUE)
+source("app/kev/algo/calorimetry/ht_runner.r", chdir = TRUE, local = TRUE)
+source("app/kev/algo/calorimetry/ht_save.r", chdir = TRUE, local = TRUE)
 source("tests/tests.script/functions.r")
 
 
@@ -43,7 +44,11 @@ kev.test.stat(dt.test.list = dt.test.list
               , test.fn = ht.test.stat
               , stop.on.fail = FALSE)
 
+# TEMP
 
+kev.test.regression.write.data(dt.test.list, path = "output")
+
+# END OF TEMP
 
 
 

@@ -248,7 +248,41 @@ ht.test.consistent <- function(env) {
 
 
 # regression tests
-# write after saving module
+
+kev.test.regression.write.data <- function(dt.test.list = list(data.table(fake = character(0))), path = "") {
+  
+  source("app/kev/algo/calorimetry/ht_save.r", chdir = TRUE, local = TRUE)
+  
+  lapply(names(dt.test.list), function(nm) {
+    
+    path.dt <- nm
+    sep.v <- basename(nm)
+    filename <- NULL
+    
+    if (!(sep.v %like% "^(csv|txt)")) {
+      
+      filename <- sep.v
+      path.dt <- dirname(nm)
+      sep.v <- "csv.comma"
+      
+    }
+    
+    sep.v <- test.dict[dir == sep.v, sep]
+    
+    ht.save(dt.ttl = dt.test.list[[nm]]
+              , path = str_replace_all(paste(path, path.dt, sep = "/"), "\\/\\/", "/")
+              , sep = sep.v
+              , filename = filename)
+
+    print(paste(nm, "saved"))
+    
+  })
+  
+  0
+  
+}
+
+kev.test.regression.read.data <- function(path = "") {}
 
 kev.test.regression <- function() {}
 

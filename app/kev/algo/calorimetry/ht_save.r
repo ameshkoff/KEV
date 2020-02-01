@@ -75,7 +75,7 @@ ht.save <- function() {
 
     # dir.create(file.path(paste0("output", subdir)), showWarnings = FALSE)
     
-    dir.create(path, showWarnings = FALSE)
+    dir.create(path, showWarnings = FALSE, recursive = TRUE)
     
     dt.ttl <- ht.save.prepare.data(dt.ttl, dt.dict)
     dt.ttl <- Filter(Negate(is.null), dt.ttl)
