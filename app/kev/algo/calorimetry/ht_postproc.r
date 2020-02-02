@@ -170,6 +170,8 @@ constant.validation <- function(cnst.m
   
   cnst.dev[validity == "OK" & as.numeric(dev) / abs(as.numeric(cnst)) > .1, validity := "Insignificant"]
   
+  setnames(cnst.dev, c("Constant", "St.Deviation", "Validity"))
+  
   # return
   
   cnst.dev
