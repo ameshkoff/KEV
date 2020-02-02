@@ -109,7 +109,8 @@ ht.test.getdata <- function(dr, sep, filename) {
 # formal tests
 
 kev.test.formal <- function(dt.test.list = list(data.table(fake = character(0)))
-                            , test.fn = function(){1}) {
+                            , test.fn = function(){1}
+                            , stop.on.fail = TRUE) {
   
   kev.test.env <- new.env(parent = parent.frame())
   
@@ -120,7 +121,7 @@ kev.test.formal <- function(dt.test.list = list(data.table(fake = character(0)))
            , envir = kev.test.env)
     assign("kev.context", paste("Formal :", dt.name), envir = kev.test.env)
     
-    test.fn(kev.test.env)
+    test.fn(kev.test.env, stop.on.fail)
     
     assign("rtrn", NULL, envir = kev.test.env)
     assign("kev.context", NULL, envir = kev.test.env)
@@ -129,10 +130,15 @@ kev.test.formal <- function(dt.test.list = list(data.table(fake = character(0)))
   
 }
 
-ht.test.formal <- function(env) {
+ht.test.formal <- function(env, stop.on.fail) {
   
   cat("\n")
-  test_file("tests/tests/ht_formal.r", env = env, reporter = c("progress", "fail"))
+
+  if (stop.on.fail) {
+    test_file("tests/tests/ht_formal.r", env = env, reporter = c("progress", "fail"))
+  } else {
+    test_file("tests/tests/ht_formal.r", env = env, reporter = "progress")
+  }
   
 }
 
@@ -171,14 +177,14 @@ ht.test.stat <- function(env, stop.on.fail) {
     test_file("tests/tests/ht_stat.r", env = env, reporter = "progress")
   }
   
-  
 }
 
 
 # consistency tests
 
 kev.test.consistent <- function(dt.test.list = list(data.table(fake = character(0)))
-                                , test.fn = function(){1}) {
+                                , test.fn = function(){1}
+                                , stop.on.fail = TRUE) {
   
   dt.test.list <- kev.test.consistent.data(dt.test.list)
   
@@ -196,7 +202,7 @@ kev.test.consistent <- function(dt.test.list = list(data.table(fake = character(
            , envir = kev.test.env)
     assign("kev.context", paste("Consistence :", dt.nm), envir = kev.test.env)
     
-    test.fn(kev.test.env)
+    test.fn(kev.test.env, stop.on.fail)
     
     assign("dt.test.list", NULL, envir = kev.test.env)
     assign("kev.context", NULL, envir = kev.test.env)
@@ -251,10 +257,15 @@ kev.test.consistent.data <- function(dt.test.list) {
   
 }
 
-ht.test.consistent <- function(env) {
+ht.test.consistent <- function(env, stop.on.fail) {
   
   cat("\n")
-  test_file("tests/tests/ht_consistent.r", env = env, reporter = c("progress", "fail"))
+  
+  if (stop.on.fail) {
+    test_file("tests/tests/ht_consistent.r", env = env, reporter = c("progress", "fail"))
+  } else {
+    test_file("tests/tests/ht_consistent.r", env = env, reporter = "progress")
+  }
   
 }
 
@@ -501,6 +512,28 @@ kev.test.regression <- function(data.path = "tests/data.gui"
   
 }
 
+kev.clear.dir <- function(path = "") {
+  
+  dirs <- dir(path, full.names = TRUE)
+  unlink(dirs, recursive = TRUE)
+  
+  invisible(0)
+  
+}
+
+kev.copy.dir <- function(path.from = "", path.to = "", ignore.pattern = "") {
+  
+  file.copy(path.from, path.to, recursive = TRUE, overwrite = TRUE)
+  
+  drs.rm <- list.dirs(path.to, full.names = TRUE, recursive = TRUE)
+  drs.rm <- drs.rm[drs.rm %like% ignore.pattern]
+  
+  unlink(drs.rm, recursive = TRUE)
+  
+  invisible(0)
+  
+}
+
 
 kev.test.regression.write.data <- function(dt.test.list = list(data.table(fake = character(0)))
                                            , path = ""
@@ -537,7 +570,6 @@ kev.test.regression.write.data <- function(dt.test.list = list(data.table(fake =
   
 }
 
-# kev.test.regression <- function() {}
 
 
 

@@ -319,7 +319,7 @@ ht.evaluation.runner(mode = "script", sep = ",", subdir = "calorimetry/ds.3.ampo
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , algorithm = "direct search", ht.mode = "base", method = "basic wls"
                      , search.density = 1, lrate.init = .5, ht.threshold = 5e-7
-                     , save.res = TRUE)
+                     , save.res = FALSE)
 
 
 

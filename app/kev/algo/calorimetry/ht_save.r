@@ -49,7 +49,8 @@ ht.save.prepare.data <- function(dt.ttl = list(), dt.dict = data.table()) {
   
   # correlation matrix
   
-  dt.ttl$cor.m <- as.data.table(dt.ttl$cor.m, keep.rownames = "")
+  if (!is.null(dt.ttl$cor.m))
+    dt.ttl$cor.m <- as.data.table(dt.ttl$cor.m, keep.rownames = "")
   
   # remove garbage
   
