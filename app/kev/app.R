@@ -65,6 +65,10 @@ source("algo/spectrophotometry/ab_runner.r", chdir = TRUE)
 source("algo/molar.extinction.coefficients/sp_runner.r", chdir = TRUE)
 source("algo/emf/emf_runner.r", chdir = TRUE)
 source("algo/nmr/nm_runner.r", chdir = TRUE)
+
+source("algo/calorimetry/ht_runner.r", chdir = TRUE, local = TRUE)
+source("algo/calorimetry/ht_save.r", chdir = TRUE, local = TRUE)
+
 source("algo/curves/cur_runner.r", chdir = TRUE)
 
 # load ui modules
@@ -74,6 +78,7 @@ source("web/ui/ui_ab.r")
 source("web/ui/ui_sp.r")
 source("web/ui/ui_emf.r")
 source("web/ui/ui_nm.r")
+source("web/ui/ui_ht.r")
 source("web/ui/ui_cur.r")
 
 
@@ -101,7 +106,9 @@ ui <- tagList(
      , ui_ab()
      , ui_sp()
      , ui_emf()
-     , ui_nm()),
+     , ui_nm()
+     , ui_ht()
+     ),
 
   ui_cur(cur.task.list, cur.curves.list, cur.algorithms)
   
