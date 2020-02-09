@@ -12,7 +12,7 @@
 
 # input data
 
-server_dt.coef.data <- function(module = c("eq", "ab", "emf", "nm")) {
+server_dt.coef.data <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   dt.coef.name <- paste0(module[1], ".dt.coef")
   
@@ -100,7 +100,7 @@ server_part.names.data <- function(module = c("eq")) {
   
 }
 
-server_dt.conc.data <- function(module = c("eq", "ab", "emf", "nm")) {
+server_dt.conc.data <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   dt.conc.name <- paste0(module[1], ".dt.conc")
   
@@ -140,7 +140,7 @@ server_dt.conc.data <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-server_part.eq.data <- function(module = c("eq", "ab", "emf", "nm")) {
+server_part.eq.data <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   part.eq.name <- paste0(module[1], ".part.eq")
   
@@ -179,7 +179,7 @@ server_part.eq.data <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-server_cnst.data <- function(module = c("eq", "ab", "emf", "nm")) {
+server_cnst.data <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   cnst.name <- paste0(module[1], ".cnst")
   
@@ -221,7 +221,7 @@ server_cnst.data <- function(module = c("eq", "ab", "emf", "nm")) {
 
 # rendering -------------------------
 
-server_render_dt.coef <- function(module = c("eq", "ab", "emf", "nm")) {
+server_render_dt.coef <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   bulk.input.name <- paste0("file.", module[1], ".bulk.input")
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -254,6 +254,10 @@ server_render_dt.coef <- function(module = c("eq", "ab", "emf", "nm")) {
       } else if (module[1] == "nm") {
         
         try(nm.cnst.tune.load(), silent = TRUE)
+        
+      } else if (module[1] == "ht") {
+        
+        try(ht.setup.load(), silent = TRUE)
         
       }
       
@@ -363,7 +367,7 @@ server_render_dt.coef <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-server_render_dt.conc <- function(module = c("eq", "ab", "emf", "nm")) {
+server_render_dt.conc <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   bulk.input.name <- paste0("file.", module[1], ".bulk.input")
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -427,6 +431,7 @@ server_render_dt.conc <- function(module = c("eq", "ab", "emf", "nm")) {
       setnames(dt.conc, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
       
       tmp <- colnames(dt.conc)
+      if (str_to_lower(tail(tmp, 1)) == "series") tmp <- tmp[1:(length(tmp) - 1)]
       updateTextInput(session, paste0(module[1], ".part.names"), value = paste(tmp, collapse = ", "))
       
       
@@ -442,6 +447,7 @@ server_render_dt.conc <- function(module = c("eq", "ab", "emf", "nm")) {
       validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
       
       tmp <- colnames(dt.conc)
+      if (str_to_lower(tail(tmp, 1)) == "series") tmp <- tmp[1:(length(tmp) - 1)]
       updateTextInput(session, paste0(module[1], ".part.names"), value = paste(tmp, collapse = ", "))
       
     } else if (module[1] == "eq" && input.source[[paste0(module[1], ".dt.conc.pc.fl")]]) {
@@ -480,7 +486,7 @@ server_render_dt.conc <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm")) {
+server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   bulk.input.name <- paste0("file.", module[1], ".bulk.input")
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -553,9 +559,12 @@ server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm")) {
       setDT(part.eq)
       part.eq[1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), "")]
 
-      validate(need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file"))
+      tmp <- unlist(tmp)
+      if (str_to_lower(tail(tmp, 1)) == "series") tmp <- tmp[1:(length(tmp) - 1)]
+
+      validate(need(ncol(part.eq) == length(tmp), "Check the column delimiter or content of your file"))
       
-      colnames(part.eq) <- unlist(tmp)
+      colnames(part.eq) <- tmp
       
     } else if (!is.null(in.file.xlsx)) {
       
@@ -567,14 +576,17 @@ server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm")) {
       part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 1), silent = TRUE)
       tmp <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 2), silent = TRUE)
       
+      tmp <- unlist(tmp)
+      if (str_to_lower(tail(tmp, 1)) == "series") tmp <- tmp[1:(length(tmp) - 1)]
+      
       validate(
         
         need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
-          need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
+          need(ncol(part.eq) == length(tmp), "Check the column delimiter or content of your file")
         
       )
       
-      colnames(part.eq) <- unlist(tmp)
+      colnames(part.eq) <- tmp
       
     } else if (module[1] == "eq" && input.source[[paste0(module[1], ".dt.conc.pc.fl")]]) {
       
@@ -594,7 +606,7 @@ server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-server_render_cnst <- function(module = c("eq", "ab", "emf", "nm")) {
+server_render_cnst <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   bulk.input.name <- paste0("file.", module[1], ".bulk.input")
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -694,7 +706,7 @@ server_render_cnst <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-server_render_dt.res <- function(module = c("eq", "ab", "emf", "nm")) {
+server_render_dt.res <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   dt.res.data <- eval(as.name(paste0(module[1], ".dt.res.data")))
 

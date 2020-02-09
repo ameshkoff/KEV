@@ -121,6 +121,69 @@ ht.scripts.load.xlsx <- function(sep, subdir, filename, tbl) {
   
 }
 
+ht.load.extract.setup <- function(tbl = list(dt = data.table())) {
+  
+  if (is.data.table(tbl[["setup"]]) && nrow(tbl[["setup"]]) > 0) {
+    
+    cln <- colnames(tbl[["setup"]])
+    
+    if (length(cln[cln == "V1"]) > 0) {
+      
+      tbl[["setup"]][1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), "")]
+      setnames(tbl[["setup"]], "V1", "X1")
+      
+    }
+    
+    tbl[["setup"]][, X1 := str_to_lower(str_trim(X1))]
+    
+    if (nrow(tbl[["setup"]][X1 %like% "^constants*$"]) > 0) {
+      
+      tbl[["cnst.tune"]] <- tbl[["setup"]][X1 %like% "^constants*$"][, !"X1", with = FALSE]
+      tbl[["cnst.tune"]] <- unlist(tbl[["cnst.tune"]])
+      tbl[["cnst.tune"]] <- tbl[["cnst.tune"]][!is.na(tbl[["cnst.tune"]]) & tbl[["cnst.tune"]] != ""]
+      
+      tbl[["cnst.tune"]] <- unlist(tbl[["cnst.tune"]])
+      
+    }
+    
+    if (nrow(tbl[["setup"]][X1 %like% "^components*$"]) > 0) {
+      
+      tbl[["cmp.tune"]] <- tbl[["setup"]][X1 %like% "^components*$"][, !"X1", with = FALSE]
+      tbl[["cmp.tune"]] <- unlist(tbl[["cmp.tune"]])
+      tbl[["cmp.tune"]] <- tbl[["cmp.tune"]][!is.na(tbl[["cmp.tune"]]) & tbl[["cmp.tune"]] != ""]
+      
+      tbl[["cmp.tune"]] <- unlist(tbl[["cmp.tune"]])[1]
+      
+    }
+    
+    if (nrow(tbl[["setup"]][X1 %like% "^calorimeter$"]) > 0) {
+      
+      tbl[["calorimeter.type"]] <- tbl[["setup"]][X1 %like% "^calorimeter*$"][, !"X1", with = FALSE]
+      tbl[["calorimeter.type"]] <- unlist(tbl[["calorimeter.type"]])
+      tbl[["calorimeter.type"]] <- tbl[["calorimeter.type"]][!is.na(tbl[["calorimeter.type"]]) & tbl[["calorimeter.type"]] != ""]
+      
+      tbl[["calorimeter.type"]] <- unlist(tbl[["calorimeter.type"]])[1]
+      
+    }
+    
+    if (nrow(tbl[["setup"]][X1 %like% "^(initial|active*).*volumes*$"]) > 0) {
+      
+      tbl[["init.vol"]] <- tbl[["setup"]][X1 %like% "^(initial|active*).*volumes*$"][, !"X1", with = FALSE]
+      tbl[["init.vol"]] <- unlist(tbl[["init.vol"]])
+      tbl[["init.vol"]] <- tbl[["init.vol"]][!is.na(tbl[["init.vol"]]) & tbl[["init.vol"]] != ""]
+      
+      tbl[["init.vol"]] <- unlist(tbl[["init.vol"]])[1]
+      
+    }
+
+  }
+
+  # return
+  
+  tbl[!(names(tbl) %in% c("setup"))]
+  
+}
+
 ht.scripts.load <- function(sep = ";", subdir = "", filename = NULL) {
   
   tbl <- list("dt.heat" = NA, "dt.enth" = NA, "setup" = NA)
@@ -142,65 +205,11 @@ ht.scripts.load <- function(sep = ";", subdir = "", filename = NULL) {
   
   # extract data from targets / setup sheet
   
-  if (is.data.table(tbl[["setup"]]) && nrow(tbl[["setup"]]) > 0) {
-    
-    cln <- colnames(tbl[["setup"]])
-    
-    if (length(cln[cln == "V1"]) > 0) {
-      
-      tbl[["setup"]][1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), "")]
-      setnames(tbl[["setup"]], "V1", "X1")
-      
-    }
-    
-    tbl[["setup"]][, X1 := str_to_lower(str_trim(X1))]
-
-    if (nrow(tbl[["setup"]][X1 %like% "^constants*$"]) > 0) {
-      
-      tbl[["cnst.tune"]] <- tbl[["setup"]][X1 %like% "^constants*$"][, !"X1", with = FALSE]
-      tbl[["cnst.tune"]] <- unlist(tbl[["cnst.tune"]])
-      tbl[["cnst.tune"]] <- tbl[["cnst.tune"]][!is.na(tbl[["cnst.tune"]]) & tbl[["cnst.tune"]] != ""]
-
-      tbl[["cnst.tune"]] <- unlist(tbl[["cnst.tune"]])
-      
-    }
-        
-    if (nrow(tbl[["setup"]][X1 %like% "^components*$"]) > 0) {
-      
-      tbl[["cmp.tune"]] <- tbl[["setup"]][X1 %like% "^components*$"][, !"X1", with = FALSE]
-      tbl[["cmp.tune"]] <- unlist(tbl[["cmp.tune"]])
-      tbl[["cmp.tune"]] <- tbl[["cmp.tune"]][!is.na(tbl[["cmp.tune"]]) & tbl[["cmp.tune"]] != ""]
-      
-      tbl[["cmp.tune"]] <- unlist(tbl[["cmp.tune"]])[1]
-      
-    }
-
-    if (nrow(tbl[["setup"]][X1 %like% "^calorimeter$"]) > 0) {
-      
-      tbl[["calorimeter.type"]] <- tbl[["setup"]][X1 %like% "^calorimeter*$"][, !"X1", with = FALSE]
-      tbl[["calorimeter.type"]] <- unlist(tbl[["calorimeter.type"]])
-      tbl[["calorimeter.type"]] <- tbl[["calorimeter.type"]][!is.na(tbl[["calorimeter.type"]]) & tbl[["calorimeter.type"]] != ""]
-      
-      tbl[["calorimeter.type"]] <- unlist(tbl[["calorimeter.type"]])[1]
-      
-    }
-    
-    if (nrow(tbl[["setup"]][X1 %like% "^(initial|active*).*volumes*$"]) > 0) {
-      
-      tbl[["init.vol"]] <- tbl[["setup"]][X1 %like% "^(initial|active*).*volumes*$"][, !"X1", with = FALSE]
-      tbl[["init.vol"]] <- unlist(tbl[["init.vol"]])
-      tbl[["init.vol"]] <- tbl[["init.vol"]][!is.na(tbl[["init.vol"]]) & tbl[["init.vol"]] != ""]
-      
-      tbl[["init.vol"]] <- unlist(tbl[["init.vol"]])[1]
-      
-    }
-    
-    
-  }
+  tbl <- ht.load.extract.setup(tbl)
   
   # return
   
-  tbl[!(names(tbl) %in% c("setup"))]
+  tbl
   
 }
 

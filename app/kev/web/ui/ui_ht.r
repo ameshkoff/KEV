@@ -45,7 +45,7 @@ ui_ht <- function() {
                , wellPanel(
                  fluidRow(column(12
                                  , h3("Bulk upload / download (optional)")))
-                 
+
                  , fluidRow(column(5
                                    , h4("Upload all data")
                                    , fileInput("file.ht.bulk.input", "Choose CSV files or XLSX file with multiple sheets",
@@ -59,8 +59,8 @@ ui_ht <- function() {
                             , column(3
                                      , h4("Download all data")
                                      , fluidRow(class = "download-row"
-                                                , downloadButton("kev.data.zip", "zip")
-                                                , downloadButton("kev.data.xlsx", "xlsx")))
+                                                , downloadButton("kev.ht.data.zip", "zip")
+                                                , downloadButton("kev.ht.data.xlsx", "xlsx")))
                             , column(4
                                      , h4("Example data")
                                      , p("Learn how to prepare data via example datasets")
@@ -74,9 +74,9 @@ ui_ht <- function() {
                                                                                 , "master/input/calorimetry', '_blank')")))))
                  )
                )))
-             
+
              , fluidRow(
-               
+
                column(
                  12
                  , wellPanel(
@@ -127,39 +127,39 @@ ui_ht <- function() {
                      )
                    )
                    , fluidRow(
-                     column(6
+                     column(8
                             , h4("Heats")
                             , p("Known heats")
-                            , rHandsontableOutput("dt.heat")
-                            , fileInput("file.dt.heat", "Choose CSV File",
+                            , rHandsontableOutput("ht.dt.heat")
+                            , fileInput("file.ht.dt.heat", "Choose CSV File",
                                         accept = c(
                                           "text/csv",
                                           "text/comma-separated-values,text/plain",
                                           ".csv")
                             )
                             , fluidRow(class = "download-row"
-                                       , downloadButton("dt.heat.csv", "csv")
-                                       , downloadButton("dt.heat.xlsx", "xlsx"))
-                            
+                                       , downloadButton("ht.dt.heat.csv", "csv")
+                                       , downloadButton("ht.dt.heat.xlsx", "xlsx"))
+
                      )
-                     , column(6
+                     , column(4
                               , h4("Enthalpies")
                               , p("Known Enthalpies")
-                              , rHandsontableOutput("dt.enth")
-                              , fileInput("file.dt.enth", "Choose CSV File",
+                              , rHandsontableOutput("ht.dt.enth")
+                              , fileInput("file.ht.dt.enth", "Choose CSV File",
                                                     accept = c(
                                                       "text/csv",
                                                       "text/comma-separated-values,text/plain",
                                                       ".csv"))
                               , fluidRow(class = "download-row"
-                                         , downloadButton("dt.enth.csv", "csv")
-                                         , downloadButton("dt.enth.xlsx", "xlsx"))
+                                         , downloadButton("ht.dt.enth.csv", "csv")
+                                         , downloadButton("ht.dt.enth.xlsx", "xlsx"))
                      )
                    )
                    , fluidRow(
                      column(4
-                            , HTML("<h4>Calorimeter type</h4><p>DSC, Ampoule or Overfilled</p>")
-                            , textInput("ht.calorimeter.type", "", "DSC"))
+                            , HTML("<h4>Calorimeter type</h4><p>&nbsp;</p>")
+                            , selectInput("ht.calorimeter.type", "", choices = c("DSC", "Ampoule", "Overfilled"), selected = "DSC"))
                      , column(4
                               , HTML("<h4>Active/Initial volume</h4><p>&nbsp;</p>")
                               , numericInput("ht.init.vol", "", 1))
@@ -170,7 +170,7 @@ ui_ht <- function() {
                  )
                )
              )
-             
+
              , fluidRow(column(
                12
                , wellPanel(
@@ -178,7 +178,7 @@ ui_ht <- function() {
                                  , actionButton("ht.conc.exec.btn", "Evaluate", class = "kev-ev-button")
                  ))
                )))
-             
+
              , fluidRow(column(
                12
                , wellPanel(
@@ -188,19 +188,19 @@ ui_ht <- function() {
                                  , fluidRow(class = "download-row"
                                             , downloadButton("ht.dt.res.csv", "csv")
                                             , downloadButton("ht.dt.res.xlsx", "xlsx"))))
-                 
+
                  , fluidRow(column(12
                                    , h4("Calculated Heats")
                                    , tabsetPanel(type = "tabs"
                                                  , tabPanel("Data"
-                                                            , rHandsontableOutput("dt.heat.calc")
+                                                            , rHandsontableOutput("ht.dt.heat.calc")
                                                             , fluidRow(class = "download-row"
-                                                                       , downloadButton("dt.heat.calc.csv", "csv")
-                                                                       , downloadButton("dt.heat.calc.xlsx", "xlsx")))
+                                                                       , downloadButton("ht.dt.heat.calc.csv", "csv")
+                                                                       , downloadButton("ht.dt.heat.calc.xlsx", "xlsx")))
                                                  , tabPanel("Plot"
-                                                            , plotlyOutput("plot.dt.heat"))
+                                                            , plotlyOutput("plot.ht.dt.heat"))
                                    )))
-                 
+
                  , fluidRow(column(12)
                             , column(6
                                      , h4("Evaluated Constants")
@@ -220,15 +220,15 @@ ui_ht <- function() {
                                      , fluidRow(class = "download-row"
                                                 , downloadButton("ht.adj.r.squared.csv", "csv")
                                                 , downloadButton("ht.adj.r.squared.xlsx", "xlsx"))))
-                 
+
                  , fluidRow(column(12
                                    , h4("Enthalpies with St.Errors")
-                                   , rHandsontableOutput("dt.enth.calc")
+                                   , rHandsontableOutput("ht.dt.enth.calc")
                                    , fluidRow(class = "download-row"
-                                              , downloadButton("dt.enth.calc.csv", "csv")
-                                              , downloadButton("dt.enth.calc.xlsx", "xlsx"))))
-                 
-                 
+                                              , downloadButton("ht.dt.enth.calc.csv", "csv")
+                                              , downloadButton("ht.dt.enth.calc.xlsx", "xlsx"))))
+
+
                ))
              )
              

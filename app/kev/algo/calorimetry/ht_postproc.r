@@ -160,7 +160,10 @@ constant.validation <- function(cnst.m
   
   #
   
-  cnst.dev <- cbind(cnst = as.vector(log(exp(cnst.m), 10)), dev = rep(0, length(cnst.m)), validity = rep("OK", length(cnst.m)))
+  cnst.dev <- cbind(name = dt.coef[, name]
+                    , cnst = as.vector(log(exp(cnst.m), 10))
+                    , dev = rep(0, length(cnst.m))
+                    , validity = rep("OK", length(cnst.m)))
   
   cnst.dev[cnst.tune.ind, "dev"] <- cov.m[row(cov.m) == col(cov.m)] ^ .5
   
@@ -170,7 +173,7 @@ constant.validation <- function(cnst.m
   
   cnst.dev[validity == "OK" & as.numeric(dev) / abs(as.numeric(cnst)) > .1, validity := "Insignificant"]
   
-  setnames(cnst.dev, c("Constant", "St.Deviation", "Validity"))
+  setnames(cnst.dev, c("Component", "Constant", "St.Deviation", "Validity"))
   
   # return
   

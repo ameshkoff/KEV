@@ -24,7 +24,7 @@ ht.preproc <- function(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, init.v
   
   # enthalpies ---------------------------------- #
   
-  if (is.data.table(dt.enth)) {
+  if (is.data.table(dt.enth) && ncol(dt.enth) > 1) {
     
     cln <- colnames(dt.enth)
     setnames(dt.enth, str_to_lower(cln))
@@ -121,11 +121,6 @@ ht.preproc <- function(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, init.v
        )
   
 }
-
-
-
-
-
 
 
 

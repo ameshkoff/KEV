@@ -60,7 +60,6 @@ ht.save.prepare.data <- function(dt.ttl = list(), dt.dict = data.table()) {
     
 }
 
-
 ht.save <- function() {
   
   dt.dict <- fread("dt.dict.csv")
