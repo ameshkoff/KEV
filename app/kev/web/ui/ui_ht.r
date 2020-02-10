@@ -189,7 +189,7 @@ ui_ht <- function() {
                                             , downloadButton("ht.dt.res.csv", "csv")
                                             , downloadButton("ht.dt.res.xlsx", "xlsx"))))
 
-                 , fluidRow(column(12
+                 , fluidRow(column(8
                                    , h4("Calculated Heats")
                                    , tabsetPanel(type = "tabs"
                                                  , tabPanel("Data"
@@ -199,7 +199,17 @@ ui_ht <- function() {
                                                                        , downloadButton("ht.dt.heat.calc.xlsx", "xlsx")))
                                                  , tabPanel("Plot"
                                                             , plotlyOutput("plot.ht.dt.heat"))
-                                   )))
+                                   ))
+                            , column(4
+                                     , h4("Enthalpies with St.Errors")
+                                     , tabsetPanel(type = "tabs"
+                                                   , tabPanel("Data"
+                                                              , rHandsontableOutput("ht.dt.enth.calc")
+                                                               , fluidRow(class = "download-row"
+                                                                          , downloadButton("ht.dt.enth.calc.csv", "csv")
+                                                                          , downloadButton("ht.dt.enth.calc.xlsx", "xlsx")))
+                                                   ))
+                            )
 
                  , fluidRow(column(12)
                             , column(6
@@ -221,12 +231,7 @@ ui_ht <- function() {
                                                 , downloadButton("ht.adj.r.squared.csv", "csv")
                                                 , downloadButton("ht.adj.r.squared.xlsx", "xlsx"))))
 
-                 , fluidRow(column(12
-                                   , h4("Enthalpies with St.Errors")
-                                   , rHandsontableOutput("ht.dt.enth.calc")
-                                   , fluidRow(class = "download-row"
-                                              , downloadButton("ht.dt.enth.calc.csv", "csv")
-                                              , downloadButton("ht.dt.enth.calc.xlsx", "xlsx"))))
+                 # , fluidRow()
 
 
                ))

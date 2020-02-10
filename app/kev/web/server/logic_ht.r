@@ -332,7 +332,8 @@ ht.init.vol.data <- reactive({
   
 })
 
-# load only updates textinput
+# update setup input fields
+
 ht.setup.load <- reactive({
   
   in.file.bulk <- input$file.ht.bulk.input
@@ -436,13 +437,24 @@ ht.eval.data <- reactive({
     ht.dt.heat <- ht.dt.heat.data()
     dt.conc <- ht.dt.conc.data()
     
+    heat.length <- nrow(dt.conc)
+    
+    if (length(colnames(dt.conc)[str_to_lower(colnames(dt.conc)) == "series"]) > 0) {
+      
+      heat.length <- heat.length - length(unique(unlist(dt.conc[, colnames(dt.conc)[str_to_lower(colnames(dt.conc)) == "series"], with = FALSE])))
+      
+    } else {
+      
+      heat.length <- heat.length - 1
+      
+    }
+    
     validate(
       
-      need(identical(nrow(ht.dt.heat) + 1, nrow(dt.conc))
-           , "Number of rows in Heats should equal to number of rows in Concentrations - 1")
+      need(identical(nrow(ht.dt.heat), as.integer(heat.length))
+           , "Number of rows in Heats should equal to number of rows in Concentrations - number of Observation series")
       
     )
-    
     
     # check if no enthalpies are known
     
@@ -450,6 +462,11 @@ ht.eval.data <- reactive({
     
     if (nrow(ht.dt.enth) <= 1)
       ht.dt.enth <- NA
+    
+    #
+    
+    cnst.tune <- ht.cnst.tune.data()
+    if (cnst.tune == "") cnst.tune <- NULL
     
     incProgress(.3)
     
@@ -459,7 +476,7 @@ ht.eval.data <- reactive({
                                 , sep = ht.sep()
                                 , eq.thr.type = "rel"
                                 , eq.threshold = 1e-08
-                                , cnst.tune = ht.cnst.tune.data()
+                                , cnst.tune = cnst.tune
                                 , algorithm = "direct search"
                                 , ht.mode = "base"
                                 , method = "basic wls"
@@ -496,7 +513,7 @@ ht.dt.res.data <- eventReactive(input$ht.conc.exec.btn, {
 
 ht.dt.heat.calc.data <- eventReactive(input$ht.conc.exec.btn, {
   
-  ht.eval.data()$ht.dt.heat.calc
+  ht.eval.data()$dt.heat.calc
 
 })
 
@@ -504,7 +521,7 @@ plot.ht.dt.heat.data <- eventReactive(input$ht.conc.exec.btn, {
   
   # get data
   
-  dt <- ht.eval.data()$ht.dt.heat.calc[, .(Data = data, Observed = heats, Calculated = heats.calculated)]
+  dt <- ht.eval.data()$dt.heat.calc[, .(Data = data, Observed = heats, Calculated = heats.calculated)]
   
   # return
   
@@ -774,7 +791,7 @@ output$ht.dt.heat.calc <- renderRHandsontable({
 
   if (!is.null(ht.dt.heat.calc)) {
     
-    row_highlight <- ht.dt.heat.calc[abs(res.rel) >= .25, which = TRUE] - 1
+    row_highlight <- ht.dt.heat.calc[abs(res.abs / mean(heats)) >= .25, which = TRUE] - 1
     
     renderer <- "
       function (instance, td, row, col, prop, value, cellProperties) {
@@ -784,6 +801,10 @@ output$ht.dt.heat.calc <- renderRHandsontable({
       if (instance.params) {
       hrows = instance.params.row_highlight
       hrows = hrows instanceof Array ? hrows : [hrows]
+      }
+      
+      if (instance.params && hrows.includes(row)) {
+      td.style.background = 'pink';
       }
       
       }" 
@@ -808,11 +829,11 @@ output$ht.cnst.dev <- renderRHandsontable({
   
   cnst.dev <- ht.cnst.dev.data()
   
-  if (!is.null(cnst.dev))
+  if (!is.null(cnst.dev)) {
     
     row_highlight <- cnst.dev[Validity != "OK", which = TRUE] - 1
-  
-  renderer <- "
+    
+    renderer <- "
     function (instance, td, row, col, prop, value, cellProperties) {
     
     Handsontable.renderers.TextRenderer.apply(this, arguments);
@@ -827,10 +848,12 @@ output$ht.cnst.dev <- renderRHandsontable({
     }
     
     }" 
-  
-  
-  rhandsontable(cnst.dev, stretchH = FALSE, row_highlight = row_highlight, useTypes = TRUE) %>%
-    hot_cols(renderer = renderer)
+    
+    
+    rhandsontable(cnst.dev, stretchH = FALSE, row_highlight = row_highlight, useTypes = TRUE) %>%
+      hot_cols(renderer = renderer)
+    
+  }
   
 })
 
@@ -851,19 +874,23 @@ output$ht.dt.enth.calc <- renderRHandsontable({
   
   if (!is.null(ht.dt.enth.calc)) {
     
-    row_highlight <- ht.dt.enth.calc[abs(dev) > .25, which = TRUE] - 1
+    row_highlight <- ht.dt.enth.calc[abs(dev / value) > .25, which = TRUE] - 1
     
     renderer <- "
-        function (instance, td, row, col, prop, value, cellProperties) {
-        
-        Handsontable.renderers.TextRenderer.apply(this, arguments);
-        
-        if (instance.params) {
-        hrows = instance.params.row_highlight
-        hrows = hrows instanceof Array ? hrows : [hrows]
-        }
-        
-      }" 
+      function (instance, td, row, col, prop, value, cellProperties) {
+      
+      Handsontable.renderers.TextRenderer.apply(this, arguments);
+      
+      if (instance.params) {
+      hrows = instance.params.row_highlight
+      hrows = hrows instanceof Array ? hrows : [hrows]
+      }
+      
+      if (instance.params && hrows.includes(row)) {
+      td.style.background = 'pink';
+      }
+      
+    }" 
     
     if (nrow(ht.dt.enth.calc) > 25) {
       
@@ -887,8 +914,32 @@ output$ht.adj.r.squared <- renderRHandsontable({
   
   if (!is.null(ht.adj.r.squared))
     
-    rhandsontable(ht.adj.r.squared, stretchH = FALSE, useTypes = FALSE) %>%
-    hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+    row_highlight <- ht.adj.r.squared[`Adj. R^2` < .95, which = TRUE] - 1
+  
+    renderer <- "
+        function (instance, td, row, col, prop, value, cellProperties) {
+        
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+        hrows = instance.params.row_highlight
+        hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+        if (instance.params && hrows.includes(row)) {
+        td.style.background = 'pink';
+        }
+        
+      }" 
+  
+    rhandsontable(ht.adj.r.squared, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
+      hot_cols(renderer = renderer)
+    
+    
+    
+    # rhandsontable(ht.adj.r.squared, stretchH = FALSE, useTypes = FALSE) %>%
+    # hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
   
 })
 
@@ -896,13 +947,13 @@ output$plot.ht.dt.heat <- renderPlotly({
   
   dt <- plot.ht.dt.heat.data()
   
-  dt <- melt(dt, id.vars = c(""), measure.vars = c(""), value.name = c(""))
+  dt <- melt(dt, id.vars = c("Data"))
   
   g <- ggplot(data = dt) +
-    geom_point(aes(x = solution, y = chem_shift, group = data, color = data), size = .5) +
+    geom_point(aes(x = Data, y = value, group = variable, color = variable), size = .5) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    facet_grid(. ~ signal) +
-    labs(x = "Solution", y = "Chemical Shifts")
+    guides(color = guide_legend(title = "")) +
+    labs(x = "Solution", y = "Heats")
   
   g <- ggplotly(g)
   g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
