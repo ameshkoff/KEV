@@ -812,11 +812,13 @@ output$ht.dt.heat.calc <- renderRHandsontable({
     if (nrow(ht.dt.heat.calc) > 25) {
       
       rhandsontable(ht.dt.heat.calc, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
         hot_cols(renderer = renderer)
       
     } else {
       
       rhandsontable(ht.dt.heat.calc, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
         hot_cols(renderer = renderer)
       
     }
@@ -825,48 +827,9 @@ output$ht.dt.heat.calc <- renderRHandsontable({
   
 })
 
-output$ht.cnst.dev <- renderRHandsontable({
-  
-  cnst.dev <- ht.cnst.dev.data()
-  
-  if (!is.null(cnst.dev)) {
-    
-    row_highlight <- cnst.dev[Validity != "OK", which = TRUE] - 1
-    
-    renderer <- "
-    function (instance, td, row, col, prop, value, cellProperties) {
-    
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
-    
-    if (instance.params) {
-    hrows = instance.params.row_highlight
-    hrows = hrows instanceof Array ? hrows : [hrows]
-    }
-    
-    if (instance.params && hrows.includes(row)) {
-    td.style.background = 'pink';
-    }
-    
-    }" 
-    
-    
-    rhandsontable(cnst.dev, stretchH = FALSE, row_highlight = row_highlight, useTypes = TRUE) %>%
-      hot_cols(renderer = renderer)
-    
-  }
-  
-})
+output$ht.cnst.dev <- server_render_cnst.dev("ht")
 
-output$ht.cor.m <- renderRHandsontable({
-  
-  cor.m <- ht.cor.m.data()
-  
-  if (!is.null(cor.m))
-    
-    rhandsontable(cor.m, stretchH = FALSE, useTypes = FALSE) %>%
-    hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
-  
-})
+output$ht.cor.m <- server_render_cor.m("ht")
 
 output$ht.dt.enth.calc <- renderRHandsontable({
   
@@ -895,11 +858,13 @@ output$ht.dt.enth.calc <- renderRHandsontable({
     if (nrow(ht.dt.enth.calc) > 25) {
       
       rhandsontable(ht.dt.enth.calc, stretchH = "all", row_highlight = row_highlight, height = 550) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
         hot_cols(renderer = renderer)
       
     } else {
       
       rhandsontable(ht.dt.enth.calc, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
         hot_cols(renderer = renderer)
       
     }
@@ -908,40 +873,7 @@ output$ht.dt.enth.calc <- renderRHandsontable({
   
 })
 
-output$ht.adj.r.squared <- renderRHandsontable({
-  
-  ht.adj.r.squared <- ht.adj.r.squared.data()
-  
-  if (!is.null(ht.adj.r.squared))
-    
-    row_highlight <- ht.adj.r.squared[`Adj. R^2` < .95, which = TRUE] - 1
-  
-    renderer <- "
-        function (instance, td, row, col, prop, value, cellProperties) {
-        
-        Handsontable.renderers.TextRenderer.apply(this, arguments);
-        
-        if (instance.params) {
-        hrows = instance.params.row_highlight
-        hrows = hrows instanceof Array ? hrows : [hrows]
-        }
-        
-        if (instance.params && hrows.includes(row)) {
-        td.style.background = 'pink';
-        }
-        
-      }" 
-  
-    rhandsontable(ht.adj.r.squared, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
-      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
-      hot_cols(renderer = renderer)
-    
-    
-    
-    # rhandsontable(ht.adj.r.squared, stretchH = FALSE, useTypes = FALSE) %>%
-    # hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
-  
-})
+output$ht.adj.r.squared <- server_render_adj.r.squared("ht")
 
 output$plot.ht.dt.heat <- renderPlotly({
   
@@ -958,8 +890,6 @@ output$plot.ht.dt.heat <- renderPlotly({
   g <- ggplotly(g)
   g[["x"]][["layout"]][["annotations"]][[1]][["y"]] <- -0.15
   g <- g %>% plotly::layout(margin = list(b = 100, t = 50))
-  
-  # g$x$data[[1]]$hoverinfo <- "none"
   
   g
   

@@ -221,6 +221,8 @@ server_cnst.data <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
 
 # rendering -------------------------
 
+# concentrations
+
 server_render_dt.coef <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   bulk.input.name <- paste0("file.", module[1], ".bulk.input")
@@ -730,11 +732,13 @@ server_render_dt.res <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
       if (nrow(dt.res) > 15) {
         
         rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE, height = 300) %>%
+          hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
           hot_cols(renderer = renderer)
         
       } else {
         
         rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE, height = NULL) %>%
+          hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
           hot_cols(renderer = renderer)
         
       }
@@ -749,8 +753,117 @@ server_render_dt.res <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
 }
 
+# constants
 
+server_render_cnst.dev <- function(module = c("ab", "emf", "nm", "ht")) {
+  
+  cnst.dev.data <- eval(as.name(paste0(module[1], ".cnst.dev.data")))
+  
+  rndr <- renderRHandsontable({
+    
+    cnst.dev <- cnst.dev.data()
+    
+    if (!is.null(cnst.dev)) {
+      
+      row_highlight <- cnst.dev[Validity != "OK", which = TRUE] - 1
+      
+      renderer <- "
+        function (instance, td, row, col, prop, value, cellProperties) {
+        
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+        hrows = instance.params.row_highlight
+        hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+        if (instance.params && hrows.includes(row)) {
+        td.style.background = 'pink';
+        }
+        
+        }" 
+      
+      rhandsontable(cnst.dev, stretchH = FALSE, row_highlight = row_highlight, useTypes = TRUE) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
+        hot_cols(renderer = renderer)
+      
+    }
+    
+  })
+  
+  # return
+  
+  return(rndr)
+  
+}
 
+server_render_cor.m <- function(module = c("ab", "emf", "nm", "ht")) {
+  
+  cor.m.data <- eval(as.name(paste0(module[1], ".cor.m.data")))
+  
+  rndr <- renderRHandsontable({
+    
+    cor.m <- cor.m.data()
+    
+    if (!is.null(cor.m)) {
+      
+      rhandsontable(cor.m, stretchH = FALSE, useTypes = FALSE) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+      
+    }
+    
+  })
+  
+  # return
+  
+  return(rndr)
+  
+}
+
+server_render_adj.r.squared <- function(module = c("ab", "emf", "nm", "ht")) {
+  
+  adj.r.squared.data <- eval(as.name(paste0(module[1], ".adj.r.squared.data")))
+  
+  rndr <- renderRHandsontable({
+    
+    adj.r.squared <- adj.r.squared.data()
+    
+    if (!is.null(adj.r.squared)) {
+      
+      row_highlight <- adj.r.squared[`Adj. R^2` < .95, which = TRUE] - 1
+      
+      adj.r.squared[, `Adj. R^2` := as.character(round(`Adj. R^2`, 6))]
+      
+      renderer <- "
+        function (instance, td, row, col, prop, value, cellProperties) {
+        
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+        hrows = instance.params.row_highlight
+        hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+        if (instance.params && hrows.includes(row)) {
+        td.style.background = 'pink';
+        }
+        
+      }" 
+      
+      rhandsontable(adj.r.squared, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
+        hot_cols(renderer = renderer)
+      
+    }
+    
+  })
+  
+  # return
+  
+  return(rndr)
+  
+}
 
 
 

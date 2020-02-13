@@ -784,57 +784,11 @@ output$dt.emf.rel <- renderRHandsontable({
   
 })
 
-output$emf.cnst.dev <- renderRHandsontable({
-  
-  cnst.dev <- emf.cnst.dev.data()
-  
-  if (!is.null(cnst.dev))
-    
-    row_highlight <- cnst.dev[Validity != "OK", which = TRUE] - 1
-  
-  renderer <- "
-    function (instance, td, row, col, prop, value, cellProperties) {
-    
-    Handsontable.renderers.TextRenderer.apply(this, arguments);
-    
-    if (instance.params) {
-    hrows = instance.params.row_highlight
-    hrows = hrows instanceof Array ? hrows : [hrows]
-    }
-    
-    if (instance.params && hrows.includes(row)) {
-    td.style.background = 'pink';
-    }
-    
-    }" 
-  
-  
-  rhandsontable(cnst.dev, stretchH = FALSE, row_highlight = row_highlight, useTypes = TRUE) %>%
-    hot_cols(renderer = renderer)
-  
-})
+output$emf.cnst.dev <- server_render_cnst.dev("emf")
 
-output$emf.cor.m <- renderRHandsontable({
-  
-  cor.m <- emf.cor.m.data()
-  
-  if (!is.null(cor.m))
-    
-    rhandsontable(cor.m, stretchH = FALSE, useTypes = FALSE) %>%
-    hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
-  
-})
+output$emf.cor.m <- server_render_cor.m("emf")
 
-output$emf.adj.r.squared <- renderRHandsontable({
-  
-  emf.adj.r.squared <- emf.adj.r.squared.data()
-  
-  if (!is.null(emf.adj.r.squared))
-    
-    rhandsontable(emf.adj.r.squared, stretchH = FALSE, useTypes = FALSE) %>%
-    hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
-  
-})
+output$emf.adj.r.squared <- server_render_adj.r.squared("emf")
 
 output$plot.dt.emf <- renderPlotly({
   

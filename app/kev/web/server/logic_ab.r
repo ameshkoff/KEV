@@ -1002,46 +1002,9 @@ output$dt.ab.rel <- renderRHandsontable({
   
 })
 
-output$ab.cnst.dev <- renderRHandsontable({
-  
-  cnst.dev <- ab.cnst.dev.data()
-  
-  if (!is.null(cnst.dev))
-    
-    row_highlight <- cnst.dev[Validity != "OK", which = TRUE] - 1
-  
-  renderer <- "
-      function (instance, td, row, col, prop, value, cellProperties) {
-    
-        Handsontable.renderers.TextRenderer.apply(this, arguments);
-        
-        if (instance.params) {
-          hrows = instance.params.row_highlight
-          hrows = hrows instanceof Array ? hrows : [hrows]
-        }
-        
-        if (instance.params && hrows.includes(row)) {
-          td.style.background = 'pink';
-        }
-        
-      }" 
-  
-  
-  rhandsontable(cnst.dev, stretchH = FALSE, row_highlight = row_highlight, useTypes = TRUE) %>%
-    hot_cols(renderer = renderer)
-  
-})
+output$ab.cnst.dev <- server_render_cnst.dev("ab")
 
-output$ab.cor.m <- renderRHandsontable({
-  
-  cor.m <- ab.cor.m.data()
-  
-  if (!is.null(cor.m))
-    
-    rhandsontable(cor.m, stretchH = FALSE, useTypes = FALSE) %>%
-    hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
-  
-})
+output$ab.cor.m <- server_render_cor.m("ab")
 
 output$mol.coef <- renderRHandsontable({
   
@@ -1083,16 +1046,7 @@ output$mol.coef <- renderRHandsontable({
   
 })
 
-output$ab.adj.r.squared <- renderRHandsontable({
-  
-  ab.adj.r.squared <- ab.adj.r.squared.data()
-  
-  if (!is.null(ab.adj.r.squared))
-    
-    rhandsontable(ab.adj.r.squared, stretchH = FALSE, useTypes = FALSE) %>%
-    hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
-  
-})
+output$ab.adj.r.squared <- server_render_adj.r.squared("ab")
 
 output$plot.dt.ab <- renderPlotly({
   
