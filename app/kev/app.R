@@ -192,6 +192,7 @@ server <- function(input, output, session) {
   source("web/server/download.handlers_sp.r", local = TRUE)
   source("web/server/download.handlers_emf.r", local = TRUE)
   source("web/server/download.handlers_nm.r", local = TRUE)
+  source("web/server/download.handlers_ht.r", local = TRUE)
   source("web/server/download.handlers_cur.r", local = TRUE)
   
 }

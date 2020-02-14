@@ -39,8 +39,14 @@ ht.save.prepare.data <- function(dt.ttl = list(), dt.dict = data.table()) {
   
   # input concentrations
   
-  part.eq.input <- rep("tot", ncol(dt.ttl$dt.conc.input))
-  part.eq.input[dt.ttl$part.eq.input] <- "eq"
+  part.eq.input <- unlist(dt.ttl$part.eq.input)
+  
+  if (is.numeric(part.eq.input)) {
+    
+    part.eq.input <- rep("tot", ncol(dt.ttl$dt.conc.input))
+    part.eq.input[dt.ttl$part.eq.input] <- "eq"
+    
+  }
   
   dt.ttl$dt.conc.input <- rbind(as.list(colnames(dt.ttl$dt.conc.input))
                                 , dt.ttl$dt.conc.input, use.names = FALSE)
@@ -110,7 +116,7 @@ ht.save <- function() {
       
     }
     
-    0
+    dt.dict.work
     
   }
 
