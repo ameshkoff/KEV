@@ -83,7 +83,7 @@ ht.evaluation.runner <- function(mode = "script"
     
   } else if (mode[1] %in% c("app", "api")) {
     
-    dt.ttl <- dt.list
+    dt.ttl <- copy(dt.list)
     
   }
   
@@ -265,6 +265,8 @@ ht.evaluation.runner <- function(mode = "script"
   
   # return
   
+  if (length(unique(conc.series)) > 1) dt.conc <- data.table(dt.conc, series = conc.series)
+  
   rtrn <- list("dt.eq.conc" = dt.res
                , "dt.heat.calc" = dt.heat.calc
                , "cnst.dev" = cnst.dev
@@ -274,7 +276,7 @@ ht.evaluation.runner <- function(mode = "script"
                , "cnst.tune" = cnst.tune
                , "lrate.fin" = lrate.fin
                , "adj.r.squared" = adj.r.squared
-               , "dt.coef.input" = dt.coef
+               , "dt.coef.input" = dt.coef[ncol(dt.coef):nrow(dt.coef)]
                , "dt.conc.input" = dt.conc
                , "cnst.input" = cnst
                , "part.eq.input" = part.eq

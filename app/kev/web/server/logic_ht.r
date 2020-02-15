@@ -290,7 +290,7 @@ ht.calorimeter.type.data <- reactive({
     
     if (is.null(values[["ht.calorimeter.type"]])) {
       
-      calorimeter.type <- "dsc"
+      calorimeter.type <- "DSC"
       
     } else {
       
@@ -406,13 +406,15 @@ ht.setup.load <- reactive({
   
   values[["ht.cnst.tune"]] <- cnst.tune 
   values[["ht.cmp.tune"]] <- cmp.tune
-  values[["ht.calorimeter.type"]] <- calorimeter.type
   values[["ht.init.vol"]] <- init.vol 
+  
+  calorimeter.type <- str_to_upper(calorimeter.type)
+  if (calorimeter.type != "DSC") calorimeter.type <- str_to_title(calorimeter.type)
+  values[["ht.calorimeter.type"]] <- calorimeter.type
   
   updateTextInput(session, "ht.cnst.tune", value = paste(cnst.tune, collapse = ", "))
   updateTextInput(session, "ht.cmp.tune", value = cmp.tune)
-  updateSelectInput(session, "ht.calorimeter.type"
-                    , selected = paste0(str_to_upper(str_sub(calorimeter.type, 1, 1)), str_sub(calorimeter.type, 2, nchar(calorimeter.type))))
+  updateSelectInput(session, "ht.calorimeter.type", selected = calorimeter.type)
   updateNumericInput(session, "ht.init.vol", value = init.vol)
   
 })
@@ -448,7 +450,7 @@ ht.eval.data <- reactive({
       heat.length <- heat.length - 1
       
     }
-    
+    # browser()
     validate(
       
       need(identical(nrow(ht.dt.heat), as.integer(heat.length))

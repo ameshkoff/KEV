@@ -69,6 +69,7 @@ if (ht.update.stable) {
 }
 
 # # uncomment to write down main output
+# kev.clear.dir("output/calorimetry")
 # kev.test.regression.write.data(dt.test.list, path = "output", write.fn = ht.save)
 
 kev.test.regression("tests/data.scripts", TRUE)

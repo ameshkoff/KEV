@@ -563,7 +563,8 @@ server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
 
       tmp <- unlist(tmp)
       if (str_to_lower(tail(tmp, 1)) == "series") tmp <- tmp[1:(length(tmp) - 1)]
-
+      if (ncol(part.eq) - length(tmp) == 1) part.eq <- as.data.table(part.eq)[, 1:length(tmp), with = FALSE]
+      
       validate(need(ncol(part.eq) == length(tmp), "Check the column delimiter or content of your file"))
       
       colnames(part.eq) <- tmp
@@ -577,16 +578,14 @@ server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
       
       part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 1), silent = TRUE)
       tmp <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 2), silent = TRUE)
+
+      validate(need(is.data.frame(part.eq), "Check the column delimiter or content of your file"))
       
       tmp <- unlist(tmp)
       if (str_to_lower(tail(tmp, 1)) == "series") tmp <- tmp[1:(length(tmp) - 1)]
+      if (ncol(part.eq) - length(tmp) == 1) part.eq <- as.data.table(part.eq)[, 1:length(tmp), with = FALSE]
       
-      validate(
-        
-        need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
-          need(ncol(part.eq) == length(tmp), "Check the column delimiter or content of your file")
-        
-      )
+      validate(need(ncol(part.eq) == length(tmp), "Check the column delimiter or content of your file"))
       
       colnames(part.eq) <- tmp
       
