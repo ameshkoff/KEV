@@ -161,7 +161,7 @@ ui_ht <- function() {
                             , HTML("<h4>Calorimeter type</h4><p>&nbsp;</p>")
                             , selectInput("ht.calorimeter.type", "", choices = c("DSC", "Ampoule", "Overfilled"), selected = "DSC"))
                      , column(4
-                              , HTML("<h4>Active/Initial volume</h4><p>&nbsp;</p>")
+                              , HTML("<h4>Active/Initial volume</h4><p>Please contact us before using Overfilled Calorimeter</p>")
                               , numericInput("ht.init.vol", "", 1))
                      , column(4
                               , HTML("<h4>Component</h4><p>To get coefficient</p>")
