@@ -31,7 +31,7 @@ eq.scripts.load.csv <- function(sep, subdir, tbl) {
   
   fls <- list.files(subdir)
   
-  cnst.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*k\\_constants\\_log10(\\.csv|\\.txt)*"][1])
+  cnst.fl <- paste0(subdir, fls[fls %like% "^(input_|output_)*(k_constants*_log10|constants*)(\\_evaluated)*(\\.csv|\\.txt)*$"][1])
   dt.coef.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*stoich(iometric)*\\_coefficients(\\.csv|\\.txt)*"][1])
   dt.conc.fl <- paste0(subdir, fls[fls %like% "^(input\\_)*concentrations(\\.csv|\\.txt)*"][1])
   
@@ -107,7 +107,7 @@ eq.scripts.load.xlsx <- function(sep, subdir, filename, tbl) {
   
   shts <- getSheetNames(filename)
   
-  tbl[["cnst"]] <- read.xlsx(filename, sheet = sort(shts[shts %like% "^(input_|output_)*k_constants*_log10"])[1])
+  tbl[["cnst"]] <- read.xlsx(filename, sheet = sort(shts[shts %like% "^(input_|output_)*(k_constants*_log10|constants*)(\\_evaluated)*"])[1])
   tbl[["dt.coef"]] <- read.xlsx(filename, sheet = sort(shts[shts %like% "^(input_|output_)*stoich(iometric)*_coefficients*"])[1])
   tbl[["dt.conc"]] <- read.xlsx(filename, sheet = sort(shts[shts %like% "^(input_|output_)*concentrations*"])[1], startRow = 2)
   tbl[["part.eq"]] <- read.xlsx(filename, sheet = sort(shts[shts %like% "^(input_|output_)*concentrations*"])[1], colNames = FALSE, rows = 1)

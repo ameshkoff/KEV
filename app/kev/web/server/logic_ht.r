@@ -491,7 +491,7 @@ ht.eval.data <- reactive({
                                                  , part.eq = ht.part.eq.data()
                                                  , dt.heat = ht.dt.heat
                                                  , dt.enth = ht.dt.enth
-                                                 , cmt.tune = ht.cmp.tune.data()
+                                                 , cmp.tune = ht.cmp.tune.data()
                                                  , calorimeter.type = ht.calorimeter.type.data()
                                                  , init.vol = ht.init.vol.data())
                                 , save.res = FALSE)
@@ -744,40 +744,12 @@ output$ht.dt.enth <- renderRHandsontable({
     if (nrow(ht.dt.enth) > 25) {
       
       rhandsontable(ht.dt.enth, stretchH = "all", useTypes = FALSE, height = 500) %>%
-        hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+        hot_context_menu(allowRowEdit = TRUE, allowColEdit = FALSE)
       
     } else {
       
       rhandsontable(ht.dt.enth, stretchH = "all", useTypes = FALSE, height = NULL) %>%
-        hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE
-                         , customOpts = list(dt_mol_rename_column =
-                                               list(name = "Change column name"
-                                                    , callback = htmlwidgets::JS(
-                                                      "function (key, options) {
-                                                        
-                                                        const visualIndex = options.start.col;
-                                                        const logicalIndex = this.runHooks('modifyCol', visualIndex);
-                                                        
-                                                        var res = prompt('Type new column name');
-                                                        //res = JSON.stringify(res);
-                                                        
-                                                        if (res === null) {
-                                                        return;
-                                                        }
-                                                        var instance = this;
-                                                        
-                                                        var headers = instance.getColHeader();
-                                                        headers[logicalIndex] = res;
-                                                        
-                                                        instance.updateSettings({
-                                                        colHeaders: headers
-                                                        });
-                                                        
-                                                        this.render();
-                                                        Shiny.onInputChange('ht.dt.enth.colnames', headers);
-                                                        //this.view.wt.wtOverlays.adjustElementsSize(true);
-      }")
-                                               )))
+        hot_context_menu(allowRowEdit = TRUE, allowColEdit = FALSE)
       
     }
     

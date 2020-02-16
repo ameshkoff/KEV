@@ -485,7 +485,9 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "debug",
       
     } else if (mode[1] == "postproc") {
       
+      if (is.null(rtrn$enth.dev)) rtrn$enth.dev <- 0 # if all enthalpies were known before and so NULL is returned
       dt.enth.calc[, dev := rtrn$enth.dev]
+      
       dt.heat.calc[, error := heats - dt.list$dt.heat[, heats]]
       
       list(err = err, dt.enth.calc = dt.enth.calc, dt.heat.calc = dt.heat.calc)
@@ -593,7 +595,7 @@ ht.enth.evaluator <- function(x.known = NULL, y.raw, dt.x, wght, method = c("lm"
   # fill NAs (0 actually)
   
   enth.new[is.na(enth.new)] <- 0
-  enth.new <- -enth.new
+  # enth.new <- -enth.new
   
   # now the trick to place them all in the original order (too dirty maybe)
   

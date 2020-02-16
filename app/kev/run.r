@@ -324,6 +324,20 @@ ht.evaluation.runner(mode = "script", sep = ",", subdir = "calorimetry/ds.3.ampo
 
 
 
+ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry"
+                     , eq.thr.type = "rel", eq.threshold = 1e-08
+                     , algorithm = "direct search", ht.mode = "base", method = "basic wls"
+                     , search.density = 1, lrate.init = .5, ht.threshold = 5e-7
+                     , save.res = FALSE
+                     , filename = "data.xlsx")
+
+
+
+
+
+
+
+
 
 
 

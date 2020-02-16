@@ -624,7 +624,7 @@ server_render_cnst <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
     
     if (input.source[[paste0(module[1], ".cnst.bulk")]]) {
       
-      in.file <- as.data.table(input[[bulk.input.name]])[name %like% "^(input\\_)*k\\_constants*\\_log10(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input[[bulk.input.name]])[name %like% "^(input_|output_)*(k_constants*_log10|constants*)(\\_evaluated)*(\\.csv|\\.txt)*$"][1]
       in.file <- as.data.frame(in.file)
       
       in.file.xlsx <- as.data.table(input[[bulk.input.name]])[name %like% "\\.xlsx$"]
@@ -663,7 +663,7 @@ server_render_cnst <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
       cln <- colnames(cnst)
       setnames(cnst, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
       
-      validate(need(length(colnames(cnst)[colnames(cnst) %like% "^Constant$|^k_constants_log10$|^cnst$|^lg_k$|log10"]) == 1
+      validate(need(length(colnames(cnst)[colnames(cnst) %like% "^[Cc]onstant$|^k_constants_log10$|^cnst$|^lg_k$|log10"]) == 1
                     , "Check the column delimiter or content of your file"))
       
       
@@ -671,14 +671,14 @@ server_render_cnst <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
       
       shts <- getSheetNames(in.file.xlsx$datapath)
       
-      shts <- shts[shts %like% "^(input_|output_)*k_constants*_log10"]
+      shts <- shts[shts %like% "^(input_|output_)*(k_constants*_log10|constants*)(\\_evaluated)*$"]
       shts <- sort(shts)
       
       cnst <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
       
       validate(
         need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
-          need(length(colnames(cnst)[colnames(cnst) %like% "^Constant$|^k_constants_log10$|^cnst$|^lg_k$|log10"]) == 1
+          need(length(colnames(cnst)[colnames(cnst) %like% "^[Cc]onstant$|^k_constants_log10$|^cnst$|^lg_k$|log10"]) == 1
                , "Check the column delimiter or content of your file")
       )
       

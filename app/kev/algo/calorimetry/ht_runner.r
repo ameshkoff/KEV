@@ -189,7 +189,7 @@ ht.evaluation.runner <- function(mode = "script"
   algorithm.options$values.tuned.ind <- dt.list$values.tuned.ind
   
   if (!is.null(dt.list$conc.series)) algorithm.options[["conc.series"]] <- dt.list$conc.series
-
+  
   objective.fn <- ht.objective.function(metrics = "mse", mode = "postproc", dt.list = dt.list)
   dt.ttl <- objective.fn(cnst.m[cnst.tune.ind], method = "basic wls", algorithm.options)
   
@@ -266,6 +266,10 @@ ht.evaluation.runner <- function(mode = "script"
   # return
   
   if (length(unique(conc.series)) > 1) dt.conc <- data.table(dt.conc, series = conc.series)
+  
+  if (!is.null(cnst.dev) && nrow(cnst.dev) > 0) cnst.dev <- cnst.dev[ncol(dt.coef):nrow(cnst.dev)]
+  if (!is.null(dt.enth.calc) && nrow(dt.enth.calc) > 0) dt.enth.calc <- dt.enth.calc[ncol(dt.coef):nrow(dt.enth.calc)]
+  if (!is.null(dt.enth) && nrow(dt.enth) > 0) dt.enth <- dt.enth[ncol(dt.coef):nrow(dt.enth)]
   
   rtrn <- list("dt.eq.conc" = dt.res
                , "dt.heat.calc" = dt.heat.calc
