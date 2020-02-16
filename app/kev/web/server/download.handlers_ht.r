@@ -263,57 +263,28 @@ output$kev.ht.data.xlsx <- downloadHandler(
   # ----
   filename = function() {
     
-    "kev.constants.data.xlsx"
+    "kev.ht.constants.data.xlsx"
     
   },
   
   content = function(file) {
     
-    data.files <- c(
-      
-      ht.dt.coef = "input_stoich_coefficients"
-      , ht.cnst = "input_k_constants_log10"
-      , ht.dt.conc = "input_concentrations"
-      , dt.heat = "input_absorbance"
-      , dt.mol = "input_mol_ext_coefficients"
-      , target = "target"
-      , ht.dt.res = "equilibrium_concentrations"
-      , dt.ht.abs = "absorbance_calc_abs_errors"
-      , dt.ht.rel = "absorbance_calc_rel_errors"
-      , ht.cnst.dev = "constants_evaluated"
-      , ht.cor.m = "correlation_matrix"
-      , ht.adj.r.squared = "adj_r_squared"
-      , mol.coef = "mol_ext_coefficients_calc"
-      
-    )
+    dt.dict <- fread("algo/calorimetry/dt.dict.csv")
     
-    dt.list <- list()
+    dt.ttl <- list()
     
-    for (i in 1:length(data.files)) {
+    for (i in nrow(dt.dict):1) {
       
-      # check if all files are present (in case run before evaluation)
+      fn.name <- paste0("ht.", str_remove(dt.dict[i, dt], "\\.input$"), ".data()")
       
       dt <- NULL
-      try(dt <- eval(expr = parse(text = paste0(names(data.files)[i], ".data()"))), silent = TRUE)
+      try(dt <- eval(expr = parse(text = fn.name)), silent = TRUE)
       
-      if (!is.null(dt)) {
-        
-        if (data.files[i] == "input_concentrations") {
-          
-          dt <- ht.dt.conc.data()
-          dt <- rbind(data.table(t(data.table(colnames(dt)))), dt, use.names = FALSE)
-          
-          setnames(dt, unlist(ht.part.eq.data()))
-          
-        }
-        
-        dt.list[[eval(data.files[i])]] <- dt
-        
-      }
+      if (!is.null(dt)) dt.ttl[[dt.dict[i, dt]]] <- dt
       
     }
     
-    write.xlsx(dt.list, file)
+    dt.dict <- ht.save(dt.ttl, path = "", sep = ht.sep(), filename = file)
     
   }
   
