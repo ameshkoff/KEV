@@ -49,38 +49,15 @@ options(shiny.sanitize.errors = TRUE)
 
 userguide.date <- "20190331"
 
-cur.task.list <- list("Spectrophotometry:UV-Vis" = "spectrophotometry:uv-vis"
-                       , "Spectrophotometry:IR" = "spectrophotometry:ir"
-                       , "Other" = "other")
-
-cur.curves.list <- list("Add Curve", "Gaussian", "Lorentzian")
-cur.algorithms <- data.table(value = c("gaussnewton", "neldermead")
-                             , label = c("Gauss-Newton", "Nelder-Mead"))
-
 
 # load algorithm
 
-source("algo/concentrations/eq_runner.r", chdir = TRUE)
 source("algo/spectrophotometry/ab_runner.r", chdir = TRUE)
 source("algo/molar.extinction.coefficients/sp_runner.r", chdir = TRUE)
-source("algo/emf/emf_runner.r", chdir = TRUE)
-source("algo/nmr/nm_runner.r", chdir = TRUE)
-
-source("algo/calorimetry/ht_runner.r", chdir = TRUE, local = TRUE)
-source("algo/calorimetry/ht_data.r", chdir = TRUE, local = TRUE)
-source("algo/calorimetry/ht_save.r", chdir = TRUE, local = TRUE)
-
-source("algo/curves/cur_runner.r", chdir = TRUE)
 
 # load ui modules
 
-source("web/ui/ui_eq.r")
-source("web/ui/ui_ab.r")
-source("web/ui/ui_sp.r")
-source("web/ui/ui_emf.r")
-source("web/ui/ui_nm.r")
-source("web/ui/ui_ht.r")
-source("web/ui/ui_cur.r")
+source("web/ui/ui_ab.r", chdir = TRUE)
 
 
 
@@ -93,26 +70,27 @@ ui <- tagList(
     tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css?family=Saira+Extra+Condensed:400,500,700")
     , tags$link(rel = "stylesheet", href = "https://fonts.googleapis.com/css?family=Muli:400,700")
 
-  ),
+  )
   
-  navbarPage(title = "KEV",
-             collapsible = TRUE,
-             position = "static-top",
-             windowTitle = "KEV: Constant Evaluator",
-             theme = "kev.css",
+  , navbarPage(title = "KEV"
+               , collapsible = TRUE
+               , position = "static-top"
+               , windowTitle = "KEV: Constant Evaluator"
+               , theme = "kev.css"
+               , selected = "page.ab"
 
-  ui_eq(google.an),
+  , tabPanel(title = HTML("</a></li><li><a href='https://k-ev.org/kev' target='_blank'>Equilibrium Concentrations"))
 
-  navbarMenu("Equilibrium Constants"
+  , navbarMenu("Equilibrium Constants"
      , ui_ab()
      , ui_sp()
-     , ui_emf()
-     , ui_nm()
-     , ui_ht()
-     ),
+     , HTML("<li><a href='https://k-ev.org/emf' target='_blank'>E.M.F. (Potentiometry)</a></li>")
+     , HTML("<li><a href='https://k-ev.org/nmr' target='_blank'>NMR (Fast Exchange)</a></li>")
+     , HTML("<li><a href='https://k-ev.org/calorimetry' target='_blank'>Calorimetry</a></li>")
+     )
   
-  ui_cur(cur.task.list, cur.curves.list, cur.algorithms)
-  
+  , tabPanel(title = HTML("</a></li><li><a href='https://k-ev.org/curve' target='_blank'>Curve Fitting"))
+
   , navbarMenu("More",
                tabPanel(HTML(paste0(
                  "<li><a href='https://gitlab.com/a.meshkov/KEV/raw/master/userguide/User_Guide_"
@@ -131,70 +109,36 @@ ui <- tagList(
 
 server <- function(input, output, session) {
 
-  source("web/server/logic.r", local = TRUE)
+  source("../kev/web/server/logic.r", local = TRUE)
   
   values <- reactiveValues()
   
   input.source <- reactiveValues(
     
-    eq.dt.coef.bulk = FALSE
-    , eq.dt.conc.bulk = FALSE
-    , eq.cnst.bulk = FALSE
-    , eq.dt.conc.pc.fl = FALSE
-    
-    , ab.dt.coef.bulk = FALSE
+    ab.dt.coef.bulk = FALSE
     , ab.dt.conc.bulk = FALSE
     , ab.cnst.bulk = FALSE
     , dt.ab.bulk = FALSE
     , dt.mol.bulk = FALSE
     , dt.mol.memory = FALSE
     
-    , emf.dt.coef.bulk = FALSE
-    , emf.dt.conc.bulk = FALSE
-    , emf.cnst.bulk = FALSE
-    , dt.emf.bulk = FALSE
-    , emf.dt.params.bulk = FALSE
-
-    , nm.dt.coef.bulk = FALSE
-    , nm.dt.conc.bulk = FALSE
-    , nm.cnst.bulk = FALSE
-    , dt.nm.bulk = FALSE
-    , nm.dt.ind.bulk = FALSE
-    
-    , ht.dt.coef.bulk = FALSE
-    , ht.dt.conc.bulk = FALSE
-    , ht.cnst.bulk = FALSE
-    , ht.dt.heat.bulk = FALSE
-    , ht.dt.enth.bulk = FALSE
-    
-    , cur.is.file.loaded = TRUE
-    
   )
   
   # logic
   
-  source("web/server/logic_eq.r", local = TRUE)
+  # source("web/server/logic_eq.r", local = TRUE)
   source("web/server/logic_ab.r", local = TRUE)
   source("web/server/logic_sp.r", local = TRUE)
-  source("web/server/logic_emf.r", local = TRUE)
-  source("web/server/logic_nm.r", local = TRUE)
-  source("web/server/logic_ht.r", local = TRUE)
-  source("web/server/logic_cur.r", local = TRUE)
-  
+
   # end of main server part ----------------------------
   
   # source download handlers
   
-  source("web/server/download.handlers.r", local = TRUE)
+  source("../kev/web/server/download.handlers.r", local = TRUE)
   
-  source("web/server/download.handlers_eq.r", local = TRUE)
   source("web/server/download.handlers_ab.r", local = TRUE)
   source("web/server/download.handlers_sp.r", local = TRUE)
-  source("web/server/download.handlers_emf.r", local = TRUE)
-  source("web/server/download.handlers_nm.r", local = TRUE)
-  source("web/server/download.handlers_ht.r", local = TRUE)
-  source("web/server/download.handlers_cur.r", local = TRUE)
-  
+
 }
 
 
