@@ -30,19 +30,15 @@ library(plotly)
 
 # ------------------------- settings ------------------------
 
-# if google analytics to be shown
-
-google.an <- "google-analytics.html"
-
 # prepare environment
 
-if (Sys.info()["sysname"] %like% "indows") {
-  
-  Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
-  google.an <- ""
-  
-}
-  
+main.folder <- "../kev/"
+
+google.an <- paste0(main.folder, "google-analytics.html")
+debug.mode <- FALSE
+
+if (Sys.info()["sysname"] %like% "indows") Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
+if (debug.mode) google.an <- ""
 
 options(shiny.sanitize.errors = TRUE)
 `%then%` <- shiny:::`%OR%`
@@ -58,6 +54,7 @@ source("algo/molar.extinction.coefficients/sp_runner.r", chdir = TRUE)
 # load ui modules
 
 source("web/ui/ui_ab.r", chdir = TRUE)
+source("web/ui/ui_sp.r", chdir = TRUE)
 
 
 
@@ -77,10 +74,12 @@ ui <- tagList(
                , position = "static-top"
                , windowTitle = "KEV: Constant Evaluator"
                , theme = "kev.css"
-               , selected = "page.ab"
+               # , selected = "page.ab"
 
-  , tabPanel(title = HTML("</a></li><li><a href='https://k-ev.org/kev' target='_blank'>Equilibrium Concentrations"))
-
+  , navbarMenu("Equilibrium Concentrations"
+               , HTML("<li><a href='https://k-ev.org/kev' target='_blank'>Equilibrium Concentrations</a></li>")
+  )
+    
   , navbarMenu("Equilibrium Constants"
      , ui_ab()
      , ui_sp()
@@ -89,8 +88,10 @@ ui <- tagList(
      , HTML("<li><a href='https://k-ev.org/calorimetry' target='_blank'>Calorimetry</a></li>")
      )
   
-  , tabPanel(title = HTML("</a></li><li><a href='https://k-ev.org/curve' target='_blank'>Curve Fitting"))
-
+  , navbarMenu("Curve Fitting"
+               , HTML("<li><a href='https://k-ev.org/curve' target='_blank'>Curve Fitting</a></li>")
+  )
+  
   , navbarMenu("More",
                tabPanel(HTML(paste0(
                  "<li><a href='https://gitlab.com/a.meshkov/KEV/raw/master/userguide/User_Guide_"
@@ -109,7 +110,7 @@ ui <- tagList(
 
 server <- function(input, output, session) {
 
-  source("../kev/web/server/logic.r", local = TRUE)
+  source(paste0(main.folder, "web/server/logic.r"), local = TRUE)
   
   values <- reactiveValues()
   
@@ -134,7 +135,7 @@ server <- function(input, output, session) {
   
   # source download handlers
   
-  source("../kev/web/server/download.handlers.r", local = TRUE)
+  source(paste0(main.folder, "web/server/download.handlers.r"), local = TRUE)
   
   source("web/server/download.handlers_ab.r", local = TRUE)
   source("web/server/download.handlers_sp.r", local = TRUE)
