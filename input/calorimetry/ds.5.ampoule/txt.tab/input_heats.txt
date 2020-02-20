@@ -1,0 +1,4 @@
+data	observation	dilution	deviation	series
+1	-70	0	0.01	a
+2	-69.92	0	0.01	b
+3	-70.07	0	0.01	c
