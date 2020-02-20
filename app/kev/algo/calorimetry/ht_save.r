@@ -51,6 +51,7 @@ ht.save.prepare.data <- function(dt.ttl = list(), dt.dict = data.table()) {
   dt.ttl$dt.conc.input <- rbind(as.list(colnames(dt.ttl$dt.conc.input))
                                 , dt.ttl$dt.conc.input, use.names = FALSE)
 
+  if (length(part.eq.input) < ncol(dt.ttl$dt.conc.input)) part.eq.input <- c(part.eq.input, rep("tot", ncol(dt.ttl$dt.conc.input) - length(part.eq.input)))
   setnames(dt.ttl$dt.conc.input, part.eq.input)
   
   # correlation matrix
