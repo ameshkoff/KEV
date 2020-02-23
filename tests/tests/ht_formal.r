@@ -35,7 +35,7 @@ test_that("calorimetry_output_non.empty.elements", {
   expect_gt(nrow(rtrn$cnst.input), 0)
   expect_type(rtrn$part.eq.input, "integer")
   expect_gt(nrow(rtrn$dt.heat.input), 0)
-  expect_gt(nrow(rtrn$dt.enth.input), 0)
+  expect_s3_class(rtrn$dt.enth.input, "data.table")
   expect_gt(length(rtrn$cmp.tune.input), 0)
   expect_gt(length(rtrn$calorimeter.type.input), 0)
   expect_gt(length(rtrn$init.vol.input), 0)
@@ -44,7 +44,7 @@ test_that("calorimetry_output_non.empty.elements", {
     
     expect_null(rtrn$err.diff)
     expect_null(rtrn$cor.m)
-    expect_null(rtrn$cnst.tune)
+    expect_length(rtrn$cnst.tune, 0L)
     expect_null(rtrn$cnst.dev)
     expect_null(rtrn$lrate.fin)
 

@@ -302,6 +302,12 @@ ht.save(dt.ttl, path = "output/calorimetry/tmp", sep = ";", filename = "kev.outp
 ht.save(dt.ttl, path = "output/calorimetry/tmp", sep = ";", filename = NULL)
 
 
+dt.ttl <- ht.evaluation.runner(mode = "script", sep = ",", subdir = "calorimetry/ds.1.dsc"
+                               , eq.thr.type = "rel", eq.threshold = 1e-08
+                               , algorithm = "direct search", ht.mode = "base", method = "basic wls"
+                               , search.density = 1, lrate.init = .5, ht.threshold = 5e-7
+                               , filename = "data.xlsx")
+
 dt.ttl <- ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.4.overfilled/data"
                                , eq.thr.type = "rel", eq.threshold = 1e-08
                                , algorithm = "direct search", ht.mode = "base", method = "basic wls"
@@ -315,7 +321,7 @@ ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.3.am
                      , save.res = TRUE
                      , filename = "data.xlsx")
 
-ht.evaluation.runner(mode = "script", sep = ",", subdir = "calorimetry/ds.3.ampoule.bad.no.opt/csv.comma"
+ht.evaluation.runner(mode = "script", sep = ",", subdir = "calorimetry/ds.10.ampoule.no.opt/csv.comma"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , algorithm = "direct search", ht.mode = "base", method = "basic wls"
                      , search.density = 1, lrate.init = .5, ht.threshold = 5e-7

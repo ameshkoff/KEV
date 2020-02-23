@@ -269,6 +269,7 @@ ht.evaluation.runner <- function(mode = "script"
   
   if (!is.null(cnst.dev) && nrow(cnst.dev) > 0) cnst.dev <- cnst.dev[ncol(dt.coef):nrow(cnst.dev)]
   if (!is.null(dt.enth.calc) && nrow(dt.enth.calc) > 0) dt.enth.calc <- dt.enth.calc[ncol(dt.coef):nrow(dt.enth.calc)]
+  if (!is.null(dt.enth) && nrow(dt.enth) == part.nm) dt.enth <- data.table(reaction = character(), value = character())
   if (!is.null(dt.enth) && nrow(dt.enth) > 0) dt.enth <- dt.enth[ncol(dt.coef):nrow(dt.enth)]
   
   rtrn <- list("dt.eq.conc" = dt.res

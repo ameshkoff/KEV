@@ -99,7 +99,7 @@ ht.preproc <- function(dt.heat, dt.enth, dt.coef, dt.conc.m, conc.series, init.v
   calorimeter.type.coef <- data.table(dt.conc.m, series = conc.series)
   calorimeter.type.coef <- calorimeter.type.coef[, .SD[2:.N], by = series]
   calorimeter.type.coef <- calorimeter.type.coef[, eval(as.name(cmp.tune))]
-
+  
   if (calorimeter.type %in% c("dsc", "overfilled")) {
     
     calorimeter.type.coef <- rep(1, times = length(calorimeter.type.coef))
