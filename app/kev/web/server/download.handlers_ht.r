@@ -111,8 +111,8 @@ output$ht.cnst.dev.xlsx <- download_cnst.dev.xlsx("ht")
 output$ht.cor.m.csv <- download_cor.m.csv("ht")
 output$ht.cor.m.xlsx <- download_cor.m.xlsx("ht")
 
-output$ht.adj.r.squared.csv <- download_adj.r.squared.csv("ht")
-output$ht.adj.r.squared.xlsx <- download_adj.r.squared.xlsx("ht")
+output$ht.dt.metrics.csv <- download_dt.metrics.csv("ht")
+output$ht.dt.metrics.xlsx <- download_dt.metrics.xlsx("ht")
 
 # specific output
 

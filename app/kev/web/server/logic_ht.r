@@ -468,7 +468,7 @@ ht.eval.data <- reactive({
     #
     
     cnst.tune <- ht.cnst.tune.data()
-    if (cnst.tune == "") cnst.tune <- NULL
+    if (length(cnst.tune) == 1 && cnst.tune == "") cnst.tune <- NULL
     
     incProgress(.3)
     
@@ -555,12 +555,11 @@ ht.dt.enth.calc.data <- eventReactive(input$ht.conc.exec.btn, {
   
 })
 
-ht.adj.r.squared.data <- eventReactive(input$ht.conc.exec.btn, {
+ht.dt.metrics.data <- eventReactive(input$ht.conc.exec.btn, {
   
-  ht.adj.r.squared <- ht.eval.data()$adj.r.squared
-  ht.adj.r.squared <- data.table(`Adj. R^2` = ht.adj.r.squared)
-  
-  ht.adj.r.squared
+  ht.dt.metrics <- ht.eval.data()$dt.metrics
+
+  ht.dt.metrics
   
 })
 
@@ -847,7 +846,7 @@ output$ht.dt.enth.calc <- renderRHandsontable({
   
 })
 
-output$ht.adj.r.squared <- server_render_adj.r.squared("ht")
+output$ht.dt.metrics <- server_render_dt.metrics("ht")
 
 output$plot.ht.dt.heat <- renderPlotly({
   

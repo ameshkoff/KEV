@@ -864,6 +864,50 @@ server_render_adj.r.squared <- function(module = c("ab", "emf", "nm", "ht")) {
   
 }
 
+server_render_dt.metrics <- function(module = c("ab", "emf", "nm", "ht")) {
+  
+  dt.metrics.data <- eval(as.name(paste0(module[1], ".dt.metrics.data")))
+  
+  rndr <- renderRHandsontable({
+    
+    dt.metrics <- dt.metrics.data()
+    
+    if (!is.null(dt.metrics)) {
+      
+      row_highlight <- dt.metrics[(str_to_lower(metrics) == "adj.r^2" & value < .95) |
+                                 (str_to_lower(metrics) %in% c("nrmse", "smape") & value > .1), which = TRUE] - 1
+      
+      dt.metrics[, value := as.character(round(value, 6))]
+      
+      renderer <- "
+        function (instance, td, row, col, prop, value, cellProperties) {
+        
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+        hrows = instance.params.row_highlight
+        hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+        if (instance.params && hrows.includes(row)) {
+        td.style.background = 'pink';
+        }
+        
+      }" 
+      
+      rhandsontable(dt.metrics, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
+        hot_cols(renderer = renderer)
+      
+    }
+    
+  })
+  
+  # return
+  
+  return(rndr)
+  
+}
 
 
 

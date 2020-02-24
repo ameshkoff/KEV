@@ -429,5 +429,63 @@ download_adj.r.squared.xlsx <- function(module = c("eq", "ab", "emf", "nm", "ht"
 }
 
 
+# dt.metrics
+
+download_dt.metrics.csv <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
+  
+  dt.metrics.data <- eval(as.name(paste0(module[1], ".dt.metrics.data")))
+  sep.fun <- eval(as.name(paste0(module[1], ".sep")))
+  
+  hndlr <- downloadHandler(
+    
+    filename = function() {
+      
+      "metrics.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep.fun() == ";") {
+        write.csv2(dt.metrics.data(), file, row.names = FALSE)
+      } else if (sep.fun() == ",") {
+        write.csv(dt.metrics.data(), file, row.names = FALSE)
+      } else if (sep.fun() == "tab") {
+        write.table(dt.metrics.data(), file, row.names = FALSE, sep = "\t")
+      }
+      
+    }
+    
+  )
+  
+  return(hndlr)
+  
+}
+
+download_dt.metrics.xlsx <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
+  
+  dt.metrics.data <- eval(as.name(paste0(module[1], ".dt.metrics.data")))
+  
+  hndlr <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "metrics.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.metrics.data(), file)
+      
+    }
+    
+  )
+  
+  return(hndlr)
+  
+}
+
+
 
 

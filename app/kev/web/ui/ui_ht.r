@@ -225,11 +225,11 @@ ui_ht <- function() {
                                                 , downloadButton("ht.cor.m.csv", "csv")
                                                 , downloadButton("ht.cor.m.xlsx", "xlsx")))
                             , column(3
-                                     , h4(HTML("Adjusted R<sup>2</sup>"))
-                                     , rHandsontableOutput("ht.adj.r.squared")
+                                     , h4(HTML("Metrics"))
+                                     , rHandsontableOutput("ht.dt.metrics")
                                      , fluidRow(class = "download-row"
-                                                , downloadButton("ht.adj.r.squared.csv", "csv")
-                                                , downloadButton("ht.adj.r.squared.xlsx", "xlsx"))))
+                                                , downloadButton("ht.dt.metrics.csv", "csv")
+                                                , downloadButton("ht.dt.metrics.xlsx", "xlsx"))))
 
                  # , fluidRow()
 
