@@ -259,7 +259,7 @@ ht.evaluation.runner <- function(mode = "script"
   dt.ttl <- heat.residuals(dt.heat, dt.heat.calc, dt.enth.calc, dt.enth)
   
   dt.heat.calc <- dt.ttl[["dt.heat.calc"]]
-  adj.r.squared <- dt.ttl[["adj.r.squared"]]
+  dt.metrics <- dt.ttl[["dt.metrics"]]
   
   # `save` module moved to the fully independent function
   
@@ -280,7 +280,7 @@ ht.evaluation.runner <- function(mode = "script"
                , "err.diff" = err.diff
                , "cnst.tune" = cnst.tune
                , "lrate.fin" = lrate.fin
-               , "adj.r.squared" = adj.r.squared
+               , "dt.metrics" = dt.metrics
                , "dt.coef.input" = dt.coef[ncol(dt.coef):nrow(dt.coef)]
                , "dt.conc.input" = dt.conc
                , "cnst.input" = cnst

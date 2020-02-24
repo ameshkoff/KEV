@@ -194,9 +194,19 @@ heat.residuals <- function(dt.heat, dt.heat.calc, dt.enth.calc, dt.enth) {
   
   tmp[, res.rel := res.abs / heats]
 
-  adj.r.squared <- 1 - (sum((dt.heat[, heats] - dt.heat.calc[, heats]) ^ 2) / (nrow(dt.heat) - x.length)) / var(dt.heat[, heats])
+  observed <- dt.heat[, heats]
+  predicted <- dt.heat.calc[, heats]
   
-  list(dt.heat.calc = tmp, adj.r.squared = adj.r.squared)
+  dt.metrics <- list(
+    `Adj.R^2` = 1 - (sum((observed - predicted) ^ 2) / (nrow(dt.heat) - x.length)) / var(observed)
+    , NRMSE = ((sum((observed - predicted) ^ 2) / (nrow(dt.heat) - x.length)) ^ .5) / abs(mean(observed))
+    , SMAPE = mean(abs(observed - predicted) / ((abs(observed) + abs(predicted)) / 2), na.rm = TRUE)
+  )
+  
+  metrics.names <- names(dt.metrics)
+  dt.metrics <- data.table(metrics = metrics.names, value = unlist(dt.metrics))
+
+  list(dt.heat.calc = tmp, dt.metrics = dt.metrics)
   
 }
 

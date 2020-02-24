@@ -72,7 +72,8 @@ if (ht.update.stable) {
 # kev.clear.dir("output/calorimetry")
 # kev.test.regression.write.data(dt.test.list, path = "output", write.fn = ht.save)
 
-kev.test.regression("tests/data.scripts", TRUE)
+kev.test.regression("tests/data.scripts", "", "", TRUE)
+kev.test.regression("tests/data.scripts", "[5-9]|10", "squared|input", TRUE)
 
 beep("fanfare")
 

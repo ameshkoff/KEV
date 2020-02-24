@@ -213,6 +213,8 @@ kev.test.consistent <- function(dt.test.list = list(data.table(fake = character(
 
 kev.test.consistent.data <- function(dt.test.list) {
   
+  dt.test.list <- copy(dt.test.list)
+  
   # convert to numeric if possible and remove vector names
   
   dt.test.list <- lapply(dt.test.list, function(x) lapply(x, function(x) {
@@ -345,6 +347,7 @@ kev.test.regression.test <- function(fl, sh, dt.stable, dt.test, verbose) {
 
 kev.test.loop.zip <- function(fl
                              , data.path = "tests/data.gui"
+                             , ignore.pattern = ""
                              , verbose = FALSE) {
 
   fl.stable.cur <- str_replace_all(paste(data.path, "stable", fl, sep = "/"), "\\/\\/", "/")
@@ -357,6 +360,7 @@ kev.test.loop.zip <- function(fl
   unzip(fl.test.cur, exdir = fl.test.cur.dir)
   
   fl.sheets <- list.files(fl.stable.cur.dir, full.names = FALSE)
+  if (length(ignore.pattern) > 0 && ignore.pattern != "") fl.sheets <- fl.sheets[!(fl.sheets %like% ignore.pattern)]
   
   tst.warnings <- c()
   
@@ -395,12 +399,14 @@ kev.test.loop.zip <- function(fl
 
 kev.test.loop.dir <- function(fl
                               , data.path = "tests/data.gui"
+                              , ignore.pattern = ""
                               , verbose = FALSE) {
   
   fl.stable.cur <- str_replace_all(paste(data.path, "stable", fl, sep = "/"), "\\/\\/", "/")
   fl.test.cur <- str_replace_all(paste(data.path, "test", fl, sep = "/"), "\\/\\/", "/")
   
   fl.sheets <- list.files(fl.stable.cur, full.names = FALSE)
+  if (length(ignore.pattern) > 0 && ignore.pattern != "") fl.sheets <- fl.sheets[!(fl.sheets %like% ignore.pattern)]
   
   tst.warnings <- c()
   
@@ -438,12 +444,14 @@ kev.test.loop.dir <- function(fl
 
 kev.test.loop.xlsx <- function(fl
                               , data.path = "tests/data.gui"
+                              , ignore.pattern = ""
                               , verbose = FALSE) {
   
   fl.stable.cur <- str_replace_all(paste(data.path, "stable", fl, sep = "/"), "\\/\\/", "/")
   fl.test.cur <- str_replace_all(paste(data.path, "test", fl, sep = "/"), "\\/\\/", "/")
 
   fl.sheets <- getSheetNames(fl.stable.cur)
+  if (length(ignore.pattern) > 0 && ignore.pattern != "") fl.sheets <- fl.sheets[!(fl.sheets %like% ignore.pattern)]
   
   tst.warnings <- c()
   
@@ -461,18 +469,23 @@ kev.test.loop.xlsx <- function(fl
 }
 
 kev.test.regression <- function(data.path = "tests/data.gui"
-                        , verbose = FALSE) {
+                                , ignore.pattern.dataset = ""
+                                , ignore.pattern.datapart = ""
+                                , verbose = FALSE) {
   
   # test files structure
   
   fl.stable <- list.files(path = str_replace_all(paste(data.path, "stable", sep = "/"), "\\/\\/", "/"), recursive = TRUE)
-  fl.test <- list.files(path = str_replace_all(paste(data.path, "stable", sep = "/"), "\\/\\/", "/"), recursive = TRUE)
+  fl.test <- list.files(path = str_replace_all(paste(data.path, "test", sep = "/"), "\\/\\/", "/"), recursive = TRUE)
   
   fl.stable[fl.stable %like% "\\.(csv|txt)$"] <- paste0(dirname(fl.stable[fl.stable %like% "\\.(csv|txt)$"]), "/")
   fl.test[fl.test %like% "\\.(csv|txt)$"] <- paste0(dirname(fl.test[fl.test %like% "\\.(csv|txt)$"]), "/")
-  
+
   fl.stable <- unique(fl.stable)
   fl.test <- unique(fl.test)
+  
+  if (length(ignore.pattern.dataset) > 0 && ignore.pattern.dataset != "") fl.stable <- fl.stable[!(fl.stable %like% ignore.pattern.dataset)]
+  if (length(ignore.pattern.dataset) > 0 && ignore.pattern.dataset != "") fl.test <- fl.test[!(fl.test %like% ignore.pattern.dataset)]
   
   fl.missed <- setdiff(fl.stable, fl.test)
   if (length(fl.missed)) stop(paste("Missed stable files :", fl.missed))
@@ -485,15 +498,15 @@ kev.test.regression <- function(data.path = "tests/data.gui"
     
     if (fl %like% "\\.zip$") {
       
-      tst.warnings <- c(tst.warnings, kev.test.loop.zip(fl, data.path, verbose))
+      tst.warnings <- c(tst.warnings, kev.test.loop.zip(fl, data.path, ignore.pattern.datapart, verbose))
       
     } else if (fl %like% "\\.xlsx$") {
       
-      tst.warnings <- c(tst.warnings, kev.test.loop.xlsx(fl, data.path, verbose))
+      tst.warnings <- c(tst.warnings, kev.test.loop.xlsx(fl, data.path, ignore.pattern.datapart, verbose))
       
     } else if (fl %like% "\\/$") {
       
-      tst.warnings <- c(tst.warnings, kev.test.loop.dir(fl, data.path, verbose))
+      tst.warnings <- c(tst.warnings, kev.test.loop.dir(fl, data.path, ignore.pattern.datapart, verbose))
       
     } else {
       

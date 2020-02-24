@@ -292,7 +292,7 @@ nm.evaluation.runner(mode = "script", sep = "tab", subdir = "nmr/dsn.3"
 source("app/kev/algo/calorimetry/ht_runner.r", chdir = TRUE)
 source("app/kev/algo/calorimetry/ht_save.r", chdir = TRUE, local = TRUE)
 
-dt.ttl <- ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.3.ampoule.bad.no.opt"
+dt.ttl <- ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.03.ampoule.bad.no.opt"
                                , eq.thr.type = "rel", eq.threshold = 1e-08
                                , algorithm = "direct search", ht.mode = "base", method = "basic wls"
                                , search.density = 1, lrate.init = .5, ht.threshold = 5e-7
@@ -302,19 +302,19 @@ ht.save(dt.ttl, path = "output/calorimetry/tmp", sep = ";", filename = "kev.outp
 ht.save(dt.ttl, path = "output/calorimetry/tmp", sep = ";", filename = NULL)
 
 
-dt.ttl <- ht.evaluation.runner(mode = "script", sep = ",", subdir = "calorimetry/ds.1.dsc"
+dt.ttl <- ht.evaluation.runner(mode = "script", sep = ",", subdir = "calorimetry/ds.02.dsc"
                                , eq.thr.type = "rel", eq.threshold = 1e-08
                                , algorithm = "direct search", ht.mode = "base", method = "basic wls"
                                , search.density = 1, lrate.init = .5, ht.threshold = 5e-7
                                , filename = "data.xlsx")
 
-dt.ttl <- ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.4.overfilled/data"
+dt.ttl <- ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.04.overfilled/data"
                                , eq.thr.type = "rel", eq.threshold = 1e-08
                                , algorithm = "direct search", ht.mode = "base", method = "basic wls"
                                , search.density = 1, lrate.init = .5, ht.threshold = 5e-7
                                , filename = "data.xlsx")
 
-ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.3.ampoule.bad.no.opt"
+ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.03.ampoule.no.opt"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , algorithm = "direct search", ht.mode = "base", method = "basic wls"
                      , search.density = 1, lrate.init = .5, ht.threshold = 5e-7

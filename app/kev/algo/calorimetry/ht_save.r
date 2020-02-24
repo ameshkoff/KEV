@@ -95,8 +95,7 @@ ht.save <- function() {
       for (i in dt.dict.work[, dt]) {
         
         save.header <- TRUE
-        if (i %in% c("adj.r.squared")) save.header <- FALSE
-        
+
         if (sep == ";"){
           write.table(dt.ttl[[i]], dt.dict.work[dt == i, paste0(path, file, ".csv")], row.names = FALSE, sep = ";", dec = ",", col.names = save.header)
         } else if (sep == ",") {

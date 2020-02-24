@@ -29,7 +29,7 @@ test_that("calorimetry_output_non.empty.elements", {
   expect_gt(nrow(rtrn$dt.eq.conc), 0)
   expect_gt(nrow(rtrn$dt.heat.calc), 0)
   expect_gt(nrow(rtrn$dt.enth.calc), 0)
-  expect_gt(length(rtrn$adj.r.squared), 0)
+  expect_gt(nrow(rtrn$dt.metrics), 0)
   expect_gt(nrow(rtrn$dt.coef.input), 0)
   expect_gt(nrow(rtrn$dt.conc.input), 0)
   expect_gt(nrow(rtrn$cnst.input), 0)

@@ -1,0 +1,4 @@
+"calorimeter"	"ampoule"
+"component"	"L"
+"constants"	NA
+"initial volume"	"1"

@@ -17,15 +17,20 @@ context(kev.context)
 
 # ----------------------- run tests --------------------------
 
-test_that("calorimetry_output_r.squared", {
+test_that("calorimetry_output_metrics", {
   
   if ((str_to_lower(kev.context) %like% "(\\b|\\_)(bad)\\b")) {
     
-    expect_lt(rtrn$adj.r.squared, .99)
+    expect_lt(rtrn$dt.metrics[str_to_lower(metrics) == "adj.r^2", value], .99)
+    
+  } else if (str_to_lower(kev.context) %like% "(\\b|\\_)(no(\\_|\\.)opt)\\b") {
+    
+    expect_lt(rtrn$dt.metrics[str_to_lower(metrics) == "nrmse", value], .1)
+    expect_lt(rtrn$dt.metrics[str_to_lower(metrics) == "smape", value], .1)
     
   } else {
     
-    expect_gt(rtrn$adj.r.squared, .99)
+    expect_gt(rtrn$dt.metrics[str_to_lower(metrics) == "adj.r^2", value], .99)
     
   }
 
