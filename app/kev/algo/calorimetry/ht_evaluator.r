@@ -429,9 +429,8 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "debug",
         if (dt.list$calorimeter.type %in% "overfilled") {
           
           dt.res.diff[i, ] <- dt.res.m[i, ] * dt.list$init.vol - dt.res.m[i - 1, ] * (dt.list$init.vol - volumes.exp[i - ser.ind])
-          # dt.res.diff[i, ] <- init.vol * (dt.res.m[i, ] - dt.res.m[i - 1, ]) + dt.res.m[i - 1, ] * volumes.exp[i - ser.ind]
-          # dt.res.diff[i, ] <- init.vol * (dt.res.m[i, ] - dt.res.m[i - 1, ]) + dt.res.m[i - 1, ] * volumes.exp[i - ser.ind]
-          
+          # dt.res.diff[i, ] <- (dt.res.m[i, ] - dt.res.m[i - 1, ] * (1 - volumes.exp[i - ser.ind] / dt.list$init.vol)) * (dt.list$init.vol)
+
         } else if (dt.list$calorimeter.type %in% c("dsc", "ampoule")) {
           
           dt.res.diff[i, ] <- dt.res.m[i, ] - dt.res.m[i - 1, ] * volumes.exp[i - ser.ind] / volumes.exp[i - ser.ind + 1]

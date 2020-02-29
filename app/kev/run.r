@@ -23,8 +23,8 @@ eq.evaluation.runner(mode = "script", sep = ",", subdir = "concentrations/ds.3p.
                      , bs.name = "L", thr.type = c("rel"), threshold = 1e-08, save.res = FALSE)
 eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.3p"
                      , bs.name = "molecule2", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
-eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.5p"
-                     , bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
+eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.5p/csv.semicolon"
+                     , bs.name = "Cu", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
 eq.evaluation.runner(mode = "script", sep = "tab", subdir = "concentrations/ds.5p.tab"
                      , bs.name = "molecule4", thr.type = c("abs"), threshold = 1e-08, save.res = FALSE)
 eq.evaluation.runner(mode = "script", sep = ";", subdir = "concentrations/ds.3p.2eq"
