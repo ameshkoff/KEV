@@ -76,17 +76,22 @@ ui <- tagList(
                , theme = "kev.css"
                # , selected = "page.ab"
 
-  , navbarMenu("Equilibrium Concentrations"
+  , navbarMenu("Simulation"
                , HTML("<li><a href='https://k-ev.org/kev' target='_blank'>Equilibrium Concentrations</a></li>")
+               , HTML("<li><a href='https://k-ev.org/kev' target='_blank'>Spectrophotometry</a></li>")
+               , HTML("<li><a href='https://k-ev.org/kev' target='_blank'>E.M.F. (Potentiometry)</a></li>")
+               , HTML("<li><a href='https://k-ev.org/kev' target='_blank'>NMR (Fast Exchange)</a></li>")
+               , HTML("<li><a href='https://k-ev.org/kev' target='_blank'>Calorimetry</a></li>")
   )
     
-  , navbarMenu("Equilibrium Constants"
-     , ui_ab()
-     , ui_sp()
-     , HTML("<li><a href='https://k-ev.org/emf' target='_blank'>E.M.F. (Potentiometry)</a></li>")
-     , HTML("<li><a href='https://k-ev.org/nmr' target='_blank'>NMR (Fast Exchange)</a></li>")
-     , HTML("<li><a href='https://k-ev.org/calorimetry' target='_blank'>Calorimetry</a></li>")
-     )
+  , navbarMenu("Constant Optimization"
+               , HTML("<li><a href='https://k-ev.org/kev' target='_blank'>Equilibrium Concentrations</a></li>")
+               , ui_ab()
+               , ui_sp()
+               , HTML("<li><a href='https://k-ev.org/emf' target='_blank'>E.M.F. (Potentiometry)</a></li>")
+               , HTML("<li><a href='https://k-ev.org/nmr' target='_blank'>NMR (Fast Exchange)</a></li>")
+               , HTML("<li><a href='https://k-ev.org/calorimetry' target='_blank'>Calorimetry</a></li>")
+  )
   
   , navbarMenu("Curve Fitting"
                , HTML("<li><a href='https://k-ev.org/curve' target='_blank'>Curve Fitting</a></li>")

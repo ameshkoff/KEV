@@ -314,6 +314,12 @@ dt.ttl <- ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimet
                                , search.density = 1, lrate.init = .5, ht.threshold = 5e-7
                                , filename = "data.xlsx")
 
+dt.ttl <- ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.11.overfilled"
+                               , eq.thr.type = "rel", eq.threshold = 1e-08
+                               , algorithm = "direct search", ht.mode = "base", method = "basic wls"
+                               , search.density = 1, lrate.init = .5, ht.threshold = 5e-7
+                               , filename = "data.xlsx")
+
 ht.evaluation.runner(mode = "script", sep = "tab", subdir = "calorimetry/ds.03.ampoule.no.opt"
                      , eq.thr.type = "rel", eq.threshold = 1e-08
                      , algorithm = "direct search", ht.mode = "base", method = "basic wls"
