@@ -33,7 +33,7 @@ ht.evaluation.runner <- function(mode = "script"
                                  , cmp.tune = NULL
                                  , algorithm = "direct search"
                                  , method = "basic wls"
-                                 , metrics = "mse"
+                                 , metrics = "sse"
                                  , ht.mode = c("base", "grid", "debug")
                                  , search.density = 1
                                  , lrate.init = .5
@@ -190,7 +190,7 @@ ht.evaluation.runner <- function(mode = "script"
   
   if (!is.null(dt.list$conc.series)) algorithm.options[["conc.series"]] <- dt.list$conc.series
   
-  objective.fn <- ht.objective.function(metrics = "mse", mode = "postproc", dt.list = dt.list)
+  objective.fn <- ht.objective.function(metrics = metrics, mode = "postproc", dt.list = dt.list)
   dt.ttl <- objective.fn(cnst.m[cnst.tune.ind], method = "basic wls", algorithm.options)
   
   heat.err <- dt.ttl[["err"]]

@@ -22,7 +22,7 @@ kev.constant.optimizer <- function(objective.fn = ht.objective.function
                                                              , value.threshold = 5e-5
                                                              , eq.threshold = 1e-08
                                                              , eq.thr.type = c("rel", "abs"))
-                                  , metrics = "mse"
+                                  , metrics = "sse"
                                   , mode = c("base", "grid", "debug")
                                   , verbose = TRUE) {
   
@@ -389,7 +389,7 @@ kev.direct.search <- function(values.init
 
 # objective function --------------------------------------- #
 
-ht.objective.function <- function(metrics = "mse", mode = c("iterator", "debug", "postproc"), dt.list = list()) {
+ht.objective.function <- function(metrics = "sse", mode = c("iterator", "debug", "postproc"), dt.list = list()) {
   
   work.fn <- function(values.tuned, method, objective.fn.args) {
     
@@ -468,8 +468,18 @@ ht.objective.function <- function(metrics = "mse", mode = c("iterator", "debug",
     
     # evaluate cost function
     
-    if (metrics == "mse") {
+    if (metrics == "sse") {
+      
       err <- sum(((dt.list$dt.heat[, heats] - dt.heat.calc[, heats]) ^ 2) * wght)
+      
+    } else if (metrics == "mse") {
+      
+      err <- mean(((dt.list$dt.heat[, heats] - dt.heat.calc[, heats]) ^ 2) * wght)
+      
+    } else if (metrics == "mae") {
+      
+      err <- mean(abs(dt.list$dt.heat[, heats] - dt.heat.calc[, heats]) * wght)
+      
     }
     
     # return

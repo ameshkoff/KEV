@@ -199,9 +199,9 @@ heat.residuals <- function(dt.heat, dt.heat.calc, dt.enth.calc, dt.enth) {
   
   dt.metrics <- list(
     `Adj.R^2` = 1 - (sum((observed - predicted) ^ 2) / (nrow(dt.heat) - x.length)) / var(observed)
-    , NRMSE = ((sum((observed - predicted) ^ 2) / (nrow(dt.heat) - x.length)) ^ .5) / abs(mean(observed))
+    , NRMSE = (mean((observed - predicted) ^ 2) ^ .5) / abs(mean(observed))
     , SMAPE = mean(abs(observed - predicted) / ((abs(observed) + abs(predicted)) / 2), na.rm = TRUE)
-    , RMSE = (sum((observed - predicted) ^ 2) / (nrow(dt.heat) - x.length)) ^ .5
+    , RMSE = mean((observed - predicted) ^ 2) ^ .5
   )
   
   metrics.names <- names(dt.metrics)
