@@ -146,9 +146,9 @@ ht.load.extract.setup <- function(tbl = list(dt = data.table())) {
       
     }
     
-    if (nrow(tbl[["setup"]][X1 %like% "^components*$"]) > 0) {
+    if (nrow(tbl[["setup"]][X1 %like% "^(components*|cell|component *\\(cell\\))$"]) > 0) {
       
-      tbl[["cmp.tune"]] <- tbl[["setup"]][X1 %like% "^components*$"][, !"X1", with = FALSE]
+      tbl[["cmp.tune"]] <- tbl[["setup"]][X1 %like% "^(components*|cell|component *\\(cell\\))$"][, !"X1", with = FALSE]
       tbl[["cmp.tune"]] <- unlist(tbl[["cmp.tune"]])
       tbl[["cmp.tune"]] <- tbl[["cmp.tune"]][!is.na(tbl[["cmp.tune"]]) & tbl[["cmp.tune"]] != ""]
       
