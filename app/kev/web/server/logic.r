@@ -877,7 +877,7 @@ server_render_dt.metrics <- function(module = c("ab", "emf", "nm", "ht")) {
       row_highlight <- dt.metrics[(str_to_lower(metrics) == "adj.r^2" & value < .95) |
                                  (str_to_lower(metrics) %in% c("nrmse", "smape") & value > .1), which = TRUE] - 1
       
-      dt.metrics[, value := as.character(round(value, 6))]
+      dt.metrics[, value := as.character(signif(value, 6))]
       
       renderer <- "
         function (instance, td, row, col, prop, value, cellProperties) {
