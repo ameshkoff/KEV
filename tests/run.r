@@ -75,6 +75,8 @@ if (ht.update.stable) {
 kev.test.regression("tests/data.scripts", "", "", TRUE)
 kev.test.regression("tests/data.scripts", "[5-9]|10", "squared|input", TRUE)
 
+kev.test.regression("tests/data.gui", "nmr.*semicolon|dsl.*semicolon|dsl\\.6", "squared", TRUE)
+
 beep("fanfare")
 
 
