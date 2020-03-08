@@ -1,3 +1,9 @@
+www.k-ev.org {
+
+	redir / https://k-ev.org 301
+
+}
+
 k-ev.org {
 
 	basicauth / "kevaulator" "f123p"
