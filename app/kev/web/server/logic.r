@@ -12,7 +12,7 @@
 
 # input data
 
-server_dt.coef.data <- function(module = c("eq", "ab", "emf", "nm")) {
+server_dt.coef.data <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   dt.coef.name <- paste0(module[1], ".dt.coef")
   
@@ -100,7 +100,7 @@ server_part.names.data <- function(module = c("eq")) {
   
 }
 
-server_dt.conc.data <- function(module = c("eq", "ab", "emf", "nm")) {
+server_dt.conc.data <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   dt.conc.name <- paste0(module[1], ".dt.conc")
   
@@ -140,7 +140,7 @@ server_dt.conc.data <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-server_part.eq.data <- function(module = c("eq", "ab", "emf", "nm")) {
+server_part.eq.data <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   part.eq.name <- paste0(module[1], ".part.eq")
   
@@ -179,7 +179,7 @@ server_part.eq.data <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-server_cnst.data <- function(module = c("eq", "ab", "emf", "nm")) {
+server_cnst.data <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   cnst.name <- paste0(module[1], ".cnst")
   
@@ -221,7 +221,9 @@ server_cnst.data <- function(module = c("eq", "ab", "emf", "nm")) {
 
 # rendering -------------------------
 
-server_render_dt.coef <- function(module = c("eq", "ab", "emf", "nm")) {
+# concentrations
+
+server_render_dt.coef <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   bulk.input.name <- paste0("file.", module[1], ".bulk.input")
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -254,6 +256,10 @@ server_render_dt.coef <- function(module = c("eq", "ab", "emf", "nm")) {
       } else if (module[1] == "nm") {
         
         try(nm.cnst.tune.load(), silent = TRUE)
+        
+      } else if (module[1] == "ht") {
+        
+        try(ht.setup.load(), silent = TRUE)
         
       }
       
@@ -363,7 +369,7 @@ server_render_dt.coef <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-server_render_dt.conc <- function(module = c("eq", "ab", "emf", "nm")) {
+server_render_dt.conc <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   bulk.input.name <- paste0("file.", module[1], ".bulk.input")
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -427,6 +433,7 @@ server_render_dt.conc <- function(module = c("eq", "ab", "emf", "nm")) {
       setnames(dt.conc, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
       
       tmp <- colnames(dt.conc)
+      if (str_to_lower(tail(tmp, 1)) == "series") tmp <- tmp[1:(length(tmp) - 1)]
       updateTextInput(session, paste0(module[1], ".part.names"), value = paste(tmp, collapse = ", "))
       
       
@@ -442,6 +449,7 @@ server_render_dt.conc <- function(module = c("eq", "ab", "emf", "nm")) {
       validate(need(is.data.frame(dt.conc), "Check the column delimiter or content of your file"))
       
       tmp <- colnames(dt.conc)
+      if (str_to_lower(tail(tmp, 1)) == "series") tmp <- tmp[1:(length(tmp) - 1)]
       updateTextInput(session, paste0(module[1], ".part.names"), value = paste(tmp, collapse = ", "))
       
     } else if (module[1] == "eq" && input.source[[paste0(module[1], ".dt.conc.pc.fl")]]) {
@@ -480,7 +488,7 @@ server_render_dt.conc <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm")) {
+server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   bulk.input.name <- paste0("file.", module[1], ".bulk.input")
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -553,9 +561,13 @@ server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm")) {
       setDT(part.eq)
       part.eq[1, V1 := str_replace(V1, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0xbb), as.raw(0xbf)))), "")]
 
-      validate(need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file"))
+      tmp <- unlist(tmp)
+      if (str_to_lower(tail(tmp, 1)) == "series") tmp <- tmp[1:(length(tmp) - 1)]
+      if (ncol(part.eq) - length(tmp) == 1) part.eq <- as.data.table(part.eq)[, 1:length(tmp), with = FALSE]
       
-      colnames(part.eq) <- unlist(tmp)
+      validate(need(ncol(part.eq) == length(tmp), "Check the column delimiter or content of your file"))
+      
+      colnames(part.eq) <- tmp
       
     } else if (!is.null(in.file.xlsx)) {
       
@@ -566,15 +578,16 @@ server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm")) {
       
       part.eq <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 1), silent = TRUE)
       tmp <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1], colNames = FALSE, rows = 2), silent = TRUE)
+
+      validate(need(is.data.frame(part.eq), "Check the column delimiter or content of your file"))
       
-      validate(
-        
-        need(is.data.frame(part.eq), "Check the column delimiter or content of your file") %then%
-          need(ncol(part.eq) == ncol(tmp), "Check the column delimiter or content of your file")
-        
-      )
+      tmp <- unlist(tmp)
+      if (str_to_lower(tail(tmp, 1)) == "series") tmp <- tmp[1:(length(tmp) - 1)]
+      if (ncol(part.eq) - length(tmp) == 1) part.eq <- as.data.table(part.eq)[, 1:length(tmp), with = FALSE]
       
-      colnames(part.eq) <- unlist(tmp)
+      validate(need(ncol(part.eq) == length(tmp), "Check the column delimiter or content of your file"))
+      
+      colnames(part.eq) <- tmp
       
     } else if (module[1] == "eq" && input.source[[paste0(module[1], ".dt.conc.pc.fl")]]) {
       
@@ -594,7 +607,7 @@ server_render_part.eq <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-server_render_cnst <- function(module = c("eq", "ab", "emf", "nm")) {
+server_render_cnst <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   bulk.input.name <- paste0("file.", module[1], ".bulk.input")
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -611,7 +624,7 @@ server_render_cnst <- function(module = c("eq", "ab", "emf", "nm")) {
     
     if (input.source[[paste0(module[1], ".cnst.bulk")]]) {
       
-      in.file <- as.data.table(input[[bulk.input.name]])[name %like% "^(input\\_)*k\\_constants*\\_log10(\\.csv|\\.txt)*"][1]
+      in.file <- as.data.table(input[[bulk.input.name]])[name %like% "^(input_|output_)*(k_constants*_log10|constants*)(\\_evaluated)*(\\.csv|\\.txt)*$"][1]
       in.file <- as.data.frame(in.file)
       
       in.file.xlsx <- as.data.table(input[[bulk.input.name]])[name %like% "\\.xlsx$"]
@@ -650,7 +663,7 @@ server_render_cnst <- function(module = c("eq", "ab", "emf", "nm")) {
       cln <- colnames(cnst)
       setnames(cnst, cln, str_replace(cln, paste0("^", rawToChar(c(as.raw(0xef), as.raw(0x2e), as.raw(0xbf)))), ""))
       
-      validate(need(length(colnames(cnst)[colnames(cnst) %like% "^Constant$|^k_constants_log10$|^cnst$|^lg_k$|log10"]) == 1
+      validate(need(length(colnames(cnst)[colnames(cnst) %like% "^[Cc]onstant$|^k_constants_log10$|^cnst$|^lg_k$|log10"]) == 1
                     , "Check the column delimiter or content of your file"))
       
       
@@ -658,14 +671,14 @@ server_render_cnst <- function(module = c("eq", "ab", "emf", "nm")) {
       
       shts <- getSheetNames(in.file.xlsx$datapath)
       
-      shts <- shts[shts %like% "^(input_|output_)*k_constants*_log10"]
+      shts <- shts[shts %like% "^(input_|output_)*(k_constants*_log10|constants*)(\\_evaluated)*$"]
       shts <- sort(shts)
       
       cnst <- try(read.xlsx(in.file.xlsx$datapath, sheet = shts[1]), silent = TRUE)
       
       validate(
         need(is.data.frame(cnst), "Check the column delimiter or content of your file") %then%
-          need(length(colnames(cnst)[colnames(cnst) %like% "^Constant$|^k_constants_log10$|^cnst$|^lg_k$|log10"]) == 1
+          need(length(colnames(cnst)[colnames(cnst) %like% "^[Cc]onstant$|^k_constants_log10$|^cnst$|^lg_k$|log10"]) == 1
                , "Check the column delimiter or content of your file")
       )
       
@@ -694,7 +707,7 @@ server_render_cnst <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-server_render_dt.res <- function(module = c("eq", "ab", "emf", "nm")) {
+server_render_dt.res <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   dt.res.data <- eval(as.name(paste0(module[1], ".dt.res.data")))
 
@@ -718,11 +731,13 @@ server_render_dt.res <- function(module = c("eq", "ab", "emf", "nm")) {
       if (nrow(dt.res) > 15) {
         
         rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE, height = 300) %>%
+          hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
           hot_cols(renderer = renderer)
         
       } else {
         
         rhandsontable(dt.res, stretchH = FALSE, useTypes = FALSE, height = NULL) %>%
+          hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
           hot_cols(renderer = renderer)
         
       }
@@ -737,9 +752,162 @@ server_render_dt.res <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
+# constants
 
+server_render_cnst.dev <- function(module = c("ab", "emf", "nm", "ht")) {
+  
+  cnst.dev.data <- eval(as.name(paste0(module[1], ".cnst.dev.data")))
+  
+  rndr <- renderRHandsontable({
+    
+    cnst.dev <- cnst.dev.data()
+    
+    if (!is.null(cnst.dev)) {
+      
+      row_highlight <- cnst.dev[Validity != "OK", which = TRUE] - 1
+      
+      renderer <- "
+        function (instance, td, row, col, prop, value, cellProperties) {
+        
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+        hrows = instance.params.row_highlight
+        hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+        if (instance.params && hrows.includes(row)) {
+        td.style.background = 'pink';
+        }
+        
+        }" 
+      
+      rhandsontable(cnst.dev, stretchH = FALSE, row_highlight = row_highlight, useTypes = TRUE) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
+        hot_cols(renderer = renderer)
+      
+    }
+    
+  })
+  
+  # return
+  
+  return(rndr)
+  
+}
 
+server_render_cor.m <- function(module = c("ab", "emf", "nm", "ht")) {
+  
+  cor.m.data <- eval(as.name(paste0(module[1], ".cor.m.data")))
+  
+  rndr <- renderRHandsontable({
+    
+    cor.m <- cor.m.data()
+    
+    if (!is.null(cor.m)) {
+      
+      rhandsontable(cor.m, stretchH = FALSE, useTypes = FALSE) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+      
+    }
+    
+  })
+  
+  # return
+  
+  return(rndr)
+  
+}
 
+server_render_adj.r.squared <- function(module = c("ab", "emf", "nm", "ht")) {
+  
+  adj.r.squared.data <- eval(as.name(paste0(module[1], ".adj.r.squared.data")))
+  
+  rndr <- renderRHandsontable({
+    
+    adj.r.squared <- adj.r.squared.data()
+    
+    if (!is.null(adj.r.squared)) {
+      
+      row_highlight <- adj.r.squared[`Adj. R^2` < .95, which = TRUE] - 1
+      
+      adj.r.squared[, `Adj. R^2` := as.character(round(`Adj. R^2`, 6))]
+      
+      renderer <- "
+        function (instance, td, row, col, prop, value, cellProperties) {
+        
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+        hrows = instance.params.row_highlight
+        hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+        if (instance.params && hrows.includes(row)) {
+        td.style.background = 'pink';
+        }
+        
+      }" 
+      
+      rhandsontable(adj.r.squared, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
+        hot_cols(renderer = renderer)
+      
+    }
+    
+  })
+  
+  # return
+  
+  return(rndr)
+  
+}
+
+server_render_dt.metrics <- function(module = c("ab", "emf", "nm", "ht")) {
+  
+  dt.metrics.data <- eval(as.name(paste0(module[1], ".dt.metrics.data")))
+  
+  rndr <- renderRHandsontable({
+    
+    dt.metrics <- dt.metrics.data()
+    
+    if (!is.null(dt.metrics)) {
+      
+      row_highlight <- dt.metrics[(str_to_lower(metrics) == "adj.r^2" & value < .95) |
+                                 (str_to_lower(metrics) %in% c("nrmse", "smape") & value > .1), which = TRUE] - 1
+      
+      dt.metrics[, value := as.character(signif(value, 6))]
+      
+      renderer <- "
+        function (instance, td, row, col, prop, value, cellProperties) {
+        
+        Handsontable.renderers.TextRenderer.apply(this, arguments);
+        
+        if (instance.params) {
+        hrows = instance.params.row_highlight
+        hrows = hrows instanceof Array ? hrows : [hrows]
+        }
+        
+        if (instance.params && hrows.includes(row)) {
+        td.style.background = 'pink';
+        }
+        
+      }" 
+      
+      rhandsontable(dt.metrics, stretchH = "all", row_highlight = row_highlight, height = NULL) %>%
+        hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE) %>%
+        hot_cols(renderer = renderer)
+      
+    }
+    
+  })
+  
+  # return
+  
+  return(rndr)
+  
+}
 
 
 

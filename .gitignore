@@ -14,4 +14,6 @@
 *checkpoint*
 /app_py/kev/__pycache__
 *.pyc
+*~$*xlsx
+*~lock.data*
 *checkpoint.ipynb

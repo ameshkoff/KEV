@@ -33,7 +33,8 @@ eq.evaluation.runner <- function(mode = c("api", "script", "app")
                                  , threshold = 1e-08
                                  , save.res = TRUE
                                  , dt.list = NULL
-                                 , pc.name = NULL) {
+                                 , pc.name = NULL
+                                 , filename = NULL) {
   
   dir.start <- ""
   
@@ -58,11 +59,11 @@ eq.evaluation.runner <- function(mode = c("api", "script", "app")
   
   if (mode == "script") {
     
-    dt.ttl <- eq.scripts.load(sep, subdir)
+    dt.ttl <- eq.scripts.load(sep, subdir, filename)
     
   } else if (mode %in% c("app", "api")) {
     
-    dt.ttl <- dt.list
+    dt.ttl <- copy(dt.list)
     
   }
   

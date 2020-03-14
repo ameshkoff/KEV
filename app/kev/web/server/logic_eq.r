@@ -461,9 +461,12 @@ output$eq.dt.conc.pc <- renderRHandsontable({
   
   eq.dt.conc.pc <- eq.dt.conc.pc.data()
   
-  if (!is.null(eq.dt.conc.pc))
+  if (!is.null(eq.dt.conc.pc)) {
+    
     rhandsontable(eq.dt.conc.pc, stretchH = "all", useTypes = FALSE) %>%
-    hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+      hot_context_menu(allowRowEdit = TRUE, allowColEdit = TRUE)
+    
+  }
   
 })
 
@@ -523,10 +526,12 @@ output$eq.dt.conc.tot <- renderRHandsontable({
   
   eq.dt.conc.tot <- eq.dt.conc.tot.data()
   
-  if (!is.null(eq.dt.conc.tot))
+  if (!is.null(eq.dt.conc.tot)) {
     
     rhandsontable(eq.dt.conc.tot, stretchH = FALSE, useTypes = FALSE) %>%
-    hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+
+  }
   
 })
 

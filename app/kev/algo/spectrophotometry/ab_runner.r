@@ -84,7 +84,7 @@ ab.evaluation.runner <- function(mode = c("api", "script", "app")
     
   } else if (mode %in% c("app", "api")) {
     
-    dt.ttl <- dt.list
+    dt.ttl <- copy(dt.list)
     
   }
   

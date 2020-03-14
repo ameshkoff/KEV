@@ -62,17 +62,19 @@ def eq_scripts_load(_sep, _subdir, _file):
         r = re.compile(r'^(input\_)*stoich(iometric)*\_coefficients*')
         file = list(filter(r.search, file_names))[0]
         file = _subdir + str(file)
-        st_coeff_data = pd.read_csv(file, sep = _sep)
+        st_coeff_data = pd.read_csv(file, sep = _sep, decimal = ".")
         
         r = re.compile(r'^(input\_)*k\_constants\_log10')
         file = list(filter(r.search, file_names))[0]
         file = _subdir + str(file)
-        lg_k_data = pd.read_csv(file, sep = _sep, decimal = ",")
+        lg_k_data = pd.read_csv(file, sep = _sep, dtype = str)
+        lg_k_data = lg_k_data.stack().str.replace(',', '.').unstack().astype(float)
         
         r = re.compile(r'^(input\_)*concentrations*')
         file = list(filter(r.search, file_names))[0]
         file = _subdir + str(file)
-        con_data = pd.read_csv(file, sep = _sep, decimal = ",", header = 1)
+        con_data = pd.read_csv(file, sep = _sep, dtype = str, header = 1)
+        con_data = con_data.stack().str.replace(',', '.').unstack().astype(float)
         
         type_con = pd.read_csv(file, sep = _sep, header = None, nrows = 1).iloc[0,:]
         

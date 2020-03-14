@@ -908,8 +908,8 @@ output$cur.plot.curves <- renderPlotly({
   # curve controls into layout
   
   g <- g %>%
-    layout(xaxis = list(title = "Labels", gridcolor = "white")
-           , yaxis = list(title = "Values", gridcolor = "white")
+    layout(xaxis = list(title = input$cur.plot.labels, gridcolor = "white")
+           , yaxis = list(title = input$cur.plot.values, gridcolor = "white")
            , plot_bgcolor = "#ebebeb"
            , shapes = peak.points
     ) %>%

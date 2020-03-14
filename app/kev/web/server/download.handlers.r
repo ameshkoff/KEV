@@ -13,7 +13,7 @@
 
 # dt.coef
 
-download_dt.coef.csv <- function(module = c("eq", "ab", "emf", "nm")) {
+download_dt.coef.csv <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   dt.coef.data <- eval(as.name(paste0(module[1], ".dt.coef.data")))
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -44,7 +44,7 @@ download_dt.coef.csv <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-download_dt.coef.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
+download_dt.coef.xlsx <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   dt.coef.data <- eval(as.name(paste0(module[1], ".dt.coef.data")))
 
@@ -71,7 +71,7 @@ download_dt.coef.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
 
 # cnst
 
-download_cnst.csv <- function(module = c("eq", "ab", "emf", "nm")) {
+download_cnst.csv <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   cnst.data <- eval(as.name(paste0(module[1], ".cnst.data")))
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -102,7 +102,7 @@ download_cnst.csv <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-download_cnst.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
+download_cnst.xlsx <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   cnst.data <- eval(as.name(paste0(module[1], ".cnst.data")))
 
@@ -129,7 +129,7 @@ download_cnst.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
 
 # dt.conc
 
-download_dt.conc.csv <- function(module = c("eq", "ab", "emf", "nm")) {
+download_dt.conc.csv <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   dt.conc.data <- eval(as.name(paste0(module[1], ".dt.conc.data")))
   part.eq.data <- eval(as.name(paste0(module[1], ".part.eq.data")))
@@ -166,7 +166,7 @@ download_dt.conc.csv <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-download_dt.conc.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
+download_dt.conc.xlsx <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   dt.conc.data <- eval(as.name(paste0(module[1], ".dt.conc.data")))
   part.eq.data <- eval(as.name(paste0(module[1], ".part.eq.data")))
@@ -199,7 +199,7 @@ download_dt.conc.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
 
 # dt.res
 
-download_dt.res.csv <- function(module = c("eq", "ab", "emf", "nm")) {
+download_dt.res.csv <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   dt.res.data <- eval(as.name(paste0(module[1], ".dt.res.data")))
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -230,7 +230,7 @@ download_dt.res.csv <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-download_dt.res.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
+download_dt.res.xlsx <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   dt.res.data <- eval(as.name(paste0(module[1], ".dt.res.data")))
   
@@ -257,7 +257,7 @@ download_dt.res.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
 
 # cnst.dev
 
-download_cnst.dev.csv <- function(module = c("eq", "ab", "emf", "nm")) {
+download_cnst.dev.csv <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   cnst.dev.data <- eval(as.name(paste0(module[1], ".cnst.dev.data")))
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -288,7 +288,7 @@ download_cnst.dev.csv <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-download_cnst.dev.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
+download_cnst.dev.xlsx <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   cnst.dev.data <- eval(as.name(paste0(module[1], ".cnst.dev.data")))
   
@@ -315,7 +315,7 @@ download_cnst.dev.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
 
 # cor.m
 
-download_cor.m.csv <- function(module = c("eq", "ab", "emf", "nm")) {
+download_cor.m.csv <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   cor.m.data <- eval(as.name(paste0(module[1], ".cor.m.data")))
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -346,7 +346,7 @@ download_cor.m.csv <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-download_cor.m.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
+download_cor.m.xlsx <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   cor.m.data <- eval(as.name(paste0(module[1], ".cor.m.data")))
   
@@ -373,7 +373,7 @@ download_cor.m.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
 
 # adj.r.squared
 
-download_adj.r.squared.csv <- function(module = c("eq", "ab", "emf", "nm")) {
+download_adj.r.squared.csv <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   adj.r.squared.data <- eval(as.name(paste0(module[1], ".adj.r.squared.data")))
   sep.fun <- eval(as.name(paste0(module[1], ".sep")))
@@ -404,7 +404,7 @@ download_adj.r.squared.csv <- function(module = c("eq", "ab", "emf", "nm")) {
   
 }
 
-download_adj.r.squared.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
+download_adj.r.squared.xlsx <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
   
   adj.r.squared.data <- eval(as.name(paste0(module[1], ".adj.r.squared.data")))
   
@@ -419,6 +419,64 @@ download_adj.r.squared.xlsx <- function(module = c("eq", "ab", "emf", "nm")) {
     content = function(file) {
       
       write.xlsx(adj.r.squared.data(), file)
+      
+    }
+    
+  )
+  
+  return(hndlr)
+  
+}
+
+
+# dt.metrics
+
+download_dt.metrics.csv <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
+  
+  dt.metrics.data <- eval(as.name(paste0(module[1], ".dt.metrics.data")))
+  sep.fun <- eval(as.name(paste0(module[1], ".sep")))
+  
+  hndlr <- downloadHandler(
+    
+    filename = function() {
+      
+      "metrics.csv"
+      
+    },
+    
+    content = function(file) {
+      
+      if (sep.fun() == ";") {
+        write.csv2(dt.metrics.data(), file, row.names = FALSE)
+      } else if (sep.fun() == ",") {
+        write.csv(dt.metrics.data(), file, row.names = FALSE)
+      } else if (sep.fun() == "tab") {
+        write.table(dt.metrics.data(), file, row.names = FALSE, sep = "\t")
+      }
+      
+    }
+    
+  )
+  
+  return(hndlr)
+  
+}
+
+download_dt.metrics.xlsx <- function(module = c("eq", "ab", "emf", "nm", "ht")) {
+  
+  dt.metrics.data <- eval(as.name(paste0(module[1], ".dt.metrics.data")))
+  
+  hndlr <- downloadHandler(
+    # ----
+    filename = function() {
+      
+      "metrics.xlsx"
+      
+    },
+    
+    content = function(file) {
+      
+      write.xlsx(dt.metrics.data(), file)
       
     }
     

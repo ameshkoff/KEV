@@ -20,7 +20,10 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
   
   reac.nm <- nrow(dt.coef) + part.nm
   
-  cnst <- rbind(rep(0, part.nm), cnst, use.names = FALSE)
+  cln <- colnames(cnst)
+  cln <- cln[!(cln %like% "^(dev|valid|vld)")]
+  
+  cnst <- rbind(rep(0, part.nm), cnst[, cln, with = FALSE], use.names = FALSE)
   
   # complete coefficients data table
   
@@ -33,6 +36,20 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
   dt.coef <- rbind(tmp, dt.coef, use.names = FALSE)
   
   setnames(dt.coef, cln)
+  
+  # split series if exist
+  
+  conc.series <- NULL
+  
+  cln <- colnames(dt.conc)
+  cl <- cln[cln %like% "^[sS]eries$"]
+  
+  if (length(cl) > 0) {
+    
+    conc.series <- dt.conc[, eval(as.name(cl))]
+    dt.conc[, eval(cl) := NULL]
+    
+  }
   
   # matrices
   
@@ -99,7 +116,8 @@ eq.preproc <- function(dt.coef, cnst, dt.conc, part.eq) {
        , "cnst.m" = cnst.m
        , "part.eq" = part.eq
        , "reac.nm" = reac.nm
-       , "part.nm" = part.nm)
+       , "part.nm" = part.nm
+       , "conc.series" = conc.series)
 
 }
 

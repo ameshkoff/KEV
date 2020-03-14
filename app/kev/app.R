@@ -2,7 +2,7 @@
 #                                                            #
 # Name: KEV:Constant Evaluator                               #
 # Author: AMeshkov                                           #
-# Date: 2018                                                 #
+# Date: 2020                                                 #
 #                                                            #
 # ########################################################## #
 
@@ -30,19 +30,13 @@ library(plotly)
 
 # ------------------------- settings ------------------------
 
-# if google analytics to be shown
-
-google.an <- "google-analytics.html"
-
 # prepare environment
 
-if (Sys.info()["sysname"] %like% "indows") {
-  
-  Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
-  google.an <- ""
-  
-}
-  
+google.an <- "google-analytics.html"
+dev.mode <- FALSE
+
+if (Sys.info()["sysname"] %like% "indows") Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
+if (dev.mode) google.an <- ""
 
 options(shiny.sanitize.errors = TRUE)
 `%then%` <- shiny:::`%OR%`
@@ -65,6 +59,11 @@ source("algo/spectrophotometry/ab_runner.r", chdir = TRUE)
 source("algo/molar.extinction.coefficients/sp_runner.r", chdir = TRUE)
 source("algo/emf/emf_runner.r", chdir = TRUE)
 source("algo/nmr/nm_runner.r", chdir = TRUE)
+
+source("algo/calorimetry/ht_runner.r", chdir = TRUE, local = TRUE)
+source("algo/calorimetry/ht_data.r", chdir = TRUE, local = TRUE)
+source("algo/calorimetry/ht_save.r", chdir = TRUE, local = TRUE)
+
 source("algo/curves/cur_runner.r", chdir = TRUE)
 
 # load ui modules
@@ -74,6 +73,7 @@ source("web/ui/ui_ab.r")
 source("web/ui/ui_sp.r")
 source("web/ui/ui_emf.r")
 source("web/ui/ui_nm.r")
+source("web/ui/ui_ht.r")
 source("web/ui/ui_cur.r")
 
 
@@ -101,8 +101,10 @@ ui <- tagList(
      , ui_ab()
      , ui_sp()
      , ui_emf()
-     , ui_nm()),
-
+     , ui_nm()
+     , ui_ht()
+     ),
+  
   ui_cur(cur.task.list, cur.curves.list, cur.algorithms)
   
   , navbarMenu("More",
@@ -114,7 +116,7 @@ ui <- tagList(
                ))
 
   )
-  , tags$footer(class = "kev-footer", HTML("Copyright 2018, 2019 &copy; G.Gamov, A.Meshkov | GNU GPL 3.0 | <a href='../#contact'>Contact us</a>"))
+  , tags$footer(class = "kev-footer", HTML("Copyright 2018-2020 &copy; G.Gamov, A.Meshkov | GNU GPL 3.0 | <a href='../#contact'>Contact us</a>"))
 
 )
 
@@ -153,10 +155,16 @@ server <- function(input, output, session) {
     , dt.nm.bulk = FALSE
     , nm.dt.ind.bulk = FALSE
     
+    , ht.dt.coef.bulk = FALSE
+    , ht.dt.conc.bulk = FALSE
+    , ht.cnst.bulk = FALSE
+    , ht.dt.heat.bulk = FALSE
+    , ht.dt.enth.bulk = FALSE
+    
     , cur.is.file.loaded = TRUE
     
   )
-
+  
   # logic
   
   source("web/server/logic_eq.r", local = TRUE)
@@ -164,6 +172,7 @@ server <- function(input, output, session) {
   source("web/server/logic_sp.r", local = TRUE)
   source("web/server/logic_emf.r", local = TRUE)
   source("web/server/logic_nm.r", local = TRUE)
+  source("web/server/logic_ht.r", local = TRUE)
   source("web/server/logic_cur.r", local = TRUE)
   
   # end of main server part ----------------------------
@@ -177,6 +186,7 @@ server <- function(input, output, session) {
   source("web/server/download.handlers_sp.r", local = TRUE)
   source("web/server/download.handlers_emf.r", local = TRUE)
   source("web/server/download.handlers_nm.r", local = TRUE)
+  source("web/server/download.handlers_ht.r", local = TRUE)
   source("web/server/download.handlers_cur.r", local = TRUE)
   
 }

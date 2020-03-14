@@ -84,7 +84,7 @@ nm.evaluation.runner <- function(mode = c("api", "script", "app")
     
   } else if (mode %in% c("app", "api")) {
     
-    dt.ttl <- dt.list
+    dt.ttl <- copy(dt.list)
     
   }
   
@@ -211,7 +211,7 @@ nm.evaluation.runner <- function(mode = c("api", "script", "app")
 
   for (i in tbl) {
     
-    dt <- dt.nm.calc[, .(signal, solution, calculated = get(i))]
+    dt <- dt.nm.calc[, .(signal, solution, calculated = as.vector(get(i)))]
     assign(i, dt)
     
   }
