@@ -32,7 +32,7 @@ library(plotly)
 
 # prepare environment
 
-google.an <- paste0(main.folder, "google-analytics.html")
+google.an <- "google-analytics.html"
 dev.mode <- FALSE
 
 if (Sys.info()["sysname"] %like% "indows") Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
