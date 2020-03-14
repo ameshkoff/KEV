@@ -35,10 +35,10 @@ library(plotly)
 main.folder <- "../kev/"
 
 google.an <- paste0(main.folder, "google-analytics.html")
-debug.mode <- FALSE
+dev.mode <- TRUE
 
 if (Sys.info()["sysname"] %like% "indows") Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
-if (debug.mode) google.an <- ""
+if (dev.mode) google.an <- ""
 
 options(shiny.sanitize.errors = TRUE)
 `%then%` <- shiny:::`%OR%`

@@ -30,19 +30,13 @@ library(plotly)
 
 # ------------------------- settings ------------------------
 
-# if google analytics to be shown
-
-google.an <- "google-analytics.html"
-
 # prepare environment
 
-if (Sys.info()["sysname"] %like% "indows") {
-  
-  Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
-  google.an <- ""
-  
-}
-  
+google.an <- paste0(main.folder, "google-analytics.html")
+dev.mode <- FALSE
+
+if (Sys.info()["sysname"] %like% "indows") Sys.setenv("R_ZIPCMD" = "c:/Rtools/bin/zip.exe")
+if (dev.mode) google.an <- ""
 
 options(shiny.sanitize.errors = TRUE)
 `%then%` <- shiny:::`%OR%`
